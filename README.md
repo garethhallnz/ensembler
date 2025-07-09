@@ -1,3 +1,172 @@
+# Media Center Management Application
+
+A comprehensive Docker-based media center management application with a graphical user interface built using TypeScript, React, and Electron. This application provides a setup wizard and dashboard for managing popular media center services like Sonarr, Radarr, Plex, Transmission, and more.
+
+## How to Run
+
+### Prerequisites
+
+Before running this application, ensure you have the following installed:
+
+1. **Node.js** (v18 or higher)
+2. **npm** (comes with Node.js)
+3. **Docker** and **Docker Compose**
+   - macOS: Install Docker Desktop from https://www.docker.com/products/docker-desktop/
+   - Windows: Install Docker Desktop from https://www.docker.com/products/docker-desktop/
+   - Linux: Install Docker Engine and Docker Compose from https://docs.docker.com/engine/install/
+
+### Quick Start
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/garethhallnz/media-center.git
+   cd media-center
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   # Install backend dependencies
+   cd backend
+   npm install
+   cd ..
+   
+   # Install frontend dependencies
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+3. **Start the application in development mode**:
+   ```bash
+   # Start backend server (in one terminal)
+   cd backend
+   npm run dev
+   
+   # Start frontend development server (in another terminal)
+   cd frontend
+   npm run dev
+   ```
+
+4. **Access the application**:
+   - The application will open automatically in development mode
+   - Backend API runs on `http://localhost:3001`
+   - Frontend runs on `http://localhost:5173`
+
+### Building for Production
+
+To create a production build of the application:
+
+1. **Using the build script** (recommended):
+   ```bash
+   # On Linux/macOS
+   ./build.sh
+   
+   # On Windows
+   build.bat
+   ```
+
+2. **Manual build process**:
+   ```bash
+   # Build backend
+   cd backend
+   npm run build
+   cd ..
+   
+   # Build and package frontend with Electron
+   cd frontend
+   npm run build
+   npm run electron-dist
+   ```
+
+The packaged application will be available in `frontend/dist-electron/`.
+
+### Running as Electron App
+
+To run the application as a desktop app during development:
+
+```bash
+cd frontend
+npm run electron-dev
+```
+
+### Environment Configuration
+
+The application will automatically create a configuration directory:
+- **Linux/macOS**: `~/.media-center/`
+- **Windows**: `%USERPROFILE%\.media-center\`
+
+This directory will contain:
+- `config.json`: Application configuration
+- `.env`: Environment variables for Docker services
+- `docker-compose.yml`: Generated Docker Compose configuration
+
+### First-Time Setup
+
+1. **Launch the application** - it will automatically check for Docker installation
+2. **Follow the Setup Wizard**:
+   - Select which media center services you want to use
+   - Configure file paths for your media libraries
+   - Set port numbers for each service
+   - Review and apply the configuration
+3. **Access the Dashboard** to manage your services
+
+### Available Services
+
+The application can manage the following Docker services:
+
+- **Prowlarr**: Indexer aggregator
+- **Sonarr**: TV show management
+- **Radarr**: Movie management
+- **Plex**: Media server
+- **Transmission**: BitTorrent client
+- **Overseerr**: Request management
+- **Homarr**: Dashboard
+- **Mealie**: Recipe management
+- **Twingate**: VPN connector
+
+### Testing
+
+Run the test suite:
+
+```bash
+# Backend tests
+cd backend
+npm test
+
+# Frontend tests
+cd frontend
+npm test
+```
+
+### Troubleshooting
+
+1. **Docker not running**: The application will show installation instructions for your OS
+2. **Port conflicts**: Use the Advanced Settings in the application to change port numbers
+3. **Permission issues**: Ensure Docker has proper permissions and your user is in the docker group (Linux)
+4. **Path issues**: Make sure the paths you configure have proper read/write permissions
+
+### Development Commands
+
+```bash
+# Backend development
+cd backend
+npm run dev          # Start with auto-reload
+npm run build        # Build TypeScript
+npm test            # Run tests
+npm run test:watch  # Run tests in watch mode
+
+# Frontend development
+cd frontend
+npm run dev             # Start Vite dev server
+npm run build          # Build for production
+npm run electron       # Run Electron app
+npm run electron-dev   # Run Electron in development
+npm run lint          # Run ESLint
+npm test             # Run tests
+```
+
+---
+
 # Overview of Docker based media center
 
 Sonarr / Radarr / Bazarr / Jackett / Transmission / Plex
