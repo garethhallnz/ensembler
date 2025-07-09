@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
-import { runtimeManager, RuntimeStatus } from './services/runtimeManager'
+import { runtimeManager, type RuntimeStatus } from './services/runtimeManager'
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()

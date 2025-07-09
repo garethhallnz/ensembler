@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdvancedSettings from './AdvancedSettings';
-import { runtimeManager, RuntimeStatus } from './services/runtimeManager';
+import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 
 interface ServiceConfig {
   key: string;
