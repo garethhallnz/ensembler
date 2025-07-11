@@ -4,6 +4,7 @@ import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner } from './components'
+import { ToastProvider } from './contexts/ToastContext';
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -80,62 +81,66 @@ function App() {
     };
   }, [])
 
-  if (status === 'checking') return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Card className="max-w-md w-full p-6">
-        <div className="flex flex-col items-center space-y-4">
-          <Spinner size="xl" />
-          <p className="text-lg text-gray-700 dark:text-gray-300">Checking Docker and Docker Compose status...</p>
+  return (
+    <ToastProvider>
+      {status === 'checking' && (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Card className="max-w-md w-full p-6">
+            <div className="flex flex-col items-center space-y-4">
+              <Spinner size="xl" />
+              <p className="text-lg text-gray-700 dark:text-gray-300">Checking Docker and Docker Compose status...</p>
+            </div>
+          </Card>
         </div>
-      </Card>
-    </div>
-  )
-  
-  if (status === 'docker-missing') return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Card className="max-w-md w-full">
-        <Card.Header>
-          <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Not Running</h3>
-        </Card.Header>
-        <Card.Body>
-          <Alert color="red" className="mb-4">
-            <div className="font-medium">Docker is not running</div>
-            <div className="mt-2">{installInstructions[os].docker}</div>
-          </Alert>
-        </Card.Body>
-      </Card>
-    </div>
-  )
-  
-  if (status === 'compose-missing') return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Card className="max-w-md w-full">
-        <Card.Header>
-          <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Compose Not Available</h3>
-        </Card.Header>
-        <Card.Body>
-          <Alert color="red" className="mb-4">
-            <div className="font-medium">Docker Compose is not available</div>
-            <div className="mt-2">{installInstructions[os].compose}</div>
-          </Alert>
-        </Card.Body>
-      </Card>
-    </div>
-  )
+      )}
+      
+      {status === 'docker-missing' && (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Card className="max-w-md w-full">
+            <Card.Header>
+              <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Not Running</h3>
+            </Card.Header>
+            <Card.Body>
+              <Alert color="red" className="mb-4">
+                <div className="font-medium">Docker is not running</div>
+                <div className="mt-2">{installInstructions[os].docker}</div>
+              </Alert>
+            </Card.Body>
+          </Card>
+        </div>
+      )}
+      
+      {status === 'compose-missing' && (
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+          <Card className="max-w-md w-full">
+            <Card.Header>
+              <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Compose Not Available</h3>
+            </Card.Header>
+            <Card.Body>
+              <Alert color="red" className="mb-4">
+                <div className="font-medium">Docker Compose is not available</div>
+                <div className="mt-2">{installInstructions[os].compose}</div>
+              </Alert>
+            </Card.Body>
+          </Card>
+        </div>
+      )}
 
-  if (status === 'ok' && (!setupComplete || showSetupWizard)) {
-    return (
-      <SetupWizard 
-        onComplete={() => {
-          setSetupComplete(true);
-          setShowSetupWizard(false);
-        }}
-        isRerun={showSetupWizard && setupComplete}
-      />
-    );
-  }
+      {status === 'ok' && (!setupComplete || showSetupWizard) && (
+        <SetupWizard
+          onComplete={() => {
+            setSetupComplete(true);
+            setShowSetupWizard(false);
+          }}
+          isRerun={showSetupWizard && setupComplete}
+        />
+      )}
 
-  return <Dashboard onEditSetup={() => setShowSetupWizard(true)} />;
+      {status === 'ok' && setupComplete && !showSetupWizard && (
+        <Dashboard onEditSetup={() => setShowSetupWizard(true)} />
+      )}
+    </ToastProvider>
+  );
 }
 
 export default App

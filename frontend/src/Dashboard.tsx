@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, Alert, Spinner } from './components';
+import { useToast } from './contexts/ToastContext';
 
 interface ServiceConfig {
   key: string;
@@ -57,6 +58,7 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ onEditSetup }: DashboardProps) {
+  const { showToast } = useToast();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
   const [serviceVersions, setServiceVersions] = useState<ServiceVersionType>({});
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
@@ -229,13 +231,13 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`${serviceName} ${action}ed successfully`);
+                showToast(`${serviceName} ${action}ed successfully`, 'success');
         await fetchServiceStatus();
       } else {
-        alert(`Failed to ${action} ${serviceName}: ${data.message}`);
+        showToast(`Failed to ${action} ${serviceName}: ${data.message}`, 'error');
       }
     } catch (error) {
-      alert(`Error ${action}ing ${serviceName}: ${error}`);
+      showToast(`Error ${action}ing ${serviceName}: ${error}`, 'error');
     } finally {
       setActionLoading(prev => ({ ...prev, [serviceName]: false }));
     }
@@ -243,7 +245,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
 
   const handleGlobalAction = async (action: 'start-all' | 'stop-all') => {
     const actionText = action === 'start-all' ? 'start all' : 'stop all';
-    if (!confirm(`Are you sure you want to ${actionText} services?`)) return;
+    if (!window.confirm(`Are you sure you want to ${actionText} services?`)) return;
     
     setActionLoading(prev => ({ ...prev, global: true }));
     try {
@@ -252,13 +254,13 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`All services ${action.split('-')[0]}ed successfully`);
+        showToast(`All services ${action.split('-')[0]}ed successfully`, 'success');
         await fetchServiceStatus();
       } else {
-        alert(`Failed to ${actionText}: ${data.message}`);
+        showToast(`Failed to ${actionText}: ${data.message}`, 'error');
       }
     } catch (error) {
-      alert(`Error ${actionText}: ${error}`);
+      showToast(`Error ${actionText}: ${error}`, 'error');
     } finally {
       setActionLoading(prev => ({ ...prev, global: false }));
     }
@@ -271,10 +273,10 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       if (data.success) {
         window.open(data.url, '_blank');
       } else {
-        alert(`Failed to get launch URL for ${serviceName}: ${data.message}`);
+        showToast(`Failed to get launch URL for ${serviceName}: ${data.message}`, 'error');
       }
     } catch (error) {
-      alert(`Error launching ${serviceName}: ${error}`);
+      showToast(`Error launching ${serviceName}: ${error}`, 'error');
     }
   };
 
@@ -289,23 +291,23 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
           setShowLogs(prev => ({ ...prev, [serviceName]: true }));
         } else {
-          alert(`Failed to get logs for ${serviceName}: ${data.message}`);
+          showToast(`Failed to get logs for ${serviceName}: ${data.message}`, 'error');
         }
       } catch (error) {
-        alert(`Error getting logs for ${serviceName}: ${error}`);
+        showToast(`Error getting logs for ${serviceName}: ${error}`, 'error');
       }
     }
   };
 
   const handleEditSetup = () => {
     // This would redirect to setup wizard with pre-populated values
-    if (confirm('Are you sure you want to edit the setup? This will take you back to the setup wizard.')) {
+    if (!window.confirm('Are you sure you want to edit the setup? This will take you back to the setup wizard.')) {
       onEditSetup();
     }
   };
 
   const handleServiceUpdate = async (serviceName: string) => {
-    if (!confirm(`Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`)) {
+    if (!window.confirm(`Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`)) {
       return;
     }
 
@@ -316,15 +318,15 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`${serviceName} updated successfully`);
+        showToast(`${serviceName} updated successfully`, 'success');
         await fetchServiceStatus();
         await fetchServiceVersions();
         await fetchServiceUpdates();
       } else {
-        alert(`Failed to update ${serviceName}: ${data.message}`);
+        showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
       }
     } catch (error) {
-      alert(`Error updating ${serviceName}: ${error}`);
+      showToast(`Error updating ${serviceName}: ${error}`, 'error');
     } finally {
       setUpdateLoading(prev => ({ ...prev, [serviceName]: false }));
     }

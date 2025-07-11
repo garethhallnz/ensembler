@@ -1,5 +1,7 @@
 {
   "name": "media-center",
+  "description": "A self-hosted media center",
+  "author": "Gemini",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -86,6 +88,7 @@
       }
     ],
     "mac": {
+      "icon": "src/assets/icon.png",
       "category": "public.app-category.utilities",
       "target": {
         "target": "dmg",
@@ -96,6 +99,7 @@
       }
     },
     "win": {
+      "icon": "src/assets/icon.ico",
       "target": {
         "target": "nsis",
         "arch": [
@@ -104,6 +108,7 @@
       }
     },
     "linux": {
+      "icon": "src/assets/icon.png",
       "target": {
         "target": "AppImage",
         "arch": [

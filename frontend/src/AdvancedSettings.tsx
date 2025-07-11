@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Modal, TextInput, Spinner, Alert, Card } from './components';
+import { useToast } from './contexts/ToastContext';
 
 interface AdvancedSettingsProps {
   onClose: () => void;
@@ -20,6 +21,7 @@ interface ConfigType {
 // Removed unused DEFAULT_PORTS constant
 
 export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
+  const { showToast } = useToast();
   const [config, setConfig] = useState<ConfigType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -130,11 +132,11 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         throw new Error('Failed to regenerate docker-compose files');
       }
 
-      alert('Settings saved successfully! Services will be restarted with new settings.');
+      showToast('Settings saved successfully! Services will be restarted with new settings.', 'success');
       onClose();
     } catch (error) {
       console.error('Error saving settings:', error);
-      alert('Failed to save settings. Please try again.');
+      showToast('Failed to save settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -152,14 +154,14 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
       });
 
       if (res.ok) {
-        alert('Settings reset successfully. Please refresh the page to start setup again.');
+        showToast('Settings reset successfully. Please refresh the page to start setup again.', 'success');
         window.location.reload();
       } else {
         throw new Error('Failed to reset settings');
       }
     } catch (error) {
       console.error('Error resetting settings:', error);
-      alert('Failed to reset settings. Please try again.');
+      showToast('Failed to reset settings. Please try again.', 'error');
     } finally {
       setSaving(false);
     }

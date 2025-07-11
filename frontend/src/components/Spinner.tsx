@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Spinner as FlowbiteSpinner } from 'flowbite-react';
 
 interface SpinnerProps {

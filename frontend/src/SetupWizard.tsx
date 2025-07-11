@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Alert, TextInput, Select, Progress, Badge, Spinner } from './components';
+import { useToast } from './contexts/ToastContext';
 
 declare global {
   interface Window {
@@ -37,6 +38,7 @@ interface SetupWizardProps {
 }
 
 export default function SetupWizard({ onComplete, isRerun = false }: SetupWizardProps) {
+  const { showToast } = useToast();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<{ [key: string]: boolean }>({});
   const [error, setError] = useState<string | null>(null);
@@ -129,7 +131,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       
       const data = await res.json();
       if (!data.success) {
-        setError(data.message ?? 'An unknown error occurred');
+                setError(data.message ?? 'An unknown error occurred');
         return false;
       }
       
@@ -185,7 +187,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                     const pathIndex = paths[svc].indexOf(result.path);
                     if (pathIndex !== -1) {
                         if (!errors[svc]) errors[svc] = [];
-                        errors[svc][pathIndex] = result.error;
+                        errors[svc][pathIndex] = result.error || '';
                     }
                 });
             }
@@ -245,7 +247,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         console.error(err);
       }
     } else {
-      alert('File system access API is not supported in your browser.');
+      showToast('File system access API is not supported in your browser.', 'warning');
     }
   };
 
@@ -317,11 +319,11 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         throw new Error('Failed to generate docker-compose files');
       }
 
-      alert('Configuration saved and applied successfully!');
+      showToast('Configuration saved and applied successfully!', 'success');
       onComplete();
     } catch (error) {
       console.error('Error saving configuration:', error);
-      alert('Failed to save configuration. Please try again.');
+      showToast('Failed to save configuration. Please try again.', 'error');
     } finally {
       setIsSaving(false);
     }
