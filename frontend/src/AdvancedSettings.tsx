@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+
+import { useState, useEffect } from 'react';
+import { Button, Modal, TextInput, Spinner, Alert, Card } from './components';
 
 interface AdvancedSettingsProps {
   onClose: () => void;
@@ -15,20 +17,16 @@ interface ConfigType {
   paths: { [key: string]: string[] };
 }
 
-const DEFAULT_PORTS: { [key: string]: number } = {
-  sonarr: 8989,
-  radarr: 7878,
-  plex: 32400,
-  transmission: 9091,
-  prowlarr: 9696,
-  overseerr: 5055,
-};
+// Removed unused DEFAULT_PORTS constant
 
 export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   const [config, setConfig] = useState<ConfigType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  
+  // Remove unused DEFAULT_PORTS constant
+  // const DEFAULT_PORTS: { [key: string]: number } = {...};
 
   useEffect(() => {
     fetchCurrentConfig();
@@ -169,224 +167,153 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
 
   if (loading) {
     return (
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        backgroundColor: 'rgba(0,0,0,0.5)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: 32, 
-          borderRadius: 8, 
-          minWidth: 300 
-        }}>
-          Loading settings...
-        </div>
-      </div>
+      <Modal show={true} onClose={() => {}} size="md">
+        <Modal.Body className="flex items-center justify-center p-8">
+          <div className="flex flex-col items-center space-y-4">
+            <Spinner size="xl" />
+            <p className="text-lg">Loading settings...</p>
+          </div>
+        </Modal.Body>
+      </Modal>
     );
   }
 
   if (!config) {
     return (
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        backgroundColor: 'rgba(0,0,0,0.5)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center' 
-      }}>
-        <div style={{ 
-          backgroundColor: 'white', 
-          padding: 32, 
-          borderRadius: 8, 
-          minWidth: 300 
-        }}>
-          <h2>Error</h2>
-          <p>Failed to load configuration. Please try again.</p>
-          <button onClick={onClose}>Close</button>
-        </div>
-      </div>
+      <Modal show={true} onClose={onClose} size="md">
+        <Modal.Header>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Error</h3>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert color="red">
+            Failed to load configuration. Please try again.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button onClick={onClose}>Close</Button>
+        </Modal.Footer>
+      </Modal>
     );
   }
 
   return (
-    <div style={{ 
-      position: 'fixed', 
-      top: 0, 
-      left: 0, 
-      right: 0, 
-      bottom: 0, 
-      backgroundColor: 'rgba(0,0,0,0.5)', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      zIndex: 1000
-    }}>
-      <div style={{ 
-        backgroundColor: 'white', 
-        padding: 32, 
-        borderRadius: 8, 
-        minWidth: 600,
-        maxWidth: 800,
-        maxHeight: '80vh',
-        overflow: 'auto'
-      }}>
-        <h2 style={{ margin: '0 0 24px 0' }}>Advanced Settings</h2>
-        
+    <Modal show={true} onClose={onClose} size="xl">
+      <Modal.Header>
+        <h3 className="text-xl font-medium text-gray-900 dark:text-white">Advanced Settings</h3>
+      </Modal.Header>
+      <Modal.Body className="max-h-[70vh] overflow-auto">
         {/* Ports Section */}
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ margin: '0 0 16px 0' }}>Port Configuration</h3>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {Object.entries(config.ports).map(([service, port]) => (
-              <div key={service} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <label style={{ minWidth: 120, textTransform: 'capitalize' }}>
-                  {service}:
-                </label>
-                <input
-                  type="number"
-                  value={port}
-                  onChange={(e) => handlePortChange(service, e.target.value)}
-                  style={{ 
-                    width: 100, 
-                    padding: '4px 8px',
-                    border: errors[`port_${service}`] ? '1px solid red' : '1px solid #ccc',
-                    borderRadius: 4 
-                  }}
-                  min="1024"
-                  max="65535"
-                />
-                {errors[`port_${service}`] && (
-                  <span style={{ color: 'red', fontSize: '14px' }}>
-                    {errors[`port_${service}`]}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card className="mb-6">
+          <Card.Header>
+            <h4 className="text-lg font-medium">Port Configuration</h4>
+          </Card.Header>
+          <Card.Body>
+            <div className="space-y-4">
+              {Object.entries(config.ports).map(([service, port]) => (
+                <div key={service} className="flex items-center space-x-4">
+                  <label className="min-w-[120px] capitalize">
+                    {service}:
+                  </label>
+                  <div className="flex-1">
+                    <TextInput
+                      type="number"
+                      value={String(port)}
+                      onChange={(e) => handlePortChange(service, e.target.value)}
+                      color={errors[`port_${service}`] ? 'failure' : 'gray'}
+                    />
+                  </div>
+                  {errors[`port_${service}`] && (
+                    <Alert color="red" className="mt-2">
+                      {errors[`port_${service}`]}
+                    </Alert>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card.Body>
+        </Card>
 
         {/* Environment Variables Section */}
-        <div style={{ marginBottom: 24 }}>
-          <h3 style={{ margin: '0 0 16px 0' }}>Environment Variables</h3>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <label style={{ minWidth: 120 }}>Timezone (TZ):</label>
-              <input
-                type="text"
-                value={config.environment.tz}
-                onChange={(e) => handleEnvironmentChange('tz', e.target.value)}
-                style={{ 
-                  width: 200, 
-                  padding: '4px 8px',
-                  border: errors.tz ? '1px solid red' : '1px solid #ccc',
-                  borderRadius: 4 
-                }}
-                placeholder="e.g., America/New_York"
-              />
-              {errors.tz && (
-                <span style={{ color: 'red', fontSize: '14px' }}>{errors.tz}</span>
-              )}
+        <Card>
+          <Card.Header>
+            <h4 className="text-lg font-medium">Environment Variables</h4>
+          </Card.Header>
+          <Card.Body>
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Timezone (TZ):
+                </label>
+                <TextInput
+                  type="text"
+                  value={config.environment.tz}
+                  onChange={(e) => handleEnvironmentChange('tz', e.target.value)}
+                  placeholder="e.g., America/New_York"
+                  color={errors.tz ? 'failure' : 'gray'}
+                />
+                {errors.tz && (
+                  <Alert color="red" className="mt-2">{errors.tz}</Alert>
+                )}
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  User ID (PUID):
+                </label>
+                <TextInput
+                  type="number"
+                  value={String(config.environment.puid)}
+                  onChange={(e) => handleEnvironmentChange('puid', parseInt(e.target.value))}
+                  color={errors.puid ? 'failure' : 'gray'}
+                />
+                {errors.puid && (
+                  <Alert color="red" className="mt-2">{errors.puid}</Alert>
+                )}
+              </div>
+              
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Group ID (PGID):
+                </label>
+                <TextInput
+                  type="number"
+                  value={String(config.environment.pgid)}
+                  onChange={(e) => handleEnvironmentChange('pgid', parseInt(e.target.value))}
+                  color={errors.pgid ? 'failure' : 'gray'}
+                />
+                {errors.pgid && (
+                  <Alert color="red" className="mt-2">{errors.pgid}</Alert>
+                )}
+              </div>
             </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <label style={{ minWidth: 120 }}>User ID (PUID):</label>
-              <input
-                type="number"
-                value={config.environment.puid}
-                onChange={(e) => handleEnvironmentChange('puid', parseInt(e.target.value))}
-                style={{ 
-                  width: 100, 
-                  padding: '4px 8px',
-                  border: errors.puid ? '1px solid red' : '1px solid #ccc',
-                  borderRadius: 4 
-                }}
-                min="0"
-              />
-              {errors.puid && (
-                <span style={{ color: 'red', fontSize: '14px' }}>{errors.puid}</span>
-              )}
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <label style={{ minWidth: 120 }}>Group ID (PGID):</label>
-              <input
-                type="number"
-                value={config.environment.pgid}
-                onChange={(e) => handleEnvironmentChange('pgid', parseInt(e.target.value))}
-                style={{ 
-                  width: 100, 
-                  padding: '4px 8px',
-                  border: errors.pgid ? '1px solid red' : '1px solid #ccc',
-                  borderRadius: 4 
-                }}
-                min="0"
-              />
-              {errors.pgid && (
-                <span style={{ color: 'red', fontSize: '14px' }}>{errors.pgid}</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'flex-end' }}>
-          <button
+          </Card.Body>
+        </Card>
+      </Modal.Body>
+      <Modal.Footer>
+        <div className="flex space-x-3">
+          <Button
             onClick={handleReset}
             disabled={saving}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.6 : 1
-            }}
+            color="red"
           >
             Reset All Settings
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
             disabled={saving}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.6 : 1
-            }}
+            color="gray"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={handleSave}
             disabled={saving}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: saving ? 'not-allowed' : 'pointer',
-              opacity: saving ? 0.6 : 1
-            }}
+            color="blue"
           >
             {saving ? 'Saving...' : 'Save Settings'}
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </Modal.Footer>
+    </Modal>
   );
-} 
+}

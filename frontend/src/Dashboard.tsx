@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
+import { Card, Button, Badge, Alert, Spinner } from './components';
 
 interface ServiceConfig {
   key: string;
@@ -38,6 +39,19 @@ interface ServiceAlertsType {
   [key: string]: { alert: boolean; status: string; healthy: boolean };
 }
 
+interface DockerUpdatesType {
+  success: boolean;
+  docker?: {
+    updateAvailable: boolean;
+    message?: string;
+  };
+  compose?: {
+    updateAvailable: boolean;
+    message?: string;
+  };
+  lastChecked: string;
+}
+
 interface DashboardProps {
   onEditSetup: () => void;
 }
@@ -58,12 +72,11 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlertsType>({});
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
-  const [dockerUpdates, setDockerUpdates] = useState<any>(null);
+  const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
-  const [maxServices, setMaxServices] = useState(6);
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
 
-  const fetchServiceStatus = async () => {
+  const fetchServiceStatus = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/services/status');
       const data = await res.json();
@@ -76,9 +89,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     } catch (error) {
       console.error('Error fetching service status:', error);
     }
-  };
+  }, []);
 
-  const fetchServiceVersions = async () => {
+  const fetchServiceVersions = useCallback(async () => {
     for (const service of selectedServices) {
       try {
         const res = await fetch(`http://localhost:3001/api/services/${service}/version`);
@@ -90,9 +103,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         console.error(`Error fetching version for ${service}:`, error);
       }
     }
-  };
+  }, [selectedServices]);
 
-  const fetchDockerStatus = async () => {
+  const fetchDockerStatus = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/docker/status');
       const data = await res.json();
@@ -103,9 +116,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     } catch (error) {
       console.error('Error fetching Docker status:', error);
     }
-  };
+  }, []);
 
-  const fetchServiceUpdates = async () => {
+  const fetchServiceUpdates = useCallback(async () => {
     for (const serviceName of selectedServices) {
       try {
         const res = await fetch(`http://localhost:3001/api/services/${serviceName}/check-updates`);
@@ -124,9 +137,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         console.error(`Error fetching updates for ${serviceName}:`, error);
       }
     }
-  };
+  }, [selectedServices]);
 
-  const fetchServiceAlerts = async () => {
+  const fetchServiceAlerts = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/services/monitor');
       const data = await res.json();
@@ -136,9 +149,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     } catch (error) {
       console.error('Error fetching service alerts:', error);
     }
-  };
+  }, []);
 
-  const fetchDockerUpdates = async () => {
+  const fetchDockerUpdates = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/docker/check-updates');
       const data = await res.json();
@@ -148,22 +161,21 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     } catch (error) {
       console.error('Error fetching Docker updates:', error);
     }
-  };
+  }, []);
 
-  const fetchServiceConfig = async () => {
+  const fetchServiceConfig = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/services/config');
       if (res.ok) {
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
           setServiceConfig(data.services);
-          setMaxServices(data.maxServices);
         }
       }
     } catch (error) {
       console.error('Error fetching service configuration:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const loadData = async () => {
@@ -188,7 +200,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     return () => {
       clearInterval(runtimeInterval);
     };
-  }, []);
+  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, fetchDockerUpdates]);
 
   useEffect(() => {
     if (selectedServices.length > 0) {
@@ -196,7 +208,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       fetchServiceUpdates();
       fetchServiceAlerts();
     }
-  }, [selectedServices]);
+  }, [selectedServices, fetchServiceVersions, fetchServiceUpdates, fetchServiceAlerts]);
 
   // Set up monitoring interval for service alerts
   useEffect(() => {
@@ -207,7 +219,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [selectedServices]);
+  }, [selectedServices, fetchServiceAlerts]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     setActionLoading(prev => ({ ...prev, [serviceName]: true }));
@@ -320,194 +332,149 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh' 
-      }}>
-        <div>Loading dashboard...</div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <Card className="max-w-md w-full p-6">
+          <div className="flex flex-col items-center space-y-4">
+            <Spinner size="xl" />
+            <p className="text-lg text-gray-700 dark:text-gray-300">Loading dashboard...</p>
+          </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div style={{ 
-      maxWidth: 1200, 
-      margin: '2rem auto', 
-      padding: 32, 
-      fontFamily: 'Arial, sans-serif' 
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: 32 
-      }}>
-        <h1 style={{ margin: 0 }}>Media Center Dashboard</h1>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <button 
-            onClick={() => setShowAdvancedSettings(true)}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer'
-            }}
-          >
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Media Center Dashboard</h1>
+        <div className="flex space-x-2">
+          <Button onClick={() => setShowAdvancedSettings(true)} color="gray">
             Advanced Settings
-          </button>
-          <button 
-            onClick={handleEditSetup}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: 'pointer'
-            }}
-          >
+          </Button>
+          <Button onClick={handleEditSetup} color="blue">
             Edit Setup
-          </button>
+          </Button>
         </div>
       </div>
 
       {/* Docker Status and Updates */}
-      <div style={{ 
-        border: '1px solid #e0e0e0', 
-        padding: 16, 
-        borderRadius: 8, 
-        marginBottom: 32,
-        backgroundColor: dockerStatus.running ? '#e8f5e8' : '#ffe8e8'
-      }}>
-        <h2 style={{ margin: '0 0 16px 0' }}>Docker Status</h2>
-        <div style={{ marginBottom: 8 }}>
-          Status: {dockerStatus.running ? '✅ Running' : '❌ Not Running'}
-        </div>
-        <div style={{ marginBottom: 8 }}>Updates: {dockerStatus.updates}</div>
-        
-        {dockerUpdates && (
-          <div style={{ marginTop: 16 }}>
-            <h3 style={{ margin: '0 0 8px 0' }}>Update Status:</h3>
-            <div style={{ marginBottom: 8 }}>
-              Docker: {dockerUpdates.docker?.updateAvailable ? '🔄 Update Available' : '✅ Up to Date'}
-            </div>
-            <div style={{ marginBottom: 8 }}>
-              Docker Compose: {dockerUpdates.compose?.updateAvailable ? '🔄 Update Available' : '✅ Up to Date'}
-            </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
-            </div>
+      <Card className={`mb-6 ${dockerStatus.running ? 'bg-green-50' : 'bg-red-50'}`}>
+        <Card.Header>
+          <h2 className="text-xl font-semibold">Docker Status</h2>
+        </Card.Header>
+        <Card.Body>
+          <div className="mb-2">
+            Status: {dockerStatus.running ? 
+              <Badge color="green">✅ Running</Badge> : 
+              <Badge color="red">❌ Not Running</Badge>}
           </div>
-        )}
-      </div>
+          <div className="mb-2">Updates: {dockerStatus.updates}</div>
+          
+          {dockerUpdates && (
+            <div className="mt-4">
+              <h3 className="text-lg font-medium mb-2">Update Status:</h3>
+              <div className="mb-2">
+                Docker: {dockerUpdates.docker?.updateAvailable ? 
+                  <Badge color="yellow">🔄 Update Available</Badge> : 
+                  <Badge color="green">✅ Up to Date</Badge>}
+              </div>
+              <div className="mb-2">
+                Docker Compose: {dockerUpdates.compose?.updateAvailable ? 
+                  <Badge color="yellow">🔄 Update Available</Badge> : 
+                  <Badge color="green">✅ Up to Date</Badge>}
+              </div>
+              <div className="text-xs text-gray-500">
+                Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </Card.Body>
+      </Card>
 
       {/* Runtime Status */}
       {runtimeStatus && (
-        <div style={{ 
-          border: '1px solid #e0e0e0', 
-          padding: 16, 
-          borderRadius: 8, 
-          marginBottom: 32,
-          backgroundColor: '#f0f8ff'
-        }}>
-          <h2 style={{ margin: '0 0 16px 0' }}>App Runtime Status</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>App Status:</strong> {runtimeStatus.appRunning ? '🟢 Active' : '⚪ Inactive'}
+        <Card className="mb-6 bg-blue-50">
+          <Card.Header>
+            <h2 className="text-xl font-semibold">App Runtime Status</h2>
+          </Card.Header>
+          <Card.Body>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="mb-2">
+                  <strong>App Status:</strong> {runtimeStatus.appRunning ? 
+                    <Badge color="green">Active</Badge> : 
+                    <Badge color="gray">Inactive</Badge>}
+                </div>
+                <div className="mb-2">
+                  <strong>Backend:</strong> {runtimeStatus.backendConnected ? 
+                    <Badge color="green">Connected</Badge> : 
+                    <Badge color="red">Disconnected</Badge>}
+                </div>
+                <div className="mb-2">
+                  <strong>Docker Available:</strong> {runtimeStatus.dockerAvailable ? 
+                    <Badge color="green">Yes</Badge> : 
+                    <Badge color="red">No</Badge>}
+                </div>
               </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Backend:</strong> {runtimeStatus.backendConnected ? '🟢 Connected' : '🔴 Disconnected'}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Docker Available:</strong> {runtimeStatus.dockerAvailable ? '🟢 Yes' : '🔴 No'}
+              <div>
+                <div className="mb-2">
+                  <strong>Services Running:</strong> {runtimeStatus.servicesRunning.length}
+                </div>
+                <div className="mb-2">
+                  <strong>Services Independent:</strong> {runtimeManager.areServicesIndependent() ? 
+                    <Badge color="green">Yes</Badge> : 
+                    <Badge color="yellow">No</Badge>}
+                </div>
+                <div className="mb-2">
+                  <strong>Last Check:</strong> {runtimeStatus.lastCheck.toLocaleTimeString()}
+                </div>
               </div>
             </div>
-            <div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Services Running:</strong> {runtimeStatus.servicesRunning.length}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Services Independent:</strong> {runtimeManager.areServicesIndependent() ? '✅ Yes' : '⚠️ No'}
-              </div>
-              <div style={{ marginBottom: 8 }}>
-                <strong>Last Check:</strong> {runtimeStatus.lastCheck.toLocaleTimeString()}
-              </div>
-            </div>
-          </div>
-          <div style={{ 
-            marginTop: 12, 
-            padding: 8, 
-            backgroundColor: '#e8f4f8', 
-            borderRadius: 4, 
-            fontSize: 14, 
-            color: '#2c5aa0' 
-          }}>
-            ℹ️ <strong>Runtime Behavior:</strong> This app is active only when launched. Docker services run independently and continue when the app is closed.
-          </div>
-        </div>
+            <Alert color="blue" className="mt-3">
+              <strong>Runtime Behavior:</strong> This app is active only when launched. Docker services run independently and continue when the app is closed.
+            </Alert>
+          </Card.Body>
+        </Card>
       )}
 
       {/* Global Controls */}
-      <div style={{ 
-        border: '1px solid #e0e0e0', 
-        padding: 16, 
-        borderRadius: 8, 
-        marginBottom: 32 
-      }}>
-        <h2 style={{ margin: '0 0 16px 0' }}>Global Controls</h2>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <button 
-            onClick={() => handleGlobalAction('stop-all')}
-            disabled={actionLoading.global}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: actionLoading.global ? 'not-allowed' : 'pointer',
-              opacity: actionLoading.global ? 0.6 : 1
-            }}
-          >
-            {actionLoading.global ? 'Processing...' : 'Stop All'}
-          </button>
-          <button 
-            onClick={() => handleGlobalAction('start-all')}
-            disabled={actionLoading.global}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: 4,
-              cursor: actionLoading.global ? 'not-allowed' : 'pointer',
-              opacity: actionLoading.global ? 0.6 : 1
-            }}
-          >
-            {actionLoading.global ? 'Processing...' : 'Start All'}
-          </button>
-        </div>
-      </div>
+      <Card className="mb-6">
+        <Card.Header>
+          <h2 className="text-xl font-semibold">Global Controls</h2>
+        </Card.Header>
+        <Card.Body>
+          <div className="flex gap-4">
+            <Button 
+              color="red"
+              onClick={() => handleGlobalAction('stop-all')}
+              disabled={actionLoading.global}
+            >
+              {actionLoading.global ? <Spinner size="sm" className="mr-2" /> : null}
+              {actionLoading.global ? 'Processing...' : 'Stop All'}
+            </Button>
+            <Button 
+              color="green"
+              onClick={() => handleGlobalAction('start-all')}
+              disabled={actionLoading.global}
+            >
+              {actionLoading.global ? <Spinner size="sm" className="mr-2" /> : null}
+              {actionLoading.global ? 'Processing...' : 'Start All'}
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
 
       {/* Service List */}
       <div>
-        <h2 style={{ margin: '0 0 16px 0' }}>Services</h2>
+        <h2 className="text-xl font-semibold mb-4">Services</h2>
         {selectedServices.length === 0 ? (
-          <div style={{ 
-            border: '1px solid #e0e0e0', 
-            padding: 32, 
-            borderRadius: 8, 
-            textAlign: 'center' 
-          }}>
-            No services configured. Click "Edit Setup" to configure services.
-          </div>
+          <Card>
+            <Card.Body className="text-center py-8">
+              No services configured. Click "Edit Setup" to configure services.
+            </Card.Body>
+          </Card>
         ) : (
-          <div style={{ display: 'grid', gap: 16 }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {selectedServices.map(serviceKey => {
               const service = serviceConfig.find(s => s.key === serviceKey);
               if (!service) return null;
@@ -520,155 +487,104 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               const isUpdating = updateLoading[serviceKey];
               
               return (
-                <div key={serviceKey} style={{ 
-                  border: '1px solid #e0e0e0', 
-                  padding: 16, 
-                  borderRadius: 8,
-                  backgroundColor: alertInfo?.alert ? '#ffe8e8' : '#f9f9f9'
-                }}>
+                <Card key={serviceKey} className={alertInfo?.alert ? 'bg-red-50' : ''}>
                   {alertInfo?.alert && (
-                    <div style={{ 
-                      marginBottom: 8, 
-                      padding: '4px 8px', 
-                      backgroundColor: '#ffdddd', 
-                      borderRadius: 4, 
-                      fontSize: '14px',
-                      color: '#721c24'
-                    }}>
+                    <Alert color="red" className="mb-3">
                       ⚠️ Alert: {alertInfo.status}
-                    </div>
+                    </Alert>
                   )}
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: '0 0 8px 0' }}>{service.name}</h3>
-                      <div style={{ marginBottom: 8 }}>
-                        <span style={{ fontWeight: 'bold' }}>Status:</span> 
-                        <span style={{ 
-                          color: status === 'Running' ? '#28a745' : '#dc3545',
-                          marginLeft: 8 
-                        }}>
-                          {status}
-                        </span>
-                        {alertInfo && !alertInfo.healthy && status === 'Running' && (
-                          <span style={{ marginLeft: 8, color: '#ffc107' }}>⚠️ Unhealthy</span>
+                  <Card.Body>
+                    <div className="flex flex-col md:flex-row justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">{service.name}</h3>
+                        <div className="mb-2">
+                          <span className="font-bold">Status:</span> 
+                          <Badge 
+                            color={status === 'Running' ? 'green' : 'red'}
+                            className="ml-2"
+                          >
+                            {status}
+                          </Badge>
+                          {alertInfo && !alertInfo.healthy && status === 'Running' && (
+                            <Badge color="yellow" className="ml-2">Unhealthy</Badge>
+                          )}
+                        </div>
+                        <div className="mb-2">
+                          <span className="font-bold">Version:</span> 
+                          <span className="ml-2">{version}</span>
+                        </div>
+                        {updateInfo && (
+                          <div className="mb-4">
+                            <span className="font-bold">Updates:</span> 
+                            <Badge 
+                              color={updateInfo.hasUpdate ? 'yellow' : 'green'}
+                              className="ml-2"
+                            >
+                              {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
+                            </Badge>
+                          </div>
                         )}
                       </div>
-                      <div style={{ marginBottom: 8 }}>
-                        <span style={{ fontWeight: 'bold' }}>Version:</span> 
-                        <span style={{ marginLeft: 8 }}>{version}</span>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        <Button 
+                          size="sm"
+                          color="blue"
+                          onClick={() => handleLaunchService(serviceKey)}
+                          disabled={status !== 'Running'}
+                        >
+                          Launch
+                        </Button>
+                        <Button 
+                          size="sm"
+                          color="yellow"
+                          onClick={() => handleServiceAction(serviceKey, 'restart')}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <Spinner size="sm" className="mr-1" /> : null}
+                          {isLoading ? 'Processing...' : 'Restart'}
+                        </Button>
+                        <Button 
+                          size="sm"
+                          color={status === 'Running' ? 'red' : 'green'}
+                          onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? <Spinner size="sm" className="mr-1" /> : null}
+                          {isLoading ? 'Processing...' : (status === 'Running' ? 'Stop' : 'Start')}
+                        </Button>
+                        <Button 
+                          size="sm"
+                          color="gray"
+                          onClick={() => toggleLogs(serviceKey)}
+                        >
+                          {showLogs[serviceKey] ? 'Hide Logs' : 'Show Logs'}
+                        </Button>
+                        {updateInfo?.hasUpdate && (
+                          <Button 
+                            size="sm"
+                            color="yellow"
+                            onClick={() => handleServiceUpdate(serviceKey)}
+                            disabled={isUpdating}
+                          >
+                            {isUpdating ? <Spinner size="sm" className="mr-1" /> : null}
+                            {isUpdating ? 'Updating...' : 'Update'}
+                          </Button>
+                        )}
                       </div>
-                      {updateInfo && (
-                        <div style={{ marginBottom: 16 }}>
-                          <span style={{ fontWeight: 'bold' }}>Updates:</span> 
-                          <span style={{ 
-                            marginLeft: 8, 
-                            color: updateInfo.hasUpdate ? '#ffc107' : '#28a745' 
-                          }}>
-                            {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
-                          </span>
-                        </div>
-                      )}
                     </div>
                     
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <button 
-                        onClick={() => handleLaunchService(serviceKey)}
-                        disabled={status !== 'Running'}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: status === 'Running' ? '#17a2b8' : '#6c757d',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: status === 'Running' ? 'pointer' : 'not-allowed',
-                          fontSize: '14px'
-                        }}
-                      >
-                        Launch
-                      </button>
-                      <button 
-                        onClick={() => handleServiceAction(serviceKey, 'restart')}
-                        disabled={isLoading}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#ffc107',
-                          color: 'black',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: isLoading ? 'not-allowed' : 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        {isLoading ? 'Processing...' : 'Restart'}
-                      </button>
-                      <button 
-                        onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
-                        disabled={isLoading}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: status === 'Running' ? '#dc3545' : '#28a745',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: isLoading ? 'not-allowed' : 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        {isLoading ? 'Processing...' : (status === 'Running' ? 'Stop' : 'Start')}
-                      </button>
-                      <button 
-                        onClick={() => toggleLogs(serviceKey)}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#6c757d',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: 4,
-                          cursor: 'pointer',
-                          fontSize: '14px'
-                        }}
-                      >
-                        {showLogs[serviceKey] ? 'Hide Logs' : 'Show Logs'}
-                      </button>
-                      {updateInfo?.hasUpdate && (
-                        <button 
-                          onClick={() => handleServiceUpdate(serviceKey)}
-                          disabled={isUpdating}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#ffc107',
-                            color: 'black',
-                            border: 'none',
-                            borderRadius: 4,
-                            cursor: isUpdating ? 'not-allowed' : 'pointer',
-                            fontSize: '14px',
-                            opacity: isUpdating ? 0.6 : 1
-                          }}
-                        >
-                          {isUpdating ? 'Updating...' : 'Update'}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {showLogs[serviceKey] && (
-                    <div style={{ marginTop: 16 }}>
-                      <h4 style={{ margin: '0 0 8px 0' }}>Logs</h4>
-                      <pre style={{ 
-                        backgroundColor: '#000', 
-                        color: '#fff', 
-                        padding: 12, 
-                        borderRadius: 4, 
-                        fontSize: '12px', 
-                        overflow: 'auto', 
-                        maxHeight: '200px' 
-                      }}>
-                        {serviceLogs[serviceKey] || 'No logs available'}
-                      </pre>
-                    </div>
-                  )}
-                </div>
+                    {showLogs[serviceKey] && (
+                      <div className="mt-4">
+                        <h4 className="text-md font-medium mb-2">Logs</h4>
+                        <pre className="bg-gray-900 text-white p-3 rounded text-xs overflow-auto max-h-48">
+                          {serviceLogs[serviceKey] || 'No logs available'}
+                        </pre>
+                      </div>
+                    )}
+                  </Card.Body>
+                </Card>
               );
             })}
           </div>

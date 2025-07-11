@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
-import { runtimeManager, type RuntimeStatus } from './services/runtimeManager'
+import { runtimeManager } from './services/runtimeManager'
+import { Card, Alert, Spinner } from './components'
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -33,18 +34,17 @@ const installInstructions = {
 
 function App() {
   const [status, setStatus] = useState<'checking'|'ok'|'docker-missing'|'compose-missing'>('checking')
-  const [composeVersion, setComposeVersion] = useState<string>('')
+  // const composeVersion = useState<string>('') - removed unused state
   const os = getOs()
   const [setupComplete, setSetupComplete] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
-  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
         // Initialize runtime manager
         await runtimeManager.initialize();
-        setRuntimeStatus(runtimeManager.getStatus());
+        
         
         // Check Docker and configuration status
         const [dockerStatus, configStatus] = await Promise.all([
@@ -56,7 +56,7 @@ function App() {
         else if (!dockerStatus.compose) setStatus('compose-missing')
         else {
           setStatus('ok')
-          setComposeVersion(dockerStatus.composeVersion || '')
+          // Removed setComposeVersion call for unused state
           setSetupComplete(configStatus.setupComplete)
         }
       } catch (error) {
@@ -69,8 +69,8 @@ function App() {
 
     // Setup runtime status monitoring
     const statusInterval = setInterval(() => {
-      const currentStatus = runtimeManager.getStatus();
-      setRuntimeStatus(currentStatus);
+      // Removed updating unused runtimeStatus state
+      runtimeManager.getStatus();
     }, 10000); // Update every 10 seconds
 
     // Cleanup on unmount
@@ -80,9 +80,48 @@ function App() {
     };
   }, [])
 
-  if (status === 'checking') return <div>Checking Docker and Docker Compose status...</div>
-  if (status === 'docker-missing') return <div>Docker is not running. {installInstructions[os].docker}</div>
-  if (status === 'compose-missing') return <div>Docker Compose is not available. {installInstructions[os].compose}</div>
+  if (status === 'checking') return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Card className="max-w-md w-full p-6">
+        <div className="flex flex-col items-center space-y-4">
+          <Spinner size="xl" />
+          <p className="text-lg text-gray-700 dark:text-gray-300">Checking Docker and Docker Compose status...</p>
+        </div>
+      </Card>
+    </div>
+  )
+  
+  if (status === 'docker-missing') return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Card className="max-w-md w-full">
+        <Card.Header>
+          <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Not Running</h3>
+        </Card.Header>
+        <Card.Body>
+          <Alert color="red" className="mb-4">
+            <div className="font-medium">Docker is not running</div>
+            <div className="mt-2">{installInstructions[os].docker}</div>
+          </Alert>
+        </Card.Body>
+      </Card>
+    </div>
+  )
+  
+  if (status === 'compose-missing') return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <Card className="max-w-md w-full">
+        <Card.Header>
+          <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Compose Not Available</h3>
+        </Card.Header>
+        <Card.Body>
+          <Alert color="red" className="mb-4">
+            <div className="font-medium">Docker Compose is not available</div>
+            <div className="mt-2">{installInstructions[os].compose}</div>
+          </Alert>
+        </Card.Body>
+      </Card>
+    </div>
+  )
 
   if (status === 'ok' && (!setupComplete || showSetupWizard)) {
     return (

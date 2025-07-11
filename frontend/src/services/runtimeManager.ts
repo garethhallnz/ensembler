@@ -5,12 +5,22 @@ export interface RuntimeConfig {
   checkInterval: number;
 }
 
-export interface RuntimeStatus {
+export type RuntimeStatus = {
   appRunning: boolean;
   backendConnected: boolean;
   dockerAvailable: boolean;
   servicesRunning: string[];
   lastCheck: Date;
+}
+
+declare global {
+  interface Performance {
+    memory?: {
+      jsHeapSizeLimit: number;
+      totalJSHeapSize: number;
+      usedJSHeapSize: number;
+    };
+  }
 }
 
 class RuntimeManager {
@@ -158,7 +168,7 @@ class RuntimeManager {
     
     return {
       uptime: now - startTime,
-      memoryUsage: (performance as any).memory?.usedJSHeapSize || 0,
+      memoryUsage: performance.memory?.usedJSHeapSize || 0,
       backendConnected: this.status.backendConnected,
       dockerIndependent: this.areServicesIndependent(),
       serviceCount: this.status.servicesRunning.length

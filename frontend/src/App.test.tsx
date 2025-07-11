@@ -506,8 +506,8 @@ describe('App Component', () => {
       });
 
       // Simulate concurrent API calls
-      let resolveDocker: (value: any) => void;
-      let resolveConfig: (value: any) => void;
+      let resolveDocker: (value: Response) => void;
+      let resolveConfig: (value: Response) => void;
 
       const dockerPromise = new Promise(resolve => { resolveDocker = resolve; });
       const configPromise = new Promise(resolve => { resolveConfig = resolve; });

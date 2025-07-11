@@ -1,15 +1,41 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import SetupWizard from './SetupWizard';
-
-// Mock fetch globally
-global.fetch = jest.fn();
+interface ElectronAPI {
+  selectDirectory: jest.Mock<Promise<string>, []>;
+}
 
 // Mock Electron APIs
-(window as any).electronAPI = {
+(window as unknown as { electronAPI: ElectronAPI }).electronAPI = {
   selectDirectory: jest.fn().mockResolvedValue('/selected/path'),
 };
 
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+
+interface ServiceConfigMock {
+  key: string;
+  name: string;
+  description: string;
+  category: string;
+  defaultPort: number;
+  pathRequirements: { label: string; required: boolean; description: string }[];
+  required: boolean;
+}
+
+interface ServiceConfigResponseMock {
+  success: boolean;
+  services: ServiceConfigMock[];
+  maxServices: number;
+}
+
+interface CurrentConfigResponseMock {
+  selectedServices: { [key: string]: boolean };
+  paths: { [service: string]: string[] };
+  ports: { [key: string]: number };
+  environment: { tz: string; puid: number; pgid: number };
+}
+
+interface PathValidateResponseMock {
+  success: boolean;
+  results: { path: string; valid: boolean; error?: string }[];
+}
 
 describe('SetupWizard Comprehensive Tests', () => {
   const mockOnComplete = jest.fn();
@@ -54,7 +80,7 @@ describe('SetupWizard Comprehensive Tests', () => {
   beforeEach(() => {
     mockFetch.mockClear();
     mockOnComplete.mockClear();
-    (window as any).electronAPI.selectDirectory.mockClear();
+    (window as unknown as { electronAPI: ElectronAPI }).electronAPI.selectDirectory.mockClear();
 
     // Default mock for service configuration
     mockFetch.mockResolvedValue({
@@ -63,7 +89,7 @@ describe('SetupWizard Comprehensive Tests', () => {
         success: true,
         services: mockServiceConfig,
         maxServices: 6
-      })
+      } as ServiceConfigResponseMock)
     } as Response);
   });
 
@@ -115,7 +141,7 @@ describe('SetupWizard Comprehensive Tests', () => {
         } as Response)
         .mockResolvedValueOnce({
           ok: true,
-          json: async () => existingConfig
+          json: async () => existingConfig as CurrentConfigResponseMock
         } as Response);
 
       render(<SetupWizard onComplete={mockOnComplete} isRerun={true} />);
@@ -264,7 +290,7 @@ describe('SetupWizard Comprehensive Tests', () => {
       fireEvent.click(browseButton);
 
       await waitFor(() => {
-        expect((window as any).electronAPI.selectDirectory).toHaveBeenCalled();
+        expect(window.electronAPI.selectDirectory).toHaveBeenCalled();
       });
 
       expect(screen.getByPlaceholderText('Directory where TV shows will be stored')).toHaveValue('/selected/path');
@@ -299,7 +325,7 @@ describe('SetupWizard Comprehensive Tests', () => {
         json: async () => ({
           success: false,
           results: [{ path: '/invalid', valid: false, error: 'Permission denied' }]
-        })
+        } as PathValidateResponseMock)
       } as Response);
 
       const pathInput = screen.getByPlaceholderText('Directory where TV shows will be stored');

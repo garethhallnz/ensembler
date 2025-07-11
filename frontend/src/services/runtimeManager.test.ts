@@ -1,4 +1,4 @@
-import RuntimeManager, { runtimeManager, RuntimeConfig, RuntimeStatus } from './runtimeManager';
+import RuntimeManager, { runtimeManager, RuntimeConfig } from './runtimeManager';
 
 // Mock fetch globally
 global.fetch = jest.fn();
