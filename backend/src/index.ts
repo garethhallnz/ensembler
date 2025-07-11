@@ -146,14 +146,10 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
 
 app.post('/api/config/generate-compose', (req: Request, res: Response) => {
   const configFile = path.join(configDir, 'config.json');
-  const envFile = path.join(configDir, '.env');
   const composeFile = path.join(configDir, 'docker-compose.yml');
 
   try {
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-
-    let envContent = `TZ=${config.environment.tz || 'UTC'}\nPUID=${config.environment.puid || 1000}\nPGID=${config.environment.pgid || 1000}\n`;
-    fs.writeFileSync(envFile, envContent);
 
     let composeServices = '';
     Object.keys(config.selectedServices).forEach((serviceKey: string) => {
@@ -165,9 +161,9 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
           composeServices += `    image: ${serviceConfig.image}\n`;
           composeServices += `    container_name: ${serviceKey}\n`;
           composeServices += `    environment:\n`;
-          composeServices += `      - PUID=\${PUID}\n`;
-          composeServices += `      - PGID=\${PGID}\n`;
-          composeServices += `      - TZ=\${TZ}\n`;
+          composeServices += `      - PUID=${config.environment.puid || 1000}\n`;
+          composeServices += `      - PGID=${config.environment.pgid || 1000}\n`;
+          composeServices += `      - TZ=${config.environment.tz || 'UTC'}\n`;
           composeServices += `    volumes:\n`;
           
           // Generate volumes based on service configuration
@@ -222,7 +218,7 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
       }
     });
 
-    const composeContent = `version: '3.8'\n\nservices:\n${composeServices}`;
+    const composeContent = `services:\n${composeServices}`;
     fs.writeFileSync(composeFile, composeContent);
 
     res.json({ success: true, message: 'Docker Compose files generated successfully.' });
@@ -442,11 +438,6 @@ app.post('/api/config/reset', async (req: Request, res: Response) => {
     // Delete configuration files
     if (fs.existsSync(configFile)) {
       fs.unlinkSync(configFile);
-    }
-    
-    const envFile = path.join(configDir, '.env');
-    if (fs.existsSync(envFile)) {
-      fs.unlinkSync(envFile);
     }
     
     if (fs.existsSync(composeFile)) {

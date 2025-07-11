@@ -32,7 +32,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'prowlarr',
     name: 'Prowlarr',
-    image: 'lscr.io/linuxserver/prowlarr',
+    image: 'lscr.io/linuxserver/prowlarr:latest',
     defaultPort: 9696,
     internalPort: 9696,
     category: 'indexer',
@@ -56,7 +56,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'sonarr',
     name: 'Sonarr',
-    image: 'lscr.io/linuxserver/sonarr',
+    image: 'lscr.io/linuxserver/sonarr:latest',
     defaultPort: 8989,
     internalPort: 8989,
     category: 'media',
@@ -91,7 +91,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'radarr',
     name: 'Radarr',
-    image: 'lscr.io/linuxserver/radarr',
+    image: 'lscr.io/linuxserver/radarr:latest',
     defaultPort: 7878,
     internalPort: 7878,
     category: 'media',
@@ -126,7 +126,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'plex',
     name: 'Plex',
-    image: 'lscr.io/linuxserver/plex',
+    image: 'lscr.io/linuxserver/plex:latest',
     defaultPort: 32400,
     internalPort: 32400,
     category: 'media',
@@ -171,7 +171,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'transmission',
     name: 'Transmission',
-    image: 'lscr.io/linuxserver/transmission',
+    image: 'lscr.io/linuxserver/transmission:latest',
     defaultPort: 9091,
     internalPort: 9091,
     category: 'torrent',
@@ -207,7 +207,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   {
     key: 'overseerr',
     name: 'Overseerr',
-    image: 'sctx/overseerr',
+    image: 'lscr.io/linuxserver/overseerr:latest',
     defaultPort: 5055,
     internalPort: 5055,
     category: 'request',
