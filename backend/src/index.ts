@@ -257,7 +257,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
 app.post('/api/services/:serviceName/start', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d ${serviceName}`);
+    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d ${serviceName} --remove-orphans --force-recreate`);
     res.json({ success: true, message: `${serviceName} started successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to start ${serviceName}.`, error: (err as Error).message });
@@ -338,18 +338,30 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
   const { serviceName } = req.params;
   try {
     if (!fs.existsSync(configFile)) {
+      console.error('config.json not found at', configFile);
       return res.status(404).json({ success: false, message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const serviceConfig = getServiceConfig(serviceName);
+
+    console.log('Launch URL Request:');
+    console.log('  Service Name:', serviceName);
+    console.log('  Config File:', configFile);
+    console.log('  Config Data:', config);
+    console.log('  Service Config:', serviceConfig);
+
     if (!serviceConfig) {
+      console.error('Service config not found for', serviceName);
       return res.status(404).json({ success: false, message: 'Service not found.' });
     }
     
     const port = config.ports[serviceName] || serviceConfig.defaultPort;
+    console.log('  Port used:', port);
+
     const url = `http://localhost:${port}`;
     res.json({ success: true, url });
   } catch (err) {
+    console.error('Error getting launch URL:', err);
     res.status(500).json({ success: false, message: 'Failed to get launch URL.', error: (err as Error).message });
   }
 });

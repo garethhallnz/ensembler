@@ -280,6 +280,20 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     setOpenModal(true);
   };
 
+  const handleLaunchService = async (serviceName: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/launch-url`);
+      const data = await res.json();
+      if (data.success) {
+        window.open(data.url, '_blank');
+      } else {
+        showToast(`Failed to get launch URL for ${serviceName}: ${data.message}`, 'error');
+      }
+    } catch (error) {
+      showToast(`Error launching ${serviceName}: ${error}`, 'error');
+    }
+  };
+
   const handleEditSetup = () => {
     setConfirmationModal({
       message: 'Are you sure you want to edit the setup? This will take you back to the setup wizard.',
