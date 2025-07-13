@@ -5,6 +5,7 @@ import { Card, Button, Badge, Alert, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
+import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPencilAlt } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -386,11 +387,11 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Media Center Dashboard</h1>
         <div className="flex space-x-2">
-          <Button onClick={() => setShowAdvancedSettings(true)} color="gray">
-            Advanced Settings
+          <Button onClick={() => setShowAdvancedSettings(true)} color="gray" title="Advanced Settings">
+            <HiCog className="inline-block mr-1" /> Advanced Settings
           </Button>
-          <Button onClick={handleEditSetup} color="blue">
-            Edit Setup
+          <Button onClick={handleEditSetup} color="blue" title="Edit Setup">
+            <HiPencilAlt className="inline-block mr-1" /> Edit Setup
           </Button>
         </div>
       </div>
@@ -412,16 +413,18 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               onClick={() => handleGlobalAction('stop-all')}
               loading={actionLoading.stopAll}
               disabled={globalActionProgress !== null}
+              title="Stop All Services"
             >
-              Stop All
+              <HiStop className="inline-block mr-1" /> Stop All
             </Button>
             <Button 
               color="green"
               onClick={() => handleGlobalAction('start-all')}
               loading={actionLoading.startAll}
               disabled={globalActionProgress !== null}
+              title="Start All Services"
             >
-              Start All
+              <HiPlay className="inline-block mr-1" /> Start All
             </Button>
           </div>
         </Card.Body>
@@ -506,8 +509,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         onClick={() => handleLaunchService(serviceKey)}
                         disabled={status !== 'Running'}
                         aria-label={`Launch ${service.name}`}
+                        title="Launch Service"
                       >
-                        Launch
+                        <HiExternalLink className="inline-block mr-1" /> Launch
                       </Button>
                       <Button
                         size="sm"
@@ -515,8 +519,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         onClick={() => handleServiceAction(serviceKey, 'restart')}
                         loading={actionLoading[`${serviceKey}:restart`]}
                         aria-label={`Restart ${service.name}`}
+                        title="Restart Service"
                       >
-                        Restart
+                        <HiRefresh className="inline-block mr-1" /> Restart
                       </Button>
                       <Button
                         size="sm"
@@ -524,7 +529,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
                         loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
                         aria-label={`${status === 'Running' ? 'Stop' : 'Start'} ${service.name}`}
+                        title={status === 'Running' ? 'Stop Service' : 'Start Service'}
                       >
+                        {status === 'Running' ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
                         {status === 'Running' ? 'Stop' : 'Start'}
                       </Button>
                       <Button
@@ -532,8 +539,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         color="gray"
                         onClick={() => openLogsDrawer(serviceKey)}
                         aria-label={`Show logs for ${service.name}`}
+                        title="Show Logs"
                       >
-                        Logs
+                        <HiDocumentText className="inline-block mr-1" /> Logs
                       </Button>
                       {updateInfo?.hasUpdate && (
                         <Button
@@ -542,8 +550,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                           onClick={() => handleServiceUpdate(serviceKey)}
                           loading={isUpdating}
                           aria-label={`Update ${service.name}`}
+                          title="Update Service"
                         >
-                          Update
+                          <HiArrowCircleUp className="inline-block mr-1" /> Update
                         </Button>
                       )}
                     </div>

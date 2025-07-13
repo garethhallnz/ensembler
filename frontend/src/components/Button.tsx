@@ -2,41 +2,36 @@ import React from 'react';
 import { Button as FlowbiteButton } from 'flowbite-react';
 import Spinner from './Spinner';
 
-interface ButtonProps {
-  children: React.ReactNode;
+type ButtonProps = {
   color?: 'blue' | 'gray' | 'green' | 'red' | 'yellow' | 'purple' | 'pink';
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  onClick?: () => void;
-  disabled?: boolean;
   outline?: boolean;
   pill?: boolean;
-  className?: string;
-  type?: 'button' | 'submit' | 'reset';
   loading?: boolean;
-}
+  className?: string;
+  children: React.ReactNode;
+} & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 export default function Button({
   children,
   color = 'blue',
   size = 'md',
-  onClick,
-  disabled = false,
   outline = false,
   pill = false,
-  className = '',
-  type = 'button',
   loading = false,
+  className = '',
+  disabled = false,
+  ...rest
 }: ButtonProps) {
   return (
     <FlowbiteButton
       color={color}
       size={size}
-      onClick={onClick}
-      disabled={disabled || loading}
       outline={outline}
       pill={pill}
       className={className}
-      type={type}
+      disabled={disabled || loading}
+      {...rest}
     >
       <span className="flex items-center justify-center">
         {children}
