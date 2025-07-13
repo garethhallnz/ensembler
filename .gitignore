@@ -8,23 +8,39 @@
 # Dependency directories
 **/node_modules/
 node_modules/
+npm-debug.log*
+yarn-error.log*
+yarn.lock
+package-lock.json # Already present, but good to keep explicit
+pnpm-lock.yaml
+/backend/node_modules/
+/frontend/node_modules/
 
 # Build output
 /backend/dist
 /frontend/dist
+/frontend/dist-electron/
 build/
 dist/
 out/
+.next/
+.nuxt/
+.vercel/
+.turbo/
+coverage/
+*.tsbuildinfo
 
 # Test results
 test-results/
-coverage/
+junit.xml
+report.xml
 
 # Log files
 *.log
-npm-debug.log*
-yarn-error.log*
-lerna-debug.log
+*.log.*
+logs/
+temp/
+tmp/
 
 # Editor directories and files
 .vscode/
@@ -34,7 +50,35 @@ lerna-debug.log
 *.njsproj
 *.sln
 *.sw?
+*.bak
+*.swo
+*.swp
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE specific files
+*.iml
+.project
+.classpath
+.settings/
+.c9/
+*.komodoproject
 
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Docker
+*.dockerignore
+docker-compose.override.yml
+
+# Misc
+.envrc
+.terraform/
+*.tfplan
+*.tfstate
+*.tfstate.backup
+.DS_Store
