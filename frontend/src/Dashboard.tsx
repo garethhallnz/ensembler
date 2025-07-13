@@ -3,6 +3,7 @@ import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, Alert, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
+import ConfirmationModal from './components/ConfirmationModal';
 
 interface ServiceConfig {
   key: string;
@@ -77,6 +78,14 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
+  const [openModal, setOpenModal] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState<{
+    message: string;
+    onConfirm: () => void;
+  }>({
+    message: '',
+    onConfirm: () => {},
+  });
 
   const fetchServiceStatus = useCallback(async () => {
     try {
@@ -243,93 +252,72 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     }
   };
 
-  const handleGlobalAction = async (action: 'start-all' | 'stop-all') => {
+  const handleGlobalAction = (action: 'start-all' | 'stop-all') => {
     const actionText = action === 'start-all' ? 'start all' : 'stop all';
-    if (!window.confirm(`Are you sure you want to ${actionText} services?`)) return;
-    
-    setActionLoading(prev => ({ ...prev, global: true }));
-    try {
-      const res = await fetch(`http://localhost:3001/api/services/${action}`, {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`All services ${action.split('-')[0]}ed successfully`, 'success');
-        await fetchServiceStatus();
-      } else {
-        showToast(`Failed to ${actionText}: ${data.message}`, 'error');
-      }
-    } catch (error) {
-      showToast(`Error ${actionText}: ${error}`, 'error');
-    } finally {
-      setActionLoading(prev => ({ ...prev, global: false }));
-    }
-  };
-
-  const handleLaunchService = async (serviceName: string) => {
-    try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/launch-url`);
-      const data = await res.json();
-      if (data.success) {
-        window.open(data.url, '_blank');
-      } else {
-        showToast(`Failed to get launch URL for ${serviceName}: ${data.message}`, 'error');
-      }
-    } catch (error) {
-      showToast(`Error launching ${serviceName}: ${error}`, 'error');
-    }
-  };
-
-  const toggleLogs = async (serviceName: string) => {
-    if (showLogs[serviceName]) {
-      setShowLogs(prev => ({ ...prev, [serviceName]: false }));
-    } else {
-      try {
-        const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
-        const data = await res.json();
-        if (data.success) {
-          setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
-          setShowLogs(prev => ({ ...prev, [serviceName]: true }));
-        } else {
-          showToast(`Failed to get logs for ${serviceName}: ${data.message}`, 'error');
+    setConfirmationModal({
+      message: `Are you sure you want to ${actionText} services?`,
+      onConfirm: async () => {
+        setOpenModal(false);
+        setActionLoading(prev => ({ ...prev, global: true }));
+        try {
+          const res = await fetch(`http://localhost:3001/api/services/${action}`, {
+            method: 'POST'
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`All services ${action.split('-')[0]}ed successfully`, 'success');
+            await fetchServiceStatus();
+          } else {
+            showToast(`Failed to ${actionText}: ${data.message}`, 'error');
+          }
+        } catch (error) {
+          showToast(`Error ${actionText}: ${error}`, 'error');
+        } finally {
+          setActionLoading(prev => ({ ...prev, global: false }));
         }
-      } catch (error) {
-        showToast(`Error getting logs for ${serviceName}: ${error}`, 'error');
       }
-    }
+    });
+    setOpenModal(true);
   };
 
   const handleEditSetup = () => {
-    // This would redirect to setup wizard with pre-populated values
-    if (window.confirm('Are you sure you want to edit the setup? This will take you back to the setup wizard.')) {
-      onEditSetup();
-    }
+    setConfirmationModal({
+      message: 'Are you sure you want to edit the setup? This will take you back to the setup wizard.',
+      onConfirm: () => {
+        onEditSetup();
+        setOpenModal(false);
+      },
+    });
+    setOpenModal(true);
   };
 
-  const handleServiceUpdate = async (serviceName: string) => {
-    if (!window.confirm(`Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`)) {
-      return;
-    }
-
-    setUpdateLoading(prev => ({ ...prev, [serviceName]: true }));
-    try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/update`, {
-        method: 'POST'
-      });
-      const data = await res.json();
-      if (data.success) {
-        showToast(`${serviceName} updated successfully`, 'success');
-        await fetchServiceStatus();
-        await fetchServiceVersions();
-        await fetchServiceUpdates();
-      } else {
-        showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
+  const handleServiceUpdate = (serviceName: string) => {
+    setConfirmationModal({
+      message: `Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`,
+      onConfirm: async () => {
+        setOpenModal(false);
+        setUpdateLoading(prev => ({ ...prev, [serviceName]: true }));
+        try {
+          const res = await fetch(`http://localhost:3001/api/services/${serviceName}/update`, {
+            method: 'POST'
+          });
+          const data = await res.json();
+          if (data.success) {
+            showToast(`${serviceName} updated successfully`, 'success');
+            await fetchServiceStatus();
+            await fetchServiceVersions();
+            await fetchServiceUpdates();
+          } else {
+            showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
+          }
+        } catch (error) {
+          showToast(`Error updating ${serviceName}: ${error}`, 'error');
+        } finally {
+          setUpdateLoading(prev => ({ ...prev, [serviceName]: false }));
+        }
       }
-    } catch (error) {
-      showToast(`Error updating ${serviceName}: ${error}`, 'error');
-    } finally {
-      setUpdateLoading(prev => ({ ...prev, [serviceName]: false }));
-    }
+    });
+    setOpenModal(true);
   };
 
   if (loading) {
@@ -596,6 +584,16 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       {/* Advanced Settings Modal */}
       {showAdvancedSettings && (
         <AdvancedSettings onClose={() => setShowAdvancedSettings(false)} />
+      )}
+
+      {/* Confirmation Modal */}
+      {openModal && (
+        <ConfirmationModal
+          show={openModal}
+          onClose={() => setOpenModal(false)}
+          onConfirm={confirmationModal.onConfirm}
+          message={confirmationModal.message}
+        />
       )}
     </div>
   );
