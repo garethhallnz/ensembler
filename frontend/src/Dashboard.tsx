@@ -391,7 +391,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Media Center Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dockarr Dashboard</h1>
         <div className="flex space-x-2 items-center">
           <Button onClick={() => setShowAdvancedSettings(true)} color="gray" title="Advanced Settings">
             <HiCog className="inline-block mr-1" /> Advanced Settings

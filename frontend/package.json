@@ -1,6 +1,6 @@
 {
-  "name": "media-center",
-  "description": "A self-hosted media center",
+  "name": "dockarr",
+  "description": "Dockarr: A self-hosted media center orchestrator",
   "author": "Gemini",
   "private": true,
   "version": "1.0.0",
@@ -68,7 +68,7 @@
   },
   "build": {
     "appId": "com.mediacenter.app",
-    "productName": "Media Center",
+    "productName": "Dockarr",
     "directories": {
       "output": "dist-electron"
     },
