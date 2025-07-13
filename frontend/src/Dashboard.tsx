@@ -301,7 +301,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
 
   const handleEditSetup = () => {
     // This would redirect to setup wizard with pre-populated values
-    if (!window.confirm('Are you sure you want to edit the setup? This will take you back to the setup wizard.')) {
+    if (window.confirm('Are you sure you want to edit the setup? This will take you back to the setup wizard.')) {
       onEditSetup();
     }
   };

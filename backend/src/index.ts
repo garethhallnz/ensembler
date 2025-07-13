@@ -169,35 +169,29 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
           // Generate volumes based on service configuration
           serviceConfig.volumes.forEach((volume) => {
             let hostPath = volume.hostPath;
-            let containerPath = volume.containerPath;
-            
+            const containerPath = volume.containerPath;
+
             // Replace placeholders
-            hostPath = hostPath.replace('{configDir}', configDir);
+            if (hostPath.includes('{configDir}')) {
+              hostPath = hostPath.replace('{configDir}', configDir);
+            }
             if (hostPath.includes('{paths.tv}') && config.paths.sonarr?.[0]) {
               hostPath = hostPath.replace('{paths.tv}', config.paths.sonarr[0]);
-            }
-            if (hostPath.includes('{paths.movies}') && config.paths.radarr?.[0]) {
+            } else if (hostPath.includes('{paths.movies}') && config.paths.radarr?.[0]) {
               hostPath = hostPath.replace('{paths.movies}', config.paths.radarr[0]);
-            }
-            if (hostPath.includes('{paths.downloads}') && config.paths.transmission?.[0]) {
+            } else if (hostPath.includes('{paths.downloads}') && config.paths.transmission?.[0]) {
               hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
             }
-            
+
             // Handle service-specific paths
-            if (serviceKey === 'sonarr' && config.paths.sonarr?.[0]) {
-              hostPath = hostPath.replace('{paths.tv}', config.paths.sonarr[0]);
-            } else if (serviceKey === 'radarr' && config.paths.radarr?.[0]) {
-              hostPath = hostPath.replace('{paths.movies}', config.paths.radarr[0]);
-            } else if (serviceKey === 'transmission' && config.paths.transmission?.[0]) {
-              hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
-            } else if (serviceKey === 'plex') {
+            if (serviceKey === 'plex') {
               if (containerPath === '/tv' && config.paths.plex?.[0]) {
                 hostPath = config.paths.plex[0];
               } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
                 hostPath = config.paths.plex[1];
               }
             }
-            
+
             composeServices += `      - ${hostPath}:${containerPath}\n`;
           });
           
