@@ -395,86 +395,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         </div>
       </div>
 
-      {/* Docker Status and Updates */}
-      <Card className={`mb-6 ${dockerStatus.running ? 'bg-green-50' : 'bg-red-50'}`}>
-        <Card.Header>
-          <h2 className="text-xl font-semibold">Docker Status</h2>
-        </Card.Header>
-        <Card.Body>
-          <div className="mb-2">
-            Status: {dockerStatus.running ? 
-              <Badge color="green">✅ Running</Badge> : 
-              <Badge color="red">❌ Not Running</Badge>}
-          </div>
-          <div className="mb-2">Updates: {dockerStatus.updates}</div>
-          
-          {dockerUpdates && (
-            <div className="mt-4">
-              <h3 className="text-lg font-medium mb-2">Update Status:</h3>
-              <div className="mb-2">
-                Docker: {dockerUpdates.docker?.updateAvailable ? 
-                  <Badge color="yellow">🔄 Update Available</Badge> : 
-                  <Badge color="green">✅ Up to Date</Badge>}
-              </div>
-              <div className="mb-2">
-                Docker Compose: {dockerUpdates.compose?.updateAvailable ? 
-                  <Badge color="yellow">🔄 Update Available</Badge> : 
-                  <Badge color="green">✅ Up to Date</Badge>}
-              </div>
-              <div className="text-xs text-gray-500">
-                Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
-              </div>
-            </div>
-          )}
-        </Card.Body>
-      </Card>
-
-      {/* Runtime Status */}
-      {runtimeStatus && (
-        <Card className="mb-6 bg-blue-50">
-          <Card.Header>
-            <h2 className="text-xl font-semibold">App Runtime Status</h2>
-          </Card.Header>
-          <Card.Body>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <div className="mb-2">
-                  <strong>App Status:</strong> {runtimeStatus.appRunning ? 
-                    <Badge color="green">Active</Badge> : 
-                    <Badge color="gray">Inactive</Badge>}
-                </div>
-                <div className="mb-2">
-                  <strong>Backend:</strong> {runtimeStatus.backendConnected ? 
-                    <Badge color="green">Connected</Badge> : 
-                    <Badge color="red">Disconnected</Badge>}
-                </div>
-                <div className="mb-2">
-                  <strong>Docker Available:</strong> {runtimeStatus.dockerAvailable ? 
-                    <Badge color="green">Yes</Badge> : 
-                    <Badge color="red">No</Badge>}
-                </div>
-              </div>
-              <div>
-                <div className="mb-2">
-                  <strong>Services Running:</strong> {runtimeStatus.servicesRunning.length}
-                </div>
-                <div className="mb-2">
-                  <strong>Services Independent:</strong> {runtimeManager.areServicesIndependent() ? 
-                    <Badge color="green">Yes</Badge> : 
-                    <Badge color="yellow">No</Badge>}
-                </div>
-                <div className="mb-2">
-                  <strong>Last Check:</strong> {runtimeStatus.lastCheck.toLocaleTimeString()}
-                </div>
-              </div>
-            </div>
-            <Alert color="blue" className="mt-3">
-              <strong>Runtime Behavior:</strong> This app is active only when launched. Docker services run independently and continue when the app is closed.
-            </Alert>
-          </Card.Body>
-        </Card>
-      )}
-
       {/* Global Controls */}
       <Card className="mb-6">
         <Card.Header>
@@ -621,7 +541,129 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           </div>
         )}
       </div>
-      
+
+      {/* Combined Docker Status and App Runtime Status */}
+      {(dockerStatus || runtimeStatus) && (
+        <Card className="mb-6">
+          <Card.Header>
+            <h2 className="text-xl font-semibold flex items-center gap-2">
+              <span>System Status</span>
+              {dockerStatus.running && runtimeStatus?.appRunning ? (
+                <span className="text-green-500" title="All systems operational">✔️</span>
+              ) : (
+                <span className="text-yellow-500" title="Attention required">⚠️</span>
+              )}
+            </h2>
+          </Card.Header>
+          <Card.Body>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Docker Status Section */}
+              <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-4 shadow-sm border border-green-200 dark:border-green-700">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg font-medium text-green-700 dark:text-green-300">Docker</span>
+                  {dockerStatus.running ? (
+                    <span className="text-green-500 text-xl">✅</span>
+                  ) : (
+                    <span className="text-red-500 text-xl">❌</span>
+                  )}
+                </div>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="font-semibold">Status:</span>
+                  {dockerStatus.running ? (
+                    <Badge color="green">Running</Badge>
+                  ) : (
+                    <Badge color="red">Not Running</Badge>
+                  )}
+                </div>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="font-semibold">Updates:</span>
+                  <span>{dockerStatus.updates}</span>
+                </div>
+                {dockerUpdates && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">Docker:</span>
+                      {dockerUpdates.docker?.updateAvailable ? (
+                        <Badge color="yellow">🔄 Update Available</Badge>
+                      ) : (
+                        <Badge color="green">Up to Date</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">Compose:</span>
+                      {dockerUpdates.compose?.updateAvailable ? (
+                        <Badge color="yellow">🔄 Update Available</Badge>
+                      ) : (
+                        <Badge color="green">Up to Date</Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {/* App Runtime Status Section */}
+              {runtimeStatus && (
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 p-4 shadow-sm border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg font-medium text-blue-700 dark:text-blue-300">App Runtime</span>
+                    {runtimeStatus.appRunning ? (
+                      <span className="text-green-500 text-xl">🟢</span>
+                    ) : (
+                      <span className="text-gray-400 text-xl">⚪</span>
+                    )}
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">App:</span>
+                    {runtimeStatus.appRunning ? (
+                      <Badge color="green">Active</Badge>
+                    ) : (
+                      <Badge color="gray">Inactive</Badge>
+                    )}
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Backend:</span>
+                    {runtimeStatus.backendConnected ? (
+                      <Badge color="green">Connected</Badge>
+                    ) : (
+                      <Badge color="red">Disconnected</Badge>
+                    )}
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Docker Available:</span>
+                    {runtimeStatus.dockerAvailable ? (
+                      <Badge color="green">Yes</Badge>
+                    ) : (
+                      <Badge color="red">No</Badge>
+                    )}
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Services Running:</span>
+                    <span>{runtimeStatus.servicesRunning.length}</span>
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Services Independent:</span>
+                    {runtimeManager.areServicesIndependent() ? (
+                      <Badge color="green">Yes</Badge>
+                    ) : (
+                      <Badge color="yellow">No</Badge>
+                    )}
+                  </div>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="font-semibold">Last Check:</span>
+                    <span>{runtimeStatus.lastCheck.toLocaleTimeString()}</span>
+                  </div>
+                  <Alert color="blue" className="mt-3">
+                    <span className="font-semibold">Runtime Behavior:</span> This app is active only when launched. Docker services run independently and continue when the app is closed.
+                  </Alert>
+                </div>
+              )}
+            </div>
+          </Card.Body>
+        </Card>
+      )}
+
       {/* Advanced Settings Modal */}
       {showAdvancedSettings && (
         <AdvancedSettings onClose={() => setShowAdvancedSettings(false)} />
