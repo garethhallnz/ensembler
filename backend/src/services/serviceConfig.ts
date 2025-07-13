@@ -26,6 +26,7 @@ export interface ServiceConfig {
     containerPath: string;
     type: 'config' | 'data' | 'media';
   }[];
+  launchUrl?: string;
 }
 
 export const SUPPORTED_SERVICES: ServiceConfig[] = [
@@ -166,7 +167,8 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
         containerPath: '/movies',
         type: 'media'
       }
-    ]
+    ],
+    launchUrl: '/web'
   },
   {
     key: 'transmission',

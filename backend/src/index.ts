@@ -358,7 +358,10 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
     const port = config.ports[serviceName] || serviceConfig.defaultPort;
     console.log('  Port used:', port);
 
-    const url = `http://localhost:${port}`;
+    let url = `http://localhost:${port}`;
+    if (serviceConfig.launchUrl) {
+      url += serviceConfig.launchUrl;
+    }
     res.json({ success: true, url });
   } catch (err) {
     console.error('Error getting launch URL:', err);
