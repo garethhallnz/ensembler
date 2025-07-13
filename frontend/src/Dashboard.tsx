@@ -448,95 +448,105 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               const alertInfo = serviceAlerts[serviceKey];
               const isUpdating = updateLoading[serviceKey];
               
+              // Determine border color
+              const borderColor = alertInfo?.alert
+                ? 'border-red-500'
+                : status === 'Running'
+                  ? 'border-green-500'
+                  : 'border-gray-300';
+
               return (
-                <Card key={serviceKey} className={alertInfo?.alert ? 'bg-red-50' : ''}>
-                  <h3 className="text-2xl font-bold mb-2 text-center">
-                    {service.name}
-                  </h3>
-                  <hr className="my-2" />
+                <Card
+                  key={serviceKey}
+                  className={`relative flex flex-col h-full shadow-lg border-l-4 ${borderColor}`}
+                >
+                  {/* Alert Banner */}
                   {alertInfo?.alert && (
-                    <Alert color="red" className="mb-3">
-                      ⚠️ Alert: {alertInfo.status}
-                    </Alert>
+                    <div className="absolute top-0 left-0 w-full bg-red-100 text-red-700 px-4 py-2 rounded-t flex items-center gap-2 z-10">
+                      <span role="img" aria-label="Alert">⚠️</span>
+                      <span className="font-semibold">{alertInfo.status}</span>
+                    </div>
                   )}
-                  
-                  <Card.Body>
-                    <div className="flex flex-col md:flex-row justify-between gap-4">
-                      <div>
-                        <div className="mb-2">
-                          <span className="font-bold">Status:</span> 
-                          <Badge 
-                            color={status === 'Running' ? 'green' : 'red'}
-                            className="ml-2"
-                          >
-                            {status}
-                          </Badge>
-                          {alertInfo && !alertInfo.healthy && status === 'Running' && (
-                            <Badge color="yellow" className="ml-2">Unhealthy</Badge>
-                          )}
-                        </div>
-                        <div className="mb-2">
-                          <span className="font-bold">Version:</span> 
-                          <span className="ml-2">{version}</span>
-                        </div>
-                        {updateInfo && (
-                          <div className="mb-4">
-                            <span className="font-bold">Updates:</span> 
-                            <Badge 
-                              color={updateInfo.hasUpdate ? 'yellow' : 'green'}
-                              className="ml-2"
-                            >
-                              {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
-                            </Badge>
-                          </div>
-                        )}
+
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                    <h3 className="text-xl font-bold">{service.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <Badge color={status === 'Running' ? 'green' : 'red'}>
+                        {status}
+                      </Badge>
+                      {alertInfo && !alertInfo.healthy && status === 'Running' && (
+                        <Badge color="yellow">Unhealthy</Badge>
+                      )}
+                    </div>
+                  </div>
+                  <hr className="mx-4" />
+
+                  {/* Card Body */}
+                  <Card.Body className="flex-1 flex flex-col justify-between px-4 pb-4">
+                    <div className="mb-2 flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">Version:</span>
+                        <span>{version}</span>
                       </div>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                          size="sm"
-                          color="blue"
-                          onClick={() => handleLaunchService(serviceKey)}
-                          disabled={status !== 'Running'}
-                        >
-                          Launch
-                        </Button>
-                        <Button 
+                      {updateInfo && (
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">Updates:</span>
+                          <Badge color={updateInfo.hasUpdate ? 'yellow' : 'green'}>
+                            {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button
+                        size="sm"
+                        color="blue"
+                        onClick={() => handleLaunchService(serviceKey)}
+                        disabled={status !== 'Running'}
+                        aria-label={`Launch ${service.name}`}
+                      >
+                        Launch
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="yellow"
+                        onClick={() => handleServiceAction(serviceKey, 'restart')}
+                        loading={actionLoading[`${serviceKey}:restart`]}
+                        aria-label={`Restart ${service.name}`}
+                      >
+                        Restart
+                      </Button>
+                      <Button
+                        size="sm"
+                        color={status === 'Running' ? 'red' : 'green'}
+                        onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
+                        loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
+                        aria-label={`${status === 'Running' ? 'Stop' : 'Start'} ${service.name}`}
+                      >
+                        {status === 'Running' ? 'Stop' : 'Start'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        color="gray"
+                        onClick={() => openLogsDrawer(serviceKey)}
+                        aria-label={`Show logs for ${service.name}`}
+                      >
+                        Logs
+                      </Button>
+                      {updateInfo?.hasUpdate && (
+                        <Button
                           size="sm"
                           color="yellow"
-                          onClick={() => handleServiceAction(serviceKey, 'restart')}
-                          loading={actionLoading[`${serviceKey}:restart`]}
+                          onClick={() => handleServiceUpdate(serviceKey)}
+                          loading={isUpdating}
+                          aria-label={`Update ${service.name}`}
                         >
-                          Restart
+                          Update
                         </Button>
-                        <Button 
-                          size="sm"
-                          color={status === 'Running' ? 'red' : 'green'}
-                          onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
-                          loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
-                        >
-                          {status === 'Running' ? 'Stop' : 'Start'}
-                        </Button>
-                        <Button 
-                          size="sm"
-                          color="gray"
-                          onClick={() => openLogsDrawer(serviceKey)}
-                        >
-                          Show Logs
-                        </Button>
-                        {updateInfo?.hasUpdate && (
-                          <Button 
-                            size="sm"
-                            color="yellow"
-                            onClick={() => handleServiceUpdate(serviceKey)}
-                            loading={isUpdating}
-                          >
-                            Update
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                    
                   </Card.Body>
                 </Card>
               );
