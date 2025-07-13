@@ -41,7 +41,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const { showToast } = useToast();
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<{ [key: string]: boolean }>({});
-  const [error, setError] = useState<string | null>(null);
   const [paths, setPaths] = useState<{ [service: string]: string[] }>({});
   const [pathErrors, setPathErrors] = useState<{ [service: string]: string[] }>({});
   const [ports, setPorts] = useState<{[key: string]: number}>({});
@@ -117,7 +116,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     
     // Check service limit
     if (selectedServices.length > maxServices) {
-      setError(`Too many services selected. Maximum is ${maxServices} services.`);
+      showToast(`Too many services selected. Maximum is ${maxServices} services.`, 'warning');
       return false;
     }
     
@@ -131,14 +130,14 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       
       const data = await res.json();
       if (!data.success) {
-                setError(data.message ?? 'An unknown error occurred');
+                showToast(data.message ?? 'An unknown error occurred', 'error');
         return false;
       }
       
-      setError(null);
       return true;
     } catch (error) {
-      setError('Error validating service selection');
+      showToast('Error validating service selection', 'error');
+      console.error('Error validating service selection:', error);
       return false;
     }
   };
@@ -371,7 +370,9 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
            <div className="space-y-6">
              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Select Services</h2>
              <p className="text-gray-600 dark:text-gray-300">Choose the services you want to run:</p>
-             {error && <Alert color="red">{error}</Alert>}
+             {Object.keys(selected).filter((svc) => selected[svc]).length === 0 && 
+              <Alert color="blue">No services selected. Please go back and select services first.</Alert>
+            }
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {serviceConfig.map((service) => (
                  <Card key={service.key} className="overflow-hidden">

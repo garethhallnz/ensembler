@@ -4,7 +4,7 @@ import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner } from './components'
-import { ToastProvider } from './contexts/ToastContext';
+import ToastProvider from './contexts/ToastProvider';
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
