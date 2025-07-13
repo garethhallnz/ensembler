@@ -403,7 +403,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         <Card.Body>
           {globalActionProgress !== null && (
             <div className="mb-4">
-              <Progress progress={globalActionProgress} labelProgress size="lg" />
+              <Progress progress={globalActionProgress} size="lg" />
             </div>
           )}
           <div className="flex gap-4">

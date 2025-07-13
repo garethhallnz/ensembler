@@ -302,14 +302,135 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
       return res.status(404).json({ success: false, message: 'Service not found.' });
     }
 
-    const imageName = serviceConfig.image;
+    // Helper to exec inside container
+    async function execInContainer(container: string, cmd: string) {
+      try {
+        const { stdout } = await execAsync(`docker exec ${container} sh -c "${cmd}"`);
+        return stdout.trim();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Helper to get image label
+    async function getImageLabel(container: string, label: string) {
+      try {
+        const { stdout: imageNameOut } = await execAsync(
+          `docker inspect --format='{{.Config.Image}}' ${container}`
+        );
+        const imageName = imageNameOut.trim();
+        if (!imageName) return null;
+        const { stdout: labelOut } = await execAsync(
+          `docker image inspect ${imageName} --format='{{ index .Config.Labels "${label}" }}'`
+        );
+        return labelOut.trim() || null;
+      } catch {
+        return null;
+      }
+    }
+
+    let version: string | null = null;
+    // Try to get version from image label for LinuxServer.io images
+    switch (serviceName) {
+      case 'sonarr':
+      case 'radarr':
+      case 'prowlarr':
+      case 'overseerr':
+      case 'plex':
+      case 'transmission': {
+        version = await getImageLabel(serviceName, 'org.opencontainers.image.version');
+        break;
+      }
+      default:
+        break;
+    }
+
+    // If not found in label, try API/exec as before
+    if (!version) {
+      switch (serviceName) {
+        case 'sonarr': {
+          const output = await execInContainer('sonarr', 'curl -s http://localhost:8989/api/v3/system/status');
+          if (output) {
+            try {
+              const json = JSON.parse(output);
+              version = json.version || null;
+            } catch {}
+          }
+          break;
+        }
+        case 'radarr': {
+          const output = await execInContainer('radarr', 'curl -s http://localhost:7878/api/v3/system/status');
+          if (output) {
+            try {
+              const json = JSON.parse(output);
+              version = json.version || null;
+            } catch {}
+          }
+          break;
+        }
+        case 'prowlarr': {
+          const output = await execInContainer('prowlarr', 'curl -s http://localhost:9696/api/v1/system/status');
+          if (output) {
+            try {
+              const json = JSON.parse(output);
+              version = json.version || null;
+            } catch {}
+          }
+          break;
+        }
+        case 'overseerr': {
+          const output = await execInContainer('overseerr', 'curl -s http://localhost:5055/api/v1/status');
+          if (output) {
+            try {
+              const json = JSON.parse(output);
+              version = json.version || null;
+            } catch {}
+          }
+          break;
+        }
+        case 'plex': {
+          version = await execInContainer('plex', 'cat /version.txt');
+          if (!version) {
+            version = await execInContainer('plex', 'dpkg-query -W plexmediaserver');
+            if (version) {
+              version = version.split('\t')[1] || version;
+            }
+          }
+          break;
+        }
+        case 'transmission': {
+          version = await execInContainer('transmission', 'transmission-daemon --version');
+          if (version) {
+            const match = version.match(/(\d+\.\d+(?:\.\d+)?)/);
+            version = match ? match[1] : version;
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
+    if (version) {
+      return res.json({ success: true, version });
+    }
+
+    // Fallback: use image creation date
     try {
-      const { stdout } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Created}}"`);
-      const version = stdout.trim().split('T')[0]; // Extract date part
-      res.json({ success: true, version });
+      const { stdout: containerImage } = await execAsync(
+        `docker inspect --format='{{.Config.Image}}' ${serviceName}`
+      );
+      const imageName = containerImage.trim();
+      if (!imageName) {
+        return res.json({ success: true, version: 'Not installed' });
+      }
+      const { stdout } = await execAsync(
+        `docker image inspect ${imageName} --format "{{.Created}}"`
+      );
+      const dateVersion = stdout.trim().split('T')[0];
+      return res.json({ success: true, version: dateVersion });
     } catch (err) {
-      // If image doesn't exist locally, return a default version
-      res.json({ success: true, version: 'Not installed' });
+      return res.json({ success: true, version: 'Not installed' });
     }
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to get version for ${serviceName}.`, error: (err as Error).message });
