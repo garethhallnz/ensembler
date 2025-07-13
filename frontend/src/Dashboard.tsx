@@ -633,8 +633,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         <div className="p-4 border-b w-full">
           <span className="text-lg font-semibold">{drawerService ? `${drawerService} Logs` : 'Logs'}</span>
         </div>
-        <div className="p-4 w-full">
-          <pre className="bg-gray-900 text-white p-3 rounded text-xs overflow-auto max-h-[70vh]">
+        <div className="p-4 w-full overflow-y-auto max-h-[70vh]">
+          <pre className="bg-gray-900 text-white p-3 rounded text-xs">
             {drawerService ? (serviceLogs[drawerService] || 'No logs available') : 'No logs available'}
           </pre>
         </div>
