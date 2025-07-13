@@ -392,49 +392,42 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Media Center Dashboard</h1>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 items-center">
           <Button onClick={() => setShowAdvancedSettings(true)} color="gray" title="Advanced Settings">
             <HiCog className="inline-block mr-1" /> Advanced Settings
           </Button>
           <Button onClick={handleEditSetup} color="blue" title="Edit Setup">
             <HiPencilAlt className="inline-block mr-1" /> Edit Setup
           </Button>
+          <span className="ms-6" />
+          {/* Global Controls Buttons moved here */}
+          <Button 
+            color="red"
+            onClick={() => handleGlobalAction('stop-all')}
+            loading={actionLoading.stopAll}
+            disabled={globalActionProgress !== null}
+            title="Stop All Services"
+          >
+            <HiStop className="inline-block mr-1" /> Stop All
+          </Button>
+          <Button 
+            color="green"
+            onClick={() => handleGlobalAction('start-all')}
+            loading={actionLoading.startAll}
+            disabled={globalActionProgress !== null}
+            title="Start All Services"
+          >
+            <HiPlay className="inline-block mr-1" /> Start All
+          </Button>
         </div>
       </div>
 
-      {/* Global Controls */}
-      <Card className="mb-6">
-        <Card.Header>
-          <h2 className="text-xl font-semibold">Global Controls</h2>
-        </Card.Header>
-        <Card.Body>
-          {globalActionProgress !== null && (
-            <div className="mb-4">
-              <Progress progress={globalActionProgress} size="lg" />
-            </div>
-          )}
-          <div className="flex gap-4">
-            <Button 
-              color="red"
-              onClick={() => handleGlobalAction('stop-all')}
-              loading={actionLoading.stopAll}
-              disabled={globalActionProgress !== null}
-              title="Stop All Services"
-            >
-              <HiStop className="inline-block mr-1" /> Stop All
-            </Button>
-            <Button 
-              color="green"
-              onClick={() => handleGlobalAction('start-all')}
-              loading={actionLoading.startAll}
-              disabled={globalActionProgress !== null}
-              title="Start All Services"
-            >
-              <HiPlay className="inline-block mr-1" /> Start All
-            </Button>
-          </div>
-        </Card.Body>
-      </Card>
+      {/* Progress bar for global actions (above service list, no container/title) */}
+      {globalActionProgress !== null && (
+        <div className="mb-4">
+          <Progress progress={globalActionProgress} size="lg" />
+        </div>
+      )}
 
       {/* Service List */}
       <div>
