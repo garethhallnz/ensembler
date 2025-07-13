@@ -450,6 +450,10 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               
               return (
                 <Card key={serviceKey} className={alertInfo?.alert ? 'bg-red-50' : ''}>
+                  <h3 className="text-2xl font-bold mb-2 text-center">
+                    {service.name}
+                  </h3>
+                  <hr className="my-2" />
                   {alertInfo?.alert && (
                     <Alert color="red" className="mb-3">
                       ⚠️ Alert: {alertInfo.status}
@@ -459,7 +463,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                   <Card.Body>
                     <div className="flex flex-col md:flex-row justify-between gap-4">
                       <div>
-                        <h3 className="text-lg font-medium mb-2">{service.name}</h3>
                         <div className="mb-2">
                           <span className="font-bold">Status:</span> 
                           <Badge 
