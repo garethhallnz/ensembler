@@ -1,11 +1,16 @@
-const { app, BrowserWindow, dialog, shell } = require('electron');
-const path = require('path');
-const { spawn } = require('child_process');
+import { app, BrowserWindow, dialog, shell } from 'electron';
+import path from 'path';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let mainWindow;
 let backendProcess;
 
 function createWindow() {
+  console.log('[Electron] Creating main window...');
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -22,6 +27,7 @@ function createWindow() {
 
   // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
+    console.log('[Electron] Main window ready to show. Showing now.');
     mainWindow.show();
   });
 
@@ -34,30 +40,45 @@ function createWindow() {
   // Load the frontend
   const isDev = process.env.NODE_ENV === 'development';
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    console.log('[Electron] Loading frontend from dev server...');
+    mainWindow.loadURL('http://localhost:5173')
+      .then(() => console.log('[Electron] Dev frontend loaded.'))
+      .catch(err => console.error('[Electron] Error loading dev frontend:', err));
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+    const indexPath = path.join(__dirname, 'dist/index.html');
+    console.log('[Electron] Loading frontend from', indexPath);
+    mainWindow.loadFile(indexPath)
+      .then(() => console.log('[Electron] Production frontend loaded.'))
+      .catch(err => console.error('[Electron] Error loading production frontend:', err));
   }
 
   mainWindow.on('closed', () => {
+    console.log('[Electron] Main window closed.');
     mainWindow = null;
+  });
+
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.error(`[Electron] Window failed to load: ${errorDescription} (${errorCode}) URL: ${validatedURL}`);
   });
 }
 
 function startBackend() {
+  console.log('[Electron] process.env.PATH:', process.env.PATH);
   const isDev = process.env.NODE_ENV === 'development';
   const backendPath = isDev 
     ? path.join(__dirname, '..', 'backend', 'src', 'index.ts')
-    : path.join(__dirname, 'backend', 'index.js');
+    : path.join(__dirname, '..', 'backend', 'dist', 'index.js');
   
+  // Use 'node' as the command in production for best compatibility with NVM and PATH
   const command = isDev ? 'ts-node' : 'node';
   const args = [backendPath];
 
   backendProcess = spawn(command, args, {
     stdio: 'inherit',
-    cwd: isDev ? path.join(__dirname, '..', 'backend') : path.join(__dirname, 'backend')
+    cwd: isDev ? path.join(__dirname, '..', 'backend') : path.join(__dirname, '..', 'backend'),
+    shell: true
   });
 
   backendProcess.on('error', (error) => {
@@ -82,15 +103,18 @@ function stopBackend() {
 
 // App event handlers
 app.whenReady().then(() => {
+  console.log('[Electron] App is ready. Starting backend...');
   startBackend();
   
   // Wait a bit for backend to start
   setTimeout(() => {
+    console.log('[Electron] Creating window after backend startup delay.');
     createWindow();
   }, 2000);
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
+      console.log('[Electron] App activated. Creating window.');
       createWindow();
     }
   });
@@ -147,4 +171,4 @@ app.on('certificate-error', (event, webContents, url, error, certificate, callba
 });
 
 // Export for testing
-module.exports = { createWindow, startBackend, stopBackend }; 
+export { createWindow, startBackend, stopBackend }; 

@@ -1,175 +1,146 @@
-# Media Center Management Application
+# Dockarr
 
-A comprehensive Docker-based media center management application with a graphical user interface built using TypeScript, React, and Electron. This application provides a setup wizard and dashboard for managing popular media center services like Sonarr, Radarr, Plex, Transmission, and more.
+**Dockarr** is a cross-platform desktop app that makes it easy to configure, deploy, and manage your home media center stack—no Docker or YAML expertise required.
 
-## How to Run
+## Features
+
+- **Guided Setup Wizard:**  
+  Select your preferred services (Sonarr, Radarr, Plex, Transmission, Prowlarr, Overseerr), set up file paths, and customize ports with real-time validation.
+- **One-Click Deploy:**  
+  Dockarr generates and manages all Docker Compose and environment files for you.
+- **Unified Dashboard:**  
+  Monitor, start, stop, restart, and update all your media services from a single interface.
+- **Service Health & Logs:**  
+  View real-time status, logs, and version info for each service. Get notified of failures or updates.
+- **Advanced Settings:**  
+  Edit environment variables (TZ, PUID, PGID, ports) and reset your configuration at any time.
+- **Cross-Platform:**  
+  Works on Windows, macOS, and Linux. Electron-powered desktop experience.
+
+## Quick Start (Recommended: Desktop App)
 
 ### Prerequisites
 
-Before running this application, ensure you have the following installed:
+- [Node.js](https://nodejs.org/) (v18+)
+- [npm](https://www.npmjs.com/)
+- [Docker](https://www.docker.com/) & Docker Compose
 
-1. **Node.js** (v18 or higher)
-2. **npm** (comes with Node.js)
-3. **Docker** and **Docker Compose**
-   - macOS: Install Docker Desktop from https://www.docker.com/products/docker-desktop/
-   - Windows: Install Docker Desktop from https://www.docker.com/products/docker-desktop/
-   - Linux: Install Docker Engine and Docker Compose from https://docs.docker.com/engine/install/
+### Installation
 
-### Quick Start
+```bash
+git clone https://github.com/garethhallnz/media-center.git
+cd media-center
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/garethhallnz/media-center.git
-   cd media-center
-   ```
+# Install backend dependencies
+cd backend
+npm install
+cd ..
 
-2. **Install dependencies**:
-   ```bash
-   # Install backend dependencies
-   cd backend
-   npm install
-   cd ..
-   
-   # Install frontend dependencies
-   cd frontend
-   npm install
-   cd ..
-   ```
+# Install frontend dependencies
+cd frontend
+npm install
+cd ..
+```
 
-3. **Start the application in development mode**:
-   ```bash
-   # Start backend server (in one terminal)
-   cd backend
-   npm run dev
-   
-   # Start frontend development server (in another terminal)
-   cd frontend
-   npm run dev
-   ```
-
-4. **Access the application**:
-   - The application will open automatically in development mode
-   - Backend API runs on `http://localhost:3001`
-   - Frontend runs on `http://localhost:5173`
-
-### Building for Production
-
-To create a production build of the application:
-
-1. **Using the build script** (recommended):
-   ```bash
-   # On Linux/macOS
-   ./build.sh
-   
-   # On Windows
-   build.bat
-   ```
-
-2. **Manual build process**:
-   ```bash
-   # Build backend
-   cd backend
-   npm run build
-   cd ..
-   
-   # Build and package frontend with Electron
-   cd frontend
-   npm run build
-   npm run electron-dist
-   ```
-
-The packaged application will be available in `frontend/dist-electron/`.
-
-### Running as Electron App
-
-To run the application as a desktop app during development:
+### Running Dockarr as a Desktop App (Electron)
 
 ```bash
 cd frontend
 npm run electron-dev
 ```
 
-### Environment Configuration
+- The app will open as a native desktop window.
+- All features are available in the desktop app.
 
-The application will automatically create a configuration directory:
-- **Linux/macOS**: `~/.media-center/`
-- **Windows**: `%USERPROFILE%\.media-center\`
-
-This directory will contain:
-- `config.json`: Application configuration
-- `.env`: Environment variables for Docker services
-- `docker-compose.yml`: Generated Docker Compose configuration
-
-### First-Time Setup
-
-1. **Launch the application** - it will automatically check for Docker installation
-2. **Follow the Setup Wizard**:
-   - Select which media center services you want to use
-   - Configure file paths for your media libraries
-   - Set port numbers for each service
-   - Review and apply the configuration
-3. **Access the Dashboard** to manage your services
-
-### Available Services
-
-The application can manage the following Docker services:
-
-- **Prowlarr**: Indexer aggregator
-- **Sonarr**: TV show management
-- **Radarr**: Movie management
-- **Plex**: Media server
-- **Transmission**: BitTorrent client
-- **Overseerr**: Request management
-- **Homarr**: Dashboard
-- **Mealie**: Recipe management
-- **Twingate**: VPN connector
-
-### Testing
-
-Run the test suite:
+### Building for Production (Desktop App)
 
 ```bash
-# Backend tests
-cd backend
-npm test
+# On Linux/macOS
+./build.sh
 
-# Frontend tests
-cd frontend
-npm test
+# On Windows
+build.bat
 ```
 
-### Troubleshooting
-
-1. **Docker not running**: The application will show installation instructions for your OS
-2. **Port conflicts**: Use the Advanced Settings in the application to change port numbers
-3. **Permission issues**: Ensure Docker has proper permissions and your user is in the docker group (Linux)
-4. **Path issues**: Make sure the paths you configure have proper read/write permissions
-
-### Development Commands
-
-```bash
-# Backend development
-cd backend
-npm run dev          # Start with auto-reload
-npm run build        # Build TypeScript
-npm test            # Run tests
-npm run test:watch  # Run tests in watch mode
-
-# Frontend development
-cd frontend
-npm run dev             # Start Vite dev server
-npm run build          # Build for production
-npm run electron       # Run Electron app
-npm run electron-dev   # Run Electron in development
-npm run lint          # Run ESLint
-npm test             # Run tests
-```
+The packaged app will be in `frontend/dist-electron/`.
 
 ---
 
-# Overview of Docker based media center
+## (Alternative) Local Development in Browser
 
-Sonarr / Radarr / Bazarr / Jackett / Transmission / Plex
+If you want to run the frontend and backend separately in your browser (for development or debugging):
+
+Open two terminals:
+
+```bash
+# Terminal 1: Start backend
+cd backend
+npm run dev
+
+# Terminal 2: Start frontend
+cd frontend
+npm run dev
+```
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3001
+
+---
+
+## How It Works
+
+1. **First Launch:**  
+   Dockarr checks for Docker and guides you through installing it if needed.
+2. **Setup Wizard:**  
+   Choose your services, set media paths, and assign ports. Dockarr validates everything and generates the required config files.
+3. **Dashboard:**  
+   Start, stop, restart, update, and monitor all your services. Access each service’s web UI with one click.
+4. **Advanced Settings:**  
+   Change environment variables or reset your setup at any time.
+
+## Supported Services
+
+- **Sonarr:** TV show management
+- **Radarr:** Movie management
+- **Plex:** Media server
+- **Transmission:** BitTorrent client
+- **Prowlarr:** Indexer aggregator
+- **Overseerr:** Request management
+
+## Configuration & Storage
+
+- All settings are stored in `~/.media-center/` (Linux/macOS) or `%USERPROFILE%\.media-center\` (Windows).
+- Dockarr manages `config.json`, `.env`, and `docker-compose.yml` for you.
+
+## Testing
+
+```bash
+# Backend
+cd backend
+npm test
+
+# Frontend
+cd frontend
+npm test
+```
+
+## Troubleshooting
+
+- **Docker not running:** Dockarr will prompt you to start or install Docker.
+- **Port conflicts:** Use Advanced Settings to resolve.
+- **Permission issues:** Ensure Docker has access to your media directories.
+
+## Contributing
+
+Pull requests and issues are welcome! Please see the code style and contribution guidelines in the repo.
+
+## License
+
+MIT
+
+---
+
+**Dockarr** – The easiest way to run your *arr stack.
 
 
 
