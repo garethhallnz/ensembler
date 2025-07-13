@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button as FlowbiteButton } from 'flowbite-react';
+import Spinner from './Spinner';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface ButtonProps {
   pill?: boolean;
   className?: string;
   type?: 'button' | 'submit' | 'reset';
+  loading?: boolean;
 }
 
 export default function Button({
@@ -23,19 +25,23 @@ export default function Button({
   pill = false,
   className = '',
   type = 'button',
+  loading = false,
 }: ButtonProps) {
   return (
     <FlowbiteButton
       color={color}
       size={size}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
       outline={outline}
       pill={pill}
       className={className}
       type={type}
     >
-      {children}
+      <span className="flex items-center justify-center">
+        {children}
+        {loading && <Spinner size={size} className="ml-2" />}
+      </span>
     </FlowbiteButton>
   );
 }

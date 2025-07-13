@@ -626,8 +626,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 </ul>
               </Card.Body>
             </Card>
-            <Button onClick={handleSaveAndApply} disabled={isSaving}>
-              {isSaving ? 'Saving and Applying...' : 'Save and Apply'}
+            <Button onClick={handleSaveAndApply} loading={isSaving}>
+              Save and Apply
             </Button>
           </div>
         )}

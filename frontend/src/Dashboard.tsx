@@ -236,7 +236,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   }, [selectedServices, fetchServiceAlerts]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
-    setActionLoading(prev => ({ ...prev, [serviceName]: true }));
+    const key = `${serviceName}:${action}`;
+    setActionLoading(prev => ({ ...prev, [key]: true }));
     try {
       const res = await fetch(`http://localhost:3001/api/services/${serviceName}/${action}`, {
         method: 'POST'
@@ -251,17 +252,18 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     } catch (error) {
       showToast(`Error ${action}ing ${serviceName}: ${error}`, 'error');
     } finally {
-      setActionLoading(prev => ({ ...prev, [serviceName]: false }));
+      setActionLoading(prev => ({ ...prev, [key]: false }));
     }
   };
 
   const handleGlobalAction = (action: 'start-all' | 'stop-all') => {
+    const key = action === 'start-all' ? 'startAll' : 'stopAll';
     const actionText = action === 'start-all' ? 'start all' : 'stop all';
     setConfirmationModal({
       message: `Are you sure you want to ${actionText} services?`,
       onConfirm: async () => {
         setOpenModal(false);
-        setActionLoading(prev => ({ ...prev, global: true }));
+        setActionLoading(prev => ({ ...prev, [key]: true }));
         try {
           const res = await fetch(`http://localhost:3001/api/services/${action}`, {
             method: 'POST'
@@ -276,7 +278,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         } catch (error) {
           showToast(`Error ${actionText}: ${error}`, 'error');
         } finally {
-          setActionLoading(prev => ({ ...prev, global: false }));
+          setActionLoading(prev => ({ ...prev, [key]: false }));
         }
       }
     });
@@ -477,18 +479,16 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
             <Button 
               color="red"
               onClick={() => handleGlobalAction('stop-all')}
-              disabled={actionLoading.global}
+              loading={actionLoading.stopAll}
             >
-              {actionLoading.global ? <Spinner size="sm" className="mr-2" /> : null}
-              {actionLoading.global ? 'Processing...' : 'Stop All'}
+              Stop All
             </Button>
             <Button 
               color="green"
               onClick={() => handleGlobalAction('start-all')}
-              disabled={actionLoading.global}
+              loading={actionLoading.startAll}
             >
-              {actionLoading.global ? <Spinner size="sm" className="mr-2" /> : null}
-              {actionLoading.global ? 'Processing...' : 'Start All'}
+              Start All
             </Button>
           </div>
         </Card.Body>
@@ -511,7 +511,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               
               const status = serviceStatus[serviceKey] || 'Unknown';
               const version = serviceVersions[serviceKey] || 'Loading...';
-              const isLoading = actionLoading[serviceKey];
               const updateInfo = serviceUpdates[serviceKey];
               const alertInfo = serviceAlerts[serviceKey];
               const isUpdating = updateLoading[serviceKey];
@@ -570,19 +569,17 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                           size="sm"
                           color="yellow"
                           onClick={() => handleServiceAction(serviceKey, 'restart')}
-                          disabled={isLoading}
+                          loading={actionLoading[`${serviceKey}:restart`]}
                         >
-                          {isLoading ? <Spinner size="sm" className="mr-1" /> : null}
-                          {isLoading ? 'Processing...' : 'Restart'}
+                          Restart
                         </Button>
                         <Button 
                           size="sm"
                           color={status === 'Running' ? 'red' : 'green'}
                           onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
-                          disabled={isLoading}
+                          loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
                         >
-                          {isLoading ? <Spinner size="sm" className="mr-1" /> : null}
-                          {isLoading ? 'Processing...' : (status === 'Running' ? 'Stop' : 'Start')}
+                          {status === 'Running' ? 'Stop' : 'Start'}
                         </Button>
                         <Button 
                           size="sm"
@@ -596,10 +593,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                             size="sm"
                             color="yellow"
                             onClick={() => handleServiceUpdate(serviceKey)}
-                            disabled={isUpdating}
+                            loading={isUpdating}
                           >
-                            {isUpdating ? <Spinner size="sm" className="mr-1" /> : null}
-                            {isUpdating ? 'Updating...' : 'Update'}
+                            Update
                           </Button>
                         )}
                       </div>

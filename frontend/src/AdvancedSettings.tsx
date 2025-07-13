@@ -295,7 +295,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         <div className="flex space-x-3">
           <Button
             onClick={handleReset}
-            disabled={saving}
+            loading={saving}
             color="red"
           >
             Reset All Settings
@@ -309,10 +309,10 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
           </Button>
           <Button
             onClick={handleSave}
-            disabled={saving}
+            loading={saving}
             color="blue"
           >
-            {saving ? 'Saving...' : 'Save Settings'}
+            Save Settings
           </Button>
         </div>
       </Modal.Footer>
