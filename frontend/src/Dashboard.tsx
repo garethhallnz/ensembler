@@ -4,6 +4,7 @@ import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, Alert, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
+import { Drawer } from 'flowbite-react';
 
 interface ServiceConfig {
   key: string;
@@ -66,7 +67,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
-  const [showLogs, setShowLogs] = useState<{ [key: string]: boolean }>({});
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
     running: true,
     updates: 'No updates available'
@@ -86,6 +86,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     message: '',
     onConfirm: () => {},
   });
+  // Add state for Drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerService, setDrawerService] = useState<string | null>(null);
 
   const fetchServiceStatus = useCallback(async () => {
     try {
@@ -294,23 +297,27 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     }
   };
 
-  const toggleLogs = async (serviceName: string) => {
-    if (showLogs[serviceName]) {
-      setShowLogs(prev => ({ ...prev, [serviceName]: false }));
-    } else {
+  const openLogsDrawer = async (serviceName: string) => {
+    if (drawerService !== serviceName) {
       try {
         const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
         const data = await res.json();
         if (data.success) {
           setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
-          setShowLogs(prev => ({ ...prev, [serviceName]: true }));
+          setDrawerService(serviceName);
+          setDrawerOpen(true);
         } else {
           showToast(`Failed to get logs for ${serviceName}: ${data.message}`, 'error');
         }
       } catch (error) {
         showToast(`Error getting logs for ${serviceName}: ${error}`, 'error');
       }
+    } else {
+      setDrawerOpen(true);
     }
+  };
+  const closeLogsDrawer = () => {
+    setDrawerOpen(false);
   };
 
   const handleEditSetup = () => {
@@ -580,9 +587,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         <Button 
                           size="sm"
                           color="gray"
-                          onClick={() => toggleLogs(serviceKey)}
+                          onClick={() => openLogsDrawer(serviceKey)}
                         >
-                          {showLogs[serviceKey] ? 'Hide Logs' : 'Show Logs'}
+                          Show Logs
                         </Button>
                         {updateInfo?.hasUpdate && (
                           <Button 
@@ -598,14 +605,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                       </div>
                     </div>
                     
-                    {showLogs[serviceKey] && (
-                      <div className="mt-4">
-                        <h4 className="text-md font-medium mb-2">Logs</h4>
-                        <pre className="bg-gray-900 text-white p-3 rounded text-xs overflow-auto max-h-48">
-                          {serviceLogs[serviceKey] || 'No logs available'}
-                        </pre>
-                      </div>
-                    )}
                   </Card.Body>
                 </Card>
               );
@@ -628,6 +627,18 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           message={confirmationModal.message}
         />
       )}
+
+      {/* Logs Drawer */}
+      <Drawer open={drawerOpen} onClose={closeLogsDrawer} position="right" className="!w-[900px] max-w-full">
+        <div className="p-4 border-b w-full">
+          <span className="text-lg font-semibold">{drawerService ? `${drawerService} Logs` : 'Logs'}</span>
+        </div>
+        <div className="p-4 w-full">
+          <pre className="bg-gray-900 text-white p-3 rounded text-xs overflow-auto max-h-[70vh]">
+            {drawerService ? (serviceLogs[drawerService] || 'No logs available') : 'No logs available'}
+          </pre>
+        </div>
+      </Drawer>
     </div>
   );
 }
