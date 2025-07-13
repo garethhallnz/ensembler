@@ -257,7 +257,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
 app.post('/api/services/:serviceName/start', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} start ${serviceName}`);
+    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d ${serviceName}`);
     res.json({ success: true, message: `${serviceName} started successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to start ${serviceName}.`, error: (err as Error).message });
@@ -318,7 +318,7 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
 
 app.post('/api/services/start-all', async (req: Request, res: Response) => {
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} start`);
+    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d`);
     res.json({ success: true, message: 'All services started successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to start all services.', error: (err as Error).message });
