@@ -4,7 +4,7 @@ import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, Alert, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
-import { Drawer } from 'flowbite-react';
+import { Drawer, Progress } from 'flowbite-react';
 
 interface ServiceConfig {
   key: string;
@@ -89,6 +89,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   // Add state for Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerService, setDrawerService] = useState<string | null>(null);
+  const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
 
   const fetchServiceStatus = useCallback(async () => {
     try {
@@ -264,22 +265,27 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       onConfirm: async () => {
         setOpenModal(false);
         setActionLoading(prev => ({ ...prev, [key]: true }));
-        try {
-          const res = await fetch(`http://localhost:3001/api/services/${action}`, {
-            method: 'POST'
-          });
-          const data = await res.json();
-          if (data.success) {
-            showToast(`All services ${action.split('-')[0]}ed successfully`, 'success');
-            await fetchServiceStatus();
-          } else {
-            showToast(`Failed to ${actionText}: ${data.message}`, 'error');
+        setGlobalActionProgress(0);
+        let completed = 0;
+        for (const service of selectedServices) {
+          try {
+            const res = await fetch(`http://localhost:3001/api/services/${service}/${action === 'start-all' ? 'start' : 'stop'}`, {
+              method: 'POST'
+            });
+            const data = await res.json();
+            if (!data.success) {
+              showToast(`Failed to ${action.split('-')[0]} ${service}: ${data.message}`, 'error');
+            }
+          } catch (error) {
+            showToast(`Error ${action.split('-')[0]}ing ${service}: ${error}`, 'error');
           }
-        } catch (error) {
-          showToast(`Error ${actionText}: ${error}`, 'error');
-        } finally {
-          setActionLoading(prev => ({ ...prev, [key]: false }));
+          completed += 1;
+          setGlobalActionProgress(Math.round((completed / selectedServices.length) * 100));
         }
+        setActionLoading(prev => ({ ...prev, [key]: false }));
+        setGlobalActionProgress(null);
+        await fetchServiceStatus();
+        showToast(`All services ${action.split('-')[0]}ed`, 'success');
       }
     });
     setOpenModal(true);
@@ -475,11 +481,17 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           <h2 className="text-xl font-semibold">Global Controls</h2>
         </Card.Header>
         <Card.Body>
+          {globalActionProgress !== null && (
+            <div className="mb-4">
+              <Progress progress={globalActionProgress} labelProgress size="lg" />
+            </div>
+          )}
           <div className="flex gap-4">
             <Button 
               color="red"
               onClick={() => handleGlobalAction('stop-all')}
               loading={actionLoading.stopAll}
+              disabled={globalActionProgress !== null}
             >
               Stop All
             </Button>
@@ -487,6 +499,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               color="green"
               onClick={() => handleGlobalAction('start-all')}
               loading={actionLoading.startAll}
+              disabled={globalActionProgress !== null}
             >
               Start All
             </Button>
