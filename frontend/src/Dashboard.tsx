@@ -246,8 +246,10 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       });
       const data = await res.json();
       if (data.success) {
-                showToast(`${serviceName} ${action}ed successfully`, 'success');
+        showToast(`${serviceName} ${action}ed successfully`, 'success');
         await fetchServiceStatus();
+        const newStatus = await runtimeManager.checkStatus();
+        setRuntimeStatus(newStatus); // Ensure up-to-date status
       } else {
         showToast(`Failed to ${action} ${serviceName}: ${data.message}`, 'error');
       }
@@ -286,6 +288,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         setActionLoading(prev => ({ ...prev, [key]: false }));
         setGlobalActionProgress(null);
         await fetchServiceStatus();
+        const newStatus = await runtimeManager.checkStatus();
+        setRuntimeStatus(newStatus); // Ensure up-to-date status
         showToast(`All services ${action.split('-')[0]}ed`, 'success');
       }
     });
@@ -354,6 +358,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           if (data.success) {
             showToast(`${serviceName} updated successfully`, 'success');
             await fetchServiceStatus();
+            const newStatus = await runtimeManager.checkStatus();
+            setRuntimeStatus(newStatus); // Ensure up-to-date status
             await fetchServiceVersions();
             await fetchServiceUpdates();
           } else {
