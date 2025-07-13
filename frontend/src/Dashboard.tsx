@@ -544,7 +544,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
 
       {/* Combined Docker Status and App Runtime Status */}
       {(dockerStatus || runtimeStatus) && (
-        <Card className="mb-6">
+        <Card className="mt-6">
           <Card.Header>
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <span>System Status</span>
