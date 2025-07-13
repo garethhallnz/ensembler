@@ -294,6 +294,25 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     }
   };
 
+  const toggleLogs = async (serviceName: string) => {
+    if (showLogs[serviceName]) {
+      setShowLogs(prev => ({ ...prev, [serviceName]: false }));
+    } else {
+      try {
+        const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
+        const data = await res.json();
+        if (data.success) {
+          setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
+          setShowLogs(prev => ({ ...prev, [serviceName]: true }));
+        } else {
+          showToast(`Failed to get logs for ${serviceName}: ${data.message}`, 'error');
+        }
+      } catch (error) {
+        showToast(`Error getting logs for ${serviceName}: ${error}`, 'error');
+      }
+    }
+  };
+
   const handleEditSetup = () => {
     setConfirmationModal({
       message: 'Are you sure you want to edit the setup? This will take you back to the setup wizard.',
@@ -612,3 +631,4 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     </div>
   );
 }
+
