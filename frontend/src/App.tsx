@@ -5,7 +5,8 @@ import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner } from './components'
 import ToastProvider from './contexts/ToastProvider'
-import { DarkThemeToggle, ThemeProvider } from "flowbite-react";
+import { CustomThemeProvider } from './contexts/ThemeContext'
+import DarkModeToggle from './components/DarkModeToggle'
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -83,9 +84,11 @@ function App() {
   }, [])
 
   return (
-    <ThemeProvider>
-    <DarkThemeToggle />
-    <ToastProvider>
+    <CustomThemeProvider>
+      <ToastProvider>
+        <div className="fixed top-4 right-4 z-50">
+          <DarkModeToggle />
+        </div>
   
       {status === 'checking' && (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -143,8 +146,8 @@ function App() {
       {status === 'ok' && setupComplete && !showSetupWizard && (
         <Dashboard onEditSetup={() => setShowSetupWizard(true)} />
       )}
-    </ToastProvider>
-    </ThemeProvider>
+      </ToastProvider>
+    </CustomThemeProvider>
   );
 }
 

@@ -1,15 +1,19 @@
 #!/bin/bash
 
-# Build script for Media Center application
+# Build script for Dockarr application
 set -e
 
-echo "Building Media Center application..."
+echo "Building Dockarr application..."
 
 # Clean previous builds
 echo "Cleaning previous builds..."
 rm -rf frontend/dist
-rm -rf frontend/dist-electron
+rm -rf dist-electron
 rm -rf backend/dist
+
+# Install root dependencies
+echo "Installing root dependencies..."
+npm install
 
 # Build backend
 echo "Building backend..."
@@ -23,9 +27,10 @@ echo "Building frontend..."
 cd frontend
 npm install
 npm run build
+cd ..
 
 # Package with Electron
 echo "Packaging with Electron..."
 npm run electron-dist
 
-echo "Build complete! Check frontend/dist-electron for the packaged application." 
+echo "Build complete! Check dist-electron for the packaged application." 

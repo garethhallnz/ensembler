@@ -773,10 +773,12 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         </Card>
       )}
 
-      {/* Advanced Settings Modal */}
-      {showAdvancedSettings && (
-        <AdvancedSettings onClose={() => setShowAdvancedSettings(false)} />
-      )}
+      {/* Advanced Settings Drawer */}
+      <Drawer open={showAdvancedSettings} onClose={() => setShowAdvancedSettings(false)} position="right" className="!w-[900px] max-w-full">
+        <div className="h-full">
+          <AdvancedSettings onClose={() => setShowAdvancedSettings(false)} />
+        </div>
+      </Drawer>
 
       {/* Confirmation Modal */}
       {openModal && (

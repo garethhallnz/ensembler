@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button, Modal, TextInput, Spinner, Alert, Card, Badge } from './components';
+import { ToggleSwitch } from 'flowbite-react';
 import { useToast } from './contexts/ToastContext';
 import { HiPlus, HiTrash, HiFolder } from 'react-icons/hi';
 
@@ -35,7 +36,8 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [activeTab, setActiveTab] = useState<'services' | 'ports' | 'environment'>('services');
+  const [pathErrors, setPathErrors] = useState<{ [service: string]: string[] }>({});
+  const [activeTab, setActiveTab] = useState<'services' | 'environment'>('services');
 
   useEffect(() => {
     fetchCurrentConfig();
@@ -85,6 +87,36 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     }));
   };
 
+  const handlePathChange = (service: string, idx: number, value: string) => {
+    const serviceConfig = availableServices.find(s => s.key === service);
+    if (!serviceConfig || !config) return;
+    
+    setConfig(prev => ({
+      ...prev!,
+      paths: {
+        ...prev!.paths,
+        [service]: prev!.paths[service]?.map((v, i) => (i === idx ? value : v)) || 
+                 serviceConfig.pathRequirements.map((_, i) => (i === idx ? value : ''))
+      }
+    }));
+  };
+
+  const handleBrowse = async (service: string, idx: number) => {
+    if ('showDirectoryPicker' in window) {
+      try {
+        const handle = await (window as any).showDirectoryPicker();
+        const path = await handle.resolve(handle);
+        if (path) {
+          handlePathChange(service, idx, path.join('/'));
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    } else {
+      showToast('File system access API is not supported in your browser.', 'warning');
+    }
+  };
+
   const handleEnvironmentChange = (field: string, value: string | number) => {
     if (!config) return;
     
@@ -109,7 +141,42 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     }));
   };
 
-  const validateConfig = () => {
+  const validatePaths = async () => {
+    const allPaths: string[] = [];
+    const newPathErrors: { [service: string]: string[] } = {};
+    let valid = true;
+
+    Object.keys(config?.selectedServices || {}).forEach((svc) => {
+      if (!config?.selectedServices[svc]) return;
+      const service = availableServices.find(s => s.key === svc);
+      if (!service) return;
+      
+      const fields = service.pathRequirements || [];
+      const serviceErrors: string[] = [];
+      
+      fields.forEach((field, idx) => {
+        const val = config.paths[svc]?.[idx] || '';
+        if (field.required && !val.trim()) {
+          serviceErrors[idx] = `${field.label} is required`;
+          valid = false;
+        } else if (val.trim() && allPaths.includes(val.trim())) {
+          serviceErrors[idx] = `Path is already used by another service`;
+          valid = false;
+        } else if (val.trim()) {
+          allPaths.push(val.trim());
+        }
+      });
+      
+      if (serviceErrors.length > 0) {
+        newPathErrors[svc] = serviceErrors;
+      }
+    });
+
+    setPathErrors(newPathErrors);
+    return valid;
+  };
+
+  const validateConfig = async () => {
     const newErrors: { [key: string]: string } = {};
     
     if (!config) return false;
@@ -138,11 +205,15 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    // Validate paths
+    const pathsValid = await validatePaths();
+    
+    return Object.keys(newErrors).length === 0 && pathsValid;
   };
 
   const handleSave = async () => {
-    if (!validateConfig()) return;
+    if (!(await validateConfig())) return;
     
     setSaving(true);
     try {
@@ -203,41 +274,44 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
 
   if (loading) {
     return (
-      <Modal show={true} onClose={() => {}} size="md">
-        <Modal.Body className="flex items-center justify-center p-8">
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Settings & Service Management</h3>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
             <Spinner size="xl" />
             <p className="text-lg">Loading settings...</p>
           </div>
-        </Modal.Body>
-      </Modal>
+        </div>
+      </div>
     );
   }
 
   if (!config) {
     return (
-      <Modal show={true} onClose={onClose} size="md">
-        <Modal.Header>
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-600">
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">Error</h3>
-        </Modal.Header>
-        <Modal.Body>
+        </div>
+        <div className="flex-1 p-4">
           <Alert color="red">
             Failed to load configuration. Please try again.
           </Alert>
-        </Modal.Body>
-        <Modal.Footer>
+        </div>
+        <div className="border-t border-gray-200 dark:border-gray-600 p-4">
           <Button onClick={onClose}>Close</Button>
-        </Modal.Footer>
-      </Modal>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Modal show={true} onClose={onClose} size="2xl">
-      <Modal.Header>
+    <div className="h-full flex flex-col">
+      <div className="p-4 border-b border-gray-200 dark:border-gray-600">
         <h3 className="text-xl font-medium text-gray-900 dark:text-white">Settings & Service Management</h3>
-      </Modal.Header>
-      <Modal.Body className="max-h-[70vh] overflow-auto">
+      </div>
+      <div className="flex-1 overflow-auto p-4">
         {/* Tab Navigation */}
         <div className="flex space-x-1 mb-6 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
           <button
@@ -248,17 +322,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
             }`}
           >
-            Services
-          </button>
-          <button
-            onClick={() => setActiveTab('ports')}
-            className={`flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors ${
-              activeTab === 'ports'
-                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
-            }`}
-          >
-            Ports
+            Services & Ports
           </button>
           <button
             onClick={() => setActiveTab('environment')}
@@ -276,50 +340,153 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         {activeTab === 'services' && (
           <Card className="mb-6">
             <Card.Header>
-              <h4 className="text-lg font-medium">Service Configuration</h4>
+              <h4 className="text-lg font-medium">Service & Port Configuration</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Select which services you want to run. You can add or remove services at any time.
+                Enable services and configure their ports. Ports must be unique and between 1024-65535.
               </p>
             </Card.Header>
             <Card.Body>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
                 {availableServices.map(service => {
                   const isSelected = config?.selectedServices[service.key] || false;
+                  const currentPort = config?.ports[service.key] || service.defaultPort;
                   return (
                     <div
                       key={service.key}
-                      className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                      className={`border rounded-lg p-4 transition-all ${
                         isSelected
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          : 'border-gray-200 dark:border-gray-700'
                       }`}
-                      onClick={() => toggleService(service.key)}
                     >
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
-                          <h5 className="font-medium text-gray-900 dark:text-white">{service.name}</h5>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{service.description}</p>
-                          <div className="mt-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="font-medium text-gray-900 dark:text-white">{service.name}</h5>
+                            <ToggleSwitch
+                              id={`service-${service.key}`}
+                              checked={isSelected}
+                              onChange={() => toggleService(service.key)}
+                            />
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{service.description}</p>
+                          <div className="flex flex-wrap gap-2">
                             <Badge variant="info" size="sm">{service.category}</Badge>
                             {service.required && (
-                              <Badge variant="warning" size="sm" className="ml-2">Required</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                            isSelected
-                              ? 'bg-blue-500 border-blue-500'
-                              : 'border-gray-300 dark:border-gray-600'
-                          }`}>
-                            {isSelected && (
-                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                              </svg>
+                              <Badge variant="warning" size="sm">Required</Badge>
                             )}
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Configuration Section - Only show if service is enabled */}
+                      {isSelected && (
+                        <div className="border-t border-gray-200 dark:border-gray-600 pt-4 mt-3">
+                          {service.pathRequirements && service.pathRequirements.length > 0 ? (
+                            /* Services with paths: Two-column layout */
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              {/* File Paths Column */}
+                              <div className="space-y-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">Paths</span>
+                                  <h4 className="text-sm font-medium text-gray-800 dark:text-white">File Paths</h4>
+                                </div>
+                                {service.pathRequirements.map((field, idx) => (
+                                  <div key={idx} className="space-y-2">
+                                    <label htmlFor={`path-${service.key}-${idx}`} className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                      {field.label} {field.required && <span className="text-red-500">*</span>}
+                                    </label>
+                                    <div className="flex gap-2">
+                                      <TextInput
+                                        id={`path-${service.key}-${idx}`}
+                                        type="text"
+                                        value={config?.paths[service.key]?.[idx] || ''}
+                                        onChange={e => handlePathChange(service.key, idx, e.target.value)}
+                                        placeholder={field.description}
+                                        color={pathErrors[service.key]?.[idx] ? 'failure' : 'gray'}
+                                        className="flex-1"
+                                      />
+                                      <Button 
+                                        onClick={() => handleBrowse(service.key, idx)} 
+                                        variant="secondary"
+                                        size="sm"
+                                      >
+                                        Browse
+                                      </Button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400">{field.description}</p>
+                                    {pathErrors[service.key]?.[idx] && (
+                                      <Alert color="red" className="text-xs">{pathErrors[service.key][idx]}</Alert>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              
+                              {/* Port Configuration Column */}
+                              <div className="space-y-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs font-medium">Port</span>
+                                  <h4 className="text-sm font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+                                </div>
+                                <div className="space-y-2">
+                                  <label htmlFor={`port-${service.key}`} className="block text-xs font-medium text-gray-700 dark:text-gray-300">
+                                    {service.name} Port:
+                                  </label>
+                                  <TextInput
+                                    id={`port-${service.key}`}
+                                    type="number"
+                                    value={String(currentPort)}
+                                    onChange={(e) => handlePortChange(service.key, e.target.value)}
+                                    color={errors[`port_${service.key}`] ? 'failure' : 'gray'}
+                                    min="1024"
+                                    max="65535"
+                                    className="w-32"
+                                  />
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    Default: {service.defaultPort}
+                                  </p>
+                                  {errors[`port_${service.key}`] && (
+                                    <Alert color="red" className="text-xs">
+                                      {errors[`port_${service.key}`]}
+                                    </Alert>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Services without paths: Single column port layout */
+                            <div className="space-y-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs font-medium">Port</span>
+                                <h4 className="text-sm font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[60px]">
+                                  Port:
+                                </label>
+                                <div className="flex-1 max-w-[120px]">
+                                  <TextInput
+                                    type="number"
+                                    value={String(currentPort)}
+                                    onChange={(e) => handlePortChange(service.key, e.target.value)}
+                                    color={errors[`port_${service.key}`] ? 'failure' : 'gray'}
+                                    min="1024"
+                                    max="65535"
+                                  />
+                                </div>
+                                <span className="text-sm text-gray-500 dark:text-gray-400">
+                                  (Default: {service.defaultPort})
+                                </span>
+                              </div>
+                              {errors[`port_${service.key}`] && (
+                                <Alert color="red" className="mt-2 text-sm">
+                                  {errors[`port_${service.key}`]}
+                                </Alert>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -328,41 +495,6 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
           </Card>
         )}
 
-        {/* Ports Tab */}
-        {activeTab === 'ports' && (
-          <Card className="mb-6">
-            <Card.Header>
-              <h4 className="text-lg font-medium">Port Configuration</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Configure ports for each enabled service. Ports must be unique and between 1024-65535.
-              </p>
-            </Card.Header>
-            <Card.Body>
-              <div className="space-y-4">
-                {config && Object.entries(config.ports).map(([service, port]) => (
-                  <div key={service} className="flex items-center space-x-4">
-                    <label className="min-w-[120px] capitalize">
-                      {service}:
-                    </label>
-                    <div className="flex-1">
-                      <TextInput
-                        type="number"
-                        value={String(port)}
-                        onChange={(e) => handlePortChange(service, e.target.value)}
-                        color={errors[`port_${service}`] ? 'failure' : 'gray'}
-                      />
-                    </div>
-                    {errors[`port_${service}`] && (
-                      <Alert color="red" className="mt-2">
-                        {errors[`port_${service}`]}
-                      </Alert>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </Card.Body>
-          </Card>
-        )}
 
         {/* Environment Tab */}
         {activeTab === 'environment' && (
@@ -424,8 +556,8 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
             </Card.Body>
           </Card>
         )}
-      </Modal.Body>
-      <Modal.Footer>
+      </div>
+      <div className="border-t border-gray-200 dark:border-gray-600 p-4">
         <div className="flex space-x-3">
           <Button
             variant="danger"
@@ -449,7 +581,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
             Save Settings
           </Button>
         </div>
-      </Modal.Footer>
-    </Modal>
+      </div>
+    </div>
   );
 }

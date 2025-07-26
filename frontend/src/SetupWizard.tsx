@@ -44,7 +44,13 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const [pathErrors, setPathErrors] = useState<{ [service: string]: string[] }>({});
   const [ports, setPorts] = useState<{[key: string]: number}>({});
   const [portErrors, setPortErrors] = useState<{[key: string]: string}>({});
-  const [tz, setTz] = useState('UTC');
+  const [tz, setTz] = useState(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return 'UTC'; // Fallback if timezone detection fails
+    }
+  });
   const [puid, setPuid] = useState(1000);
   const [pgid, setPgid] = useState(1000);
   const [envErrors, setEnvErrors] = useState<{[key: string]: string}>({});
@@ -97,7 +103,13 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         setSelected(config.selectedServices || {});
         setPaths(config.paths || {});
         setPorts(prev => ({ ...prev, ...config.ports }));
-        setTz(config.environment?.tz || 'UTC');
+        setTz(config.environment?.tz || (() => {
+          try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+          } catch {
+            return 'UTC';
+          }
+        })());
         setPuid(config.environment?.puid || 1000);
         setPgid(config.environment?.pgid || 1000);
       }

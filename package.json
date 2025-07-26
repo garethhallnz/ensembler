@@ -1,0 +1,83 @@
+{
+  "name": "dockarr",
+  "description": "Dockarr: A self-hosted media center orchestrator",
+  "author": "Gemini",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "electron.js",
+  "homepage": "./",
+  "scripts": {
+    "dev": "NODE_ENV=development electron .",
+    "electron": "electron .",
+    "electron-dev": "NODE_ENV=development electron .",
+    "build": "./build.sh",
+    "electron-build": "npm run build && electron-builder",
+    "electron-dist": "npm run build && electron-builder --publish=never",
+    "install-deps": "cd backend && npm install && cd ../frontend && npm install",
+    "test": "cd backend && npm test && cd ../frontend && npm test"
+  },
+  "dependencies": {
+    "node-docker-api": "^1.1.22"
+  },
+  "devDependencies": {
+    "electron": "^36.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.mediacenter.app",
+    "productName": "Dockarr",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "frontend/dist/**/*",
+      "electron.js",
+      "preload.js",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "backend/dist",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "icon": "frontend/src/assets/icon.png",
+      "category": "public.app-category.utilities",
+      "target": {
+        "target": "dmg",
+        "arch": [
+          "x64",
+          "arm64"
+        ]
+      }
+    },
+    "win": {
+      "icon": "frontend/src/assets/icon.ico",
+      "target": {
+        "target": "nsis",
+        "arch": [
+          "x64"
+        ]
+      }
+    },
+    "linux": {
+      "icon": "frontend/src/assets/icon.png",
+      "target": {
+        "target": "AppImage",
+        "arch": [
+          "x64"
+        ]
+      },
+      "category": "Utility"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

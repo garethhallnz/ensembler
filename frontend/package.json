@@ -5,23 +5,17 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "main": "electron.js",
-  "homepage": "./",
+  "homepage": "./..",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",
-    "electron": "electron .",
-    "electron-dev": "NODE_ENV=development electron .",
-    "electron-build": "npm run build && electron-builder",
-    "electron-dist": "npm run build && electron-builder --publish=never",
     "postinstall": "flowbite-react patch"
   },
   "dependencies": {
     "flowbite-react": "^0.11.8",
-    "node-docker-api": "^1.1.22",
     "postcss": "^8.4.31",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -42,8 +36,6 @@
     "@typescript-eslint/parser": "^8.32.1",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.21",
-    "electron": "^36.2.0",
-    "electron-builder": "^25.1.8",
     "eslint": "^9.26.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
@@ -65,61 +57,5 @@
     "setupFilesAfterEnv": [
       "@testing-library/jest-dom"
     ]
-  },
-  "build": {
-    "appId": "com.mediacenter.app",
-    "productName": "Dockarr",
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron.js",
-      "preload.js",
-      "node_modules/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "../backend/dist",
-        "to": "backend",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "mac": {
-      "icon": "src/assets/icon.png",
-      "category": "public.app-category.utilities",
-      "target": {
-        "target": "dmg",
-        "arch": [
-          "x64",
-          "arm64"
-        ]
-      }
-    },
-    "win": {
-      "icon": "src/assets/icon.ico",
-      "target": {
-        "target": "nsis",
-        "arch": [
-          "x64"
-        ]
-      }
-    },
-    "linux": {
-      "icon": "src/assets/icon.png",
-      "target": {
-        "target": "AppImage",
-        "arch": [
-          "x64"
-        ]
-      },
-      "category": "Utility"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
   }
 }

@@ -45,8 +45,7 @@ cd ..
 ### Running Dockarr as a Desktop App (Electron)
 
 ```bash
-cd frontend
-npm run electron-dev
+npm run dev
 ```
 
 - The app will open as a native desktop window.
@@ -62,7 +61,7 @@ npm run electron-dev
 build.bat
 ```
 
-The packaged app will be in `frontend/dist-electron/`.
+The packaged app will be in `dist-electron/`.
 
 ---
 

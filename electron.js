@@ -20,7 +20,7 @@ function createWindow() {
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: path.join(__dirname, 'assets/icon.png'), // Add your app icon
+    icon: path.join(__dirname, 'frontend/src/assets/icon.png'), // Add your app icon
     show: false, // Don't show until ready
     titleBarStyle: 'default'
   });
@@ -47,7 +47,7 @@ function createWindow() {
     // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    const indexPath = path.join(__dirname, 'dist/index.html');
+    const indexPath = path.join(__dirname, 'frontend/dist/index.html');
     console.log('[Electron] Loading frontend from', indexPath);
     mainWindow.loadFile(indexPath)
       .then(() => console.log('[Electron] Production frontend loaded.'))
@@ -68,8 +68,8 @@ function startBackend() {
   console.log('[Electron] process.env.PATH:', process.env.PATH);
   const isDev = process.env.NODE_ENV === 'development';
   const backendPath = isDev 
-    ? path.join(__dirname, '..', 'backend', 'src', 'index.ts')
-    : path.join(__dirname, '..', 'backend', 'dist', 'index.js');
+    ? path.join(__dirname, 'backend', 'src', 'index.ts')
+    : path.join(__dirname, 'backend', 'dist', 'index.js');
   
   // Use 'node' as the command in production for best compatibility with NVM and PATH
   const command = isDev ? 'ts-node' : 'node';
@@ -77,7 +77,7 @@ function startBackend() {
 
   backendProcess = spawn(command, args, {
     stdio: 'inherit',
-    cwd: isDev ? path.join(__dirname, '..', 'backend') : path.join(__dirname, '..', 'backend'),
+    cwd: path.join(__dirname, 'backend'),
     shell: true
   });
 
