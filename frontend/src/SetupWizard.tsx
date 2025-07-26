@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Button, Alert, TextInput, Select, Progress, Badge, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
+import { ToggleSwitch } from 'flowbite-react';
 
 declare global {
   interface Window {
@@ -26,9 +27,7 @@ interface ServiceConfigResponse {
 
 const steps = [
   'Service Selection',
-  'File Paths',
-  'Ports',
-  'Environment',
+  'Configuration',
   'Summary',
 ];
 
@@ -111,8 +110,43 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     setSelected((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const handleToggleAll = () => {
+    const selectedServices = Object.keys(selected).filter(key => selected[key]);
+    const allServices = serviceConfig.map(service => service.key);
+    
+    // If all services are selected, deselect all (except required ones)
+    // If not all are selected, select all
+    const shouldSelectAll = selectedServices.length < allServices.length;
+    
+    const newSelected: { [key: string]: boolean } = {};
+    serviceConfig.forEach(service => {
+      // Keep required services always selected
+      if (service.required) {
+        newSelected[service.key] = true;
+      } else {
+        newSelected[service.key] = shouldSelectAll;
+      }
+    });
+    
+    setSelected(newSelected);
+  };
+
+  const getToggleAllState = () => {
+    const selectedServices = Object.keys(selected).filter(key => selected[key]);
+    const selectableServices = serviceConfig.filter(service => !service.required);
+    const selectedSelectableServices = selectableServices.filter(service => selected[service.key]);
+    
+    return selectedSelectableServices.length === selectableServices.length;
+  };
+
   const validateServiceSelection = async () => {
     const selectedServices = Object.keys(selected).filter(key => selected[key]);
+    
+    // Check that at least one service is selected
+    if (selectedServices.length === 0) {
+      showToast('Please select at least one service to continue.', 'warning');
+      return false;
+    }
     
     // Check service limit
     if (selectedServices.length > maxServices) {
@@ -120,26 +154,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       return false;
     }
     
-    // Use backend validation
-    try {
-      const res = await fetch('http://localhost:3001/api/services/validate-selection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ selectedServices }),
-      });
-      
-      const data = await res.json();
-      if (!data.success) {
-                showToast(data.message ?? 'An unknown error occurred', 'error');
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      showToast('Error validating service selection', 'error');
-      console.error('Error validating service selection:', error);
-      return false;
-    }
+    // Frontend validation is sufficient - any service is allowed
+    return true;
   };
 
   const validatePaths = async () => {
@@ -276,11 +292,13 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const handleNext = async () => {
     if (step === 0 && !(await validateServiceSelection())) return;
     if (step === 1) {
+        // Validate both paths and ports in the configuration step
         await validatePaths();
+        if (!validatePorts()) return;
+        // Continue to next step if validations pass
+        setStep((s) => Math.min(steps.length - 1, s + 1));
         return;
     }
-    if (step === 2 && !validatePorts()) return;
-    if (step === 3 && !validateEnvironment()) return;
     setStep((s) => Math.min(steps.length - 1, s + 1));
   };
 
@@ -342,8 +360,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      <h1 className="text-3xl font-bold text-center mb-8 text-gray-900 dark:text-white">Media Center Setup</h1>
+    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md min-w-[800px]">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dockarr Setup</h1>
+      </div>
       
       <div className="mb-8">
         <Progress
@@ -365,34 +385,50 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           ))}
         </div>
       </div>
-      <div className="min-h-[400px] mb-6">
+      <div className="min-h-[500px] mb-6">
         {step === 0 && (
            <div className="space-y-6">
              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Select Services</h2>
              <p className="text-gray-600 dark:text-gray-300">Choose the services you want to run:</p>
-             {Object.keys(selected).filter((svc) => selected[svc]).length === 0 && 
-              <Alert color="blue">No services selected. Please go back and select services first.</Alert>
-            }
+             
+             {/* Toggle All Option */}
+             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+               <div className="flex items-center justify-between">
+                 <div className="flex-1">
+                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h3>
+                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                     {getToggleAllState() ? 'Deselect all optional services' : 'Select all available services'}
+                   </p>
+                 </div>
+                 <div className="flex items-center">
+                   <ToggleSwitch
+                     id="toggle-all-services"
+                     checked={getToggleAllState()}
+                     onChange={handleToggleAll}
+                     label="Toggle All"
+                   />
+                 </div>
+               </div>
+             </div>
+             
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {serviceConfig.map((service) => (
                  <Card key={service.key} className="overflow-hidden">
                    <Card.Body>
-                     <div className="flex items-start space-x-3">
-                       <div className="flex items-center h-5 mt-1">
-                         <input
-                           id={`service-${service.key}`}
-                           type="checkbox"
-                           checked={!!selected[service.key]}
-                           onChange={() => handleServiceChange(service.key)}
-                           disabled={service.required}
-                           className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                         />
-                       </div>
-                       <div className="flex-1">
+                     <div className="flex items-start justify-between">
+                       <div className="flex-1 pr-4">
                          <label htmlFor={`service-${service.key}`} className="block text-lg font-medium text-gray-900 dark:text-white cursor-pointer">
                            {service.name} {service.required && <Badge color="blue">Required</Badge>}
                          </label>
                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{service.description}</p>
+                       </div>
+                       <div className="flex items-center mt-1">
+                         <ToggleSwitch
+                           id={`service-${service.key}`}
+                           checked={!!selected[service.key]}
+                           onChange={() => handleServiceChange(service.key)}
+                           disabled={service.required}
+                         />
                        </div>
                      </div>
                    </Card.Body>
@@ -400,57 +436,148 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                ))}
              </div>
              <div className="text-sm text-gray-500 dark:text-gray-400">
-               At least <span className="font-semibold">Sonarr</span> or <span className="font-semibold">Radarr</span> must be selected. Maximum {maxServices} services.
+               Select at least one service to continue. Maximum {maxServices} services.
              </div>
            </div>
         )}
         {step === 1 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Configure File Paths</h2>
-            <p className="text-gray-600 dark:text-gray-300">Set the file paths for your media:</p>
-            {Object.keys(selected).filter((svc) => selected[svc]).length === 0 && 
-              <Alert color="blue">No services selected. Please go back and select services first.</Alert>
-            }
-            <div className="space-y-8">
+          <div className="space-y-8">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Service Configuration</h2>
+              <p className="text-gray-600 dark:text-gray-300">Configure file paths and ports for your services:</p>
+            </div>
+            <div className="space-y-6">
               {Object.keys(selected).filter((svc) => selected[svc]).map((svc) => {
                 const service = serviceConfig.find(s => s.key === svc);
                 if (!service) return null;
                 
                 return (
-                  <Card key={svc}>
+                  <Card key={svc} className="border-l-4 border-blue-500">
                     <Card.Header>
-                      <h3 className="text-xl font-medium">{service.name}</h3>
+                      <h3 className="text-xl font-medium text-gray-900 dark:text-white">{service.name}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{service.description}</p>
                     </Card.Header>
-                    <Card.Body className="space-y-4">
-                      {service.pathRequirements.map((field, idx) => (
-                        <div key={idx} className="space-y-2">
-                          <label htmlFor={`path-${svc}-${idx}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                            {field.label} {field.required && <span className="text-red-500">*</span>}
-                          </label>
-                          <div className="flex">
-                            <TextInput
-                              id={`path-${svc}-${idx}`}
-                              type="text"
-                              value={paths[svc]?.[idx] || ''}
-                              onChange={e => handlePathChange(svc, idx, e.target.value)}
-                              placeholder={field.description}
-                              color={pathErrors[svc]?.[idx] ? 'failure' : 'gray'}
-                              className="flex-grow"
-                            />
-                            <Button 
-                              onClick={() => handleBrowse(svc, idx)} 
-                              className="ml-2"
-                              color="gray"
-                            >
-                              Browse
-                            </Button>
+                    <Card.Body>
+                      {/* Check if service has paths to determine layout */}
+                      {service.pathRequirements && service.pathRequirements.length > 0 ? (
+                        /* Services with paths: Two-column layout */
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          {/* File Paths Column */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm font-medium">Paths</span>
+                              <h4 className="text-lg font-medium text-gray-800 dark:text-white">File Paths</h4>
+                            </div>
+                            {service.pathRequirements.map((field, idx) => (
+                              <div key={idx} className="space-y-2">
+                                <label htmlFor={`path-${svc}-${idx}`} className="block text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {field.label} {field.required && <span className="text-red-500">*</span>}
+                                </label>
+                                <div className="flex gap-2">
+                                  <TextInput
+                                    id={`path-${svc}-${idx}`}
+                                    type="text"
+                                    value={paths[svc]?.[idx] || './'}
+                                    onChange={e => handlePathChange(svc, idx, e.target.value)}
+                                    placeholder={field.description}
+                                    color={pathErrors[svc]?.[idx] ? 'failure' : 'gray'}
+                                    className="flex-1"
+                                  />
+                                  <Button 
+                                    onClick={() => handleBrowse(svc, idx)} 
+                                    color="gray"
+                                    size="sm"
+                                  >
+                                    Browse
+                                  </Button>
+                                </div>
+                                <p className="text-left text-xs text-gray-500 dark:text-gray-400">{field.description}</p>
+                                {pathErrors[svc]?.[idx] && (
+                                  <Alert color="red">{pathErrors[svc][idx]}</Alert>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{field.description}</div>
-                          {pathErrors[svc]?.[idx] && (
-                            <Alert color="red" className="mt-2">{pathErrors[svc][idx]}</Alert>
-                          )}
+                          
+                          {/* Port Configuration Column */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-sm font-medium">Port</span>
+                              <h4 className="text-lg font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+                            </div>
+                            <div className="space-y-2">
+                              <label htmlFor={`port-${svc}`} className="block text-sm font-medium text-left text-gray-700 dark:text-gray-300">
+                                {service.name} Port:
+                              </label>
+                              <TextInput
+                                id={`port-${svc}`}
+                                type="number"
+                                value={String(ports[svc] || service.defaultPort)}
+                                onChange={(e) => handlePortChange(svc, parseInt(e.target.value))}
+                                color={portErrors[svc] ? 'failure' : 'gray'}
+                                className="w-32"
+                              />
+                              <p className="text-left text-xs text-gray-500 dark:text-gray-400">
+                                Default: {service.defaultPort}
+                              </p>
+                              {portErrors[svc] && (
+                                <Alert color="red">{portErrors[svc]}</Alert>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      ))}
+                      ) : (
+                        /* Services without paths: Consistent two-column layout with left alignment */
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                          {/* Information Column (replaces File Paths) */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-sm font-medium">Info</span>
+                              <h4 className="text-lg font-medium text-gray-800 dark:text-white">Service Information</h4>
+                            </div>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                              <div className="flex items-center gap-3 mb-3">
+                                <div className="text-blue-600 dark:text-blue-400 text-2xl">📌</div>
+                                <div>
+                                  <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                    No file paths required
+                                  </p>
+                                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                                    This service doesn't require any file path configuration.
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Port Configuration Column */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                              <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-sm font-medium">Port</span>
+                              <h4 className="text-lg font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+                            </div>
+                            <div className="space-y-2">
+                              <label htmlFor={`port-${svc}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {service.name} Port:
+                              </label>
+                              <TextInput
+                                id={`port-${svc}`}
+                                type="number"
+                                value={String(ports[svc] || service.defaultPort)}
+                                onChange={(e) => handlePortChange(svc, parseInt(e.target.value))}
+                                color={portErrors[svc] ? 'failure' : 'gray'}
+                                className="w-32"
+                              />
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Default: {service.defaultPort}
+                              </p>
+                              {portErrors[svc] && (
+                                <Alert color="red">{portErrors[svc]}</Alert>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </Card.Body>
                   </Card>
                 );
@@ -459,103 +586,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           </div>
         )}
         {step === 2 && (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Configure Ports</h2>
-            <p className="text-gray-600 dark:text-gray-300">Set the ports for your services:</p>
-            {Object.keys(selected).filter((svc) => selected[svc]).length === 0 && 
-              <Alert color="blue">No services selected. Please go back and select services first.</Alert>
-            }
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.keys(selected).filter((svc) => selected[svc]).map((svc) => {
-                const service = serviceConfig.find(s => s.key === svc);
-                if (!service) return null;
-                
-                return (
-                  <Card key={svc}>
-                    <Card.Body>
-                      <div className="space-y-2">
-                        <label htmlFor={`port-${svc}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {service.name} Port:
-                        </label>
-                        <TextInput
-                          id={`port-${svc}`}
-                          type="number"
-                          value={String(ports[svc] || service.defaultPort)}
-                          onChange={(e) => handlePortChange(svc, parseInt(e.target.value))}
-                      color={portErrors[svc] ? 'failure' : 'gray'}
-                    />
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
-                          Default: {service.defaultPort}
-                        </div>
-                        {portErrors[svc] && (
-                          <Alert color="red" className="mt-2">{portErrors[svc]}</Alert>
-                        )}
-                      </div>
-                    </Card.Body>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        {step === 3 && (
-           <div className="space-y-6">
-             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Environment Settings</h2>
-             <Card>
-               <Card.Body className="space-y-4">
-                 <div className="space-y-2">
-                   <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                     Timezone (TZ):
-                   </label>
-                   <Select
-                     id="timezone"
-                     value={tz}
-                     onChange={(e) => setTz(e.target.value)}
-                     color={envErrors.tz ? 'failure' : 'gray'}
-                   >
-                     <option value="UTC">UTC</option>
-                     <option value="America/New_York">Eastern Time</option>
-                     <option value="America/Chicago">Central Time</option>
-                     <option value="America/Denver">Mountain Time</option>
-                     <option value="America/Los_Angeles">Pacific Time</option>
-                     <option value="Europe/London">London</option>
-                     <option value="Europe/Paris">Paris</option>
-                     <option value="Asia/Tokyo">Tokyo</option>
-                     <option value="Australia/Sydney">Sydney</option>
-                   </Select>
-                   {envErrors.tz && <Alert color="red" className="mt-2">{envErrors.tz}</Alert>}
-                 </div>
-                 <div className="space-y-2">
-                   <label htmlFor="puid" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                     User ID (PUID):
-                   </label>
-                   <TextInput
-                     id="puid"
-                     type="number"
-                     value={String(puid)}
-                     onChange={(e) => setPuid(parseInt(e.target.value, 10))}
-                     color={envErrors.puid ? 'failure' : 'gray'}
-                   />
-                   {envErrors.puid && <Alert color="red" className="mt-2">{envErrors.puid}</Alert>}
-                 </div>
-                 <div className="space-y-2">
-                   <label htmlFor="pgid" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                     Group ID (PGID):
-                   </label>
-                   <TextInput
-                     id="pgid"
-                     type="number"
-                     value={String(pgid)}
-                     onChange={(e) => setPgid(parseInt(e.target.value, 10))}
-                     color={envErrors.pgid ? 'failure' : 'gray'}
-                   />
-                   {envErrors.pgid && <Alert color="red" className="mt-2">{envErrors.pgid}</Alert>}
-                 </div>
-               </Card.Body>
-             </Card>
-           </div>
-          )}
-        {step === 4 && (
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Summary</h2>
             <Card>
@@ -606,27 +636,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
               </Card.Body>
             </Card>
             
-            <Card>
-              <Card.Header>
-                <h3 className="text-xl font-medium">Environment</h3>
-              </Card.Header>
-              <Card.Body>
-                <ul className="space-y-2">
-                  <li className="flex items-center space-x-2">
-                    <Badge color="purple">Timezone</Badge>
-                    <span>{tz}</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <Badge color="purple">PUID</Badge>
-                    <span>{puid}</span>
-                  </li>
-                  <li className="flex items-center space-x-2">
-                    <Badge color="purple">PGID</Badge>
-                    <span>{pgid}</span>
-                  </li>
-                </ul>
-              </Card.Body>
-            </Card>
             <Button onClick={handleSaveAndApply} loading={isSaving}>
               Save and Apply
             </Button>

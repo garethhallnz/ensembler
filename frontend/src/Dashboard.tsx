@@ -333,12 +333,29 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     setDrawerOpen(false);
   };
 
-  const handleEditSetup = () => {
+  const handleCompleteReset = () => {
     setConfirmationModal({
-      message: 'Are you sure you want to edit the setup? This will take you back to the setup wizard.',
-      onConfirm: () => {
-        onEditSetup();
+      message: '⚠️ DESTRUCTIVE ACTION: This will completely reset Dockarr, delete ALL configuration, stop ALL services, and remove ALL data. This action CANNOT be undone. Are you absolutely sure?',
+      onConfirm: async () => {
         setOpenModal(false);
+        setActionLoading(prev => ({ ...prev, reset: true }));
+        try {
+          const res = await fetch('http://localhost:3001/api/config/reset', {
+            method: 'POST',
+          });
+          if (res.ok) {
+            showToast('Complete reset successful. Reloading application...', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else {
+            throw new Error('Failed to reset application');
+          }
+        } catch (error) {
+          showToast(`Failed to reset application: ${error}`, 'error');
+        } finally {
+          setActionLoading(prev => ({ ...prev, reset: false }));
+        }
       },
     });
     setOpenModal(true);
@@ -377,48 +394,93 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Card className="max-w-md w-full p-6">
-          <div className="flex flex-col items-center space-y-4">
-            <Spinner size="xl" />
-            <p className="text-lg text-gray-700 dark:text-gray-300">Loading dashboard...</p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-64 mb-2"></div>
+              <div className="h-6 bg-gray-200 dark:bg-gray-600 rounded w-48"></div>
+            </div>
+            <div className="flex space-x-2">
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-24"></div>
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-32"></div>
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded w-20"></div>
+            </div>
           </div>
-        </Card>
+          <div className="mb-8">
+            <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-32 mb-4"></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-24 mb-3"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-full mb-4"></div>
+                  <div className="flex space-x-2">
+                    <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-16"></div>
+                    <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-16"></div>
+                    <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-16"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Dockarr Dashboard</h1>
-        <div className="flex space-x-2 items-center">
-          <Button onClick={() => setShowAdvancedSettings(true)} color="gray" title="Advanced Settings">
-            <HiCog className="inline-block mr-1" /> Advanced Settings
-          </Button>
-          <Button onClick={handleEditSetup} color="blue" title="Edit Setup">
-            <HiPencilAlt className="inline-block mr-1" /> Edit Setup
-          </Button>
-          <span className="ms-6" />
-          {/* Global Controls Buttons moved here */}
-          <Button 
-            color="red"
-            onClick={() => handleGlobalAction('stop-all')}
-            loading={actionLoading.stopAll}
-            disabled={globalActionProgress !== null}
-            title="Stop All Services"
-          >
-            <HiStop className="inline-block mr-1" /> Stop All
-          </Button>
-          <Button 
-            color="green"
-            onClick={() => handleGlobalAction('start-all')}
-            loading={actionLoading.startAll}
-            disabled={globalActionProgress !== null}
-            title="Start All Services"
-          >
-            <HiPlay className="inline-block mr-1" /> Start All
-          </Button>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dockarr Dashboard</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
+        </div>
+        <div className="flex items-center gap-4">
+          
+          {/* Settings Group */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="secondary" 
+              onClick={() => setShowAdvancedSettings(true)} 
+              tooltip="Advanced Settings"
+            >
+              <HiCog className="inline-block mr-1" /> Settings
+            </Button>
+            <Button 
+              variant="danger" 
+              onClick={handleCompleteReset}
+              loading={actionLoading.reset}
+              tooltip="⚠️ Complete Reset - This will delete everything!"
+              outline
+            >
+              🗑️ Reset
+            </Button>
+          </div>
+          
+          {/* Divider */}
+          <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+          
+          {/* Global Controls Group */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="danger"
+              onClick={() => handleGlobalAction('stop-all')}
+              loading={actionLoading.stopAll}
+              disabled={globalActionProgress !== null || selectedServices.length === 0}
+              tooltip={selectedServices.length === 0 ? 'No services to stop' : 'Stop All Services'}
+            >
+              <HiStop className="inline-block mr-1" /> Stop All
+            </Button>
+            <Button 
+              variant="success"
+              onClick={() => handleGlobalAction('start-all')}
+              loading={actionLoading.startAll}
+              disabled={globalActionProgress !== null || selectedServices.length === 0}
+              tooltip={selectedServices.length === 0 ? 'No services to start' : 'Start All Services'}
+            >
+              <HiPlay className="inline-block mr-1" /> Start All
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -430,16 +492,35 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       )}
 
       {/* Service List */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Services</h2>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured</p>
+          </div>
+        </div>
         {selectedServices.length === 0 ? (
-          <Card>
-            <Card.Body className="text-center py-8">
-              No services configured. Click "Edit Setup" to configure services.
+          <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
+            <Card.Body className="text-center py-12">
+              <div className="space-y-4">
+                <div className="text-6xl text-gray-400">🚀</div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Services Configured</h3>
+                <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
+                  Get started by adding and configuring your media center services. 
+                  You can add services individually as needed.
+                </p>
+                <Button 
+                  variant="primary" 
+                  onClick={() => setShowAdvancedSettings(true)}
+                  className="mt-4"
+                >
+                  <HiPencilAlt className="inline-block mr-2" /> Add Services
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {selectedServices.map(serviceKey => {
               const service = serviceConfig.find(s => s.key === serviceKey);
               if (!service) return null;
@@ -460,100 +541,107 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               return (
                 <Card
                   key={serviceKey}
-                  className={`relative flex flex-col h-full shadow-lg border-l-4 ${borderColor}`}
+                  className={`relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 border-l-4 ${borderColor} bg-white dark:bg-gray-800`}
                 >
-                  {/* Alert Banner */}
-                  {alertInfo?.alert && (
-                    <div className="absolute top-0 left-0 w-full bg-red-100 text-red-700 px-4 py-2 rounded-t flex items-center gap-2 z-10">
-                      <span role="img" aria-label="Alert">⚠️</span>
-                      <span className="font-semibold">{alertInfo.status}</span>
-                    </div>
-                  )}
-
                   {/* Card Header */}
-                  <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                    <h3 className="text-xl font-bold">{service.name}</h3>
-                    <div className="flex items-center gap-2">
-                      <Badge color={status === 'Running' ? 'green' : 'red'}>
-                        {status}
-                      </Badge>
-                      {alertInfo && !alertInfo.healthy && status === 'Running' && (
-                        <Badge color="yellow">Unhealthy</Badge>
-                      )}
+                  <div className="px-6 pt-6 pb-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white mb-1">{service.name}</h3>
+                        <p className="text-left text-sm text-gray-600 dark:text-gray-400">{service.description}</p>
+                      </div>
+                      <div className="flex items-center gap-2 ml-4">
+                        <Badge variant={status === 'Running' ? 'running' : 'stopped'}>
+                          {status}
+                        </Badge>
+                        {alertInfo && !alertInfo.healthy && status === 'Running' && (
+                          <Badge variant="warning">Unhealthy</Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <hr className="mx-4" />
 
                   {/* Card Body */}
-                  <Card.Body className="flex-1 flex flex-col justify-between px-4 pb-4">
-                    <div className="mb-2 flex flex-col gap-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">Version:</span>
-                        <span>{version}</span>
-                      </div>
-                      {updateInfo && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">Updates:</span>
-                          <Badge color={updateInfo.hasUpdate ? 'yellow' : 'green'}>
-                            {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
-                          </Badge>
+                  <Card.Body className="flex-1 flex flex-col justify-between px-6 pb-6">
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Version</span>
+                          <span className="text-sm font-mono text-gray-900 dark:text-white">{version}</span>
                         </div>
-                      )}
+                        {updateInfo && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Updates</span>
+                            <Badge variant={updateInfo.hasUpdate ? 'update' : 'success'} size="sm">
+                              {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     {/* Actions */}
-                    <div className="flex flex-wrap gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        color="blue"
-                        onClick={() => handleLaunchService(serviceKey)}
-                        disabled={status !== 'Running'}
-                        aria-label={`Launch ${service.name}`}
-                        title="Launch Service"
-                      >
-                        <HiExternalLink className="inline-block mr-1" /> Launch
-                      </Button>
-                      <Button
-                        size="sm"
-                        color="yellow"
-                        onClick={() => handleServiceAction(serviceKey, 'restart')}
-                        loading={actionLoading[`${serviceKey}:restart`]}
-                        aria-label={`Restart ${service.name}`}
-                        title="Restart Service"
-                      >
-                        <HiRefresh className="inline-block mr-1" /> Restart
-                      </Button>
-                      <Button
-                        size="sm"
-                        color={status === 'Running' ? 'red' : 'green'}
-                        onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
-                        loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
-                        aria-label={`${status === 'Running' ? 'Stop' : 'Start'} ${service.name}`}
-                        title={status === 'Running' ? 'Stop Service' : 'Start Service'}
-                      >
-                        {status === 'Running' ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
-                        {status === 'Running' ? 'Stop' : 'Start'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        color="gray"
-                        onClick={() => openLogsDrawer(serviceKey)}
-                        aria-label={`Show logs for ${service.name}`}
-                        title="Show Logs"
-                      >
-                        <HiDocumentText className="inline-block mr-1" /> Logs
-                      </Button>
-                      {updateInfo?.hasUpdate && (
-                        <Button
-                          size="sm"
-                          color="yellow"
-                          onClick={() => handleServiceUpdate(serviceKey)}
-                          loading={isUpdating}
-                          aria-label={`Update ${service.name}`}
-                          title="Update Service"
-                        >
-                          <HiArrowCircleUp className="inline-block mr-1" /> Update
-                        </Button>
-                      )}
+                    <div className="mt-6">
+                      <div className="flex flex-wrap gap-2">
+                        {/* Primary Actions */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => handleLaunchService(serviceKey)}
+                            disabled={status !== 'Running'}
+                            aria-label={`Launch ${service.name}`}
+                            tooltip={status !== 'Running' ? 'Service must be running to launch' : 'Launch Service'}
+                          >
+                            <HiExternalLink className="inline-block mr-1" /> Launch
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={status === 'Running' ? 'danger' : 'success'}
+                            onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
+                            loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
+                            aria-label={`${status === 'Running' ? 'Stop' : 'Start'} ${service.name}`}
+                            tooltip={status === 'Running' ? 'Stop Service' : 'Start Service'}
+                          >
+                            {status === 'Running' ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
+                            {status === 'Running' ? 'Stop' : 'Start'}
+                          </Button>
+                        </div>
+                        
+                        {/* Secondary Actions */}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="warning"
+                            onClick={() => handleServiceAction(serviceKey, 'restart')}
+                            loading={actionLoading[`${serviceKey}:restart`]}
+                            aria-label={`Restart ${service.name}`}
+                            tooltip="Restart Service"
+                          >
+                            <HiRefresh className="inline-block mr-1" /> Restart
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="neutral"
+                            onClick={() => openLogsDrawer(serviceKey)}
+                            aria-label={`Show logs for ${service.name}`}
+                            tooltip="Show Logs"
+                          >
+                            <HiDocumentText className="inline-block mr-1" /> Logs
+                          </Button>
+                          {updateInfo?.hasUpdate && (
+                            <Button
+                              size="sm"
+                              variant="warning"
+                              onClick={() => handleServiceUpdate(serviceKey)}
+                              loading={isUpdating}
+                              aria-label={`Update ${service.name}`}
+                              tooltip="Update Service"
+                            >
+                              <HiArrowCircleUp className="inline-block mr-1" /> Update
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </Card.Body>
                 </Card>
@@ -591,9 +679,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                 <div className="mb-1 flex items-center gap-2">
                   <span className="font-semibold">Status:</span>
                   {dockerStatus.running ? (
-                    <Badge color="green">Running</Badge>
+                    <Badge variant="running">Running</Badge>
                   ) : (
-                    <Badge color="red">Not Running</Badge>
+                    <Badge variant="stopped">Not Running</Badge>
                   )}
                 </div>
                 <div className="mb-1 flex items-center gap-2">
@@ -605,17 +693,17 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">Docker:</span>
                       {dockerUpdates.docker?.updateAvailable ? (
-                        <Badge color="yellow">🔄 Update Available</Badge>
+                        <Badge variant="update">🔄 Update Available</Badge>
                       ) : (
-                        <Badge color="green">Up to Date</Badge>
+                        <Badge variant="success">Up to Date</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">Compose:</span>
                       {dockerUpdates.compose?.updateAvailable ? (
-                        <Badge color="yellow">🔄 Update Available</Badge>
+                        <Badge variant="update">🔄 Update Available</Badge>
                       ) : (
-                        <Badge color="green">Up to Date</Badge>
+                        <Badge variant="success">Up to Date</Badge>
                       )}
                     </div>
                     <div className="text-xs text-gray-500 mt-1">
@@ -638,25 +726,25 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold">App:</span>
                     {runtimeStatus.appRunning ? (
-                      <Badge color="green">Active</Badge>
+                      <Badge variant="running">Active</Badge>
                     ) : (
-                      <Badge color="gray">Inactive</Badge>
+                      <Badge variant="neutral">Inactive</Badge>
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold">Backend:</span>
                     {runtimeStatus.backendConnected ? (
-                      <Badge color="green">Connected</Badge>
+                      <Badge variant="success">Connected</Badge>
                     ) : (
-                      <Badge color="red">Disconnected</Badge>
+                      <Badge variant="error">Disconnected</Badge>
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold">Docker Available:</span>
                     {runtimeStatus.dockerAvailable ? (
-                      <Badge color="green">Yes</Badge>
+                      <Badge variant="success">Yes</Badge>
                     ) : (
-                      <Badge color="red">No</Badge>
+                      <Badge variant="error">No</Badge>
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
@@ -666,9 +754,9 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                   <div className="mb-1 flex items-center gap-2">
                     <span className="font-semibold">Services Independent:</span>
                     {runtimeManager.areServicesIndependent() ? (
-                      <Badge color="green">Yes</Badge>
+                      <Badge variant="success">Yes</Badge>
                     ) : (
-                      <Badge color="yellow">No</Badge>
+                      <Badge variant="warning">No</Badge>
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
@@ -706,7 +794,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           <span className="text-lg font-semibold">{drawerService ? `${drawerService} Logs` : 'Logs'}</span>
         </div>
         <div className="p-4 w-full overflow-y-auto max-h-[70vh]">
-          <pre className="bg-gray-900 text-white p-3 rounded text-xs">
+          <pre className="bg-gray-900 text-left text-white p-3 rounded text-xs">
             {drawerService ? (serviceLogs[drawerService] || 'No logs available') : 'No logs available'}
           </pre>
         </div>

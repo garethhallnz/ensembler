@@ -4,7 +4,8 @@ import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner } from './components'
-import ToastProvider from './contexts/ToastProvider';
+import ToastProvider from './contexts/ToastProvider'
+import { DarkThemeToggle, ThemeProvider } from "flowbite-react";
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -82,7 +83,10 @@ function App() {
   }, [])
 
   return (
+    <ThemeProvider>
+    <DarkThemeToggle />
     <ToastProvider>
+  
       {status === 'checking' && (
         <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
           <Card className="max-w-md w-full p-6">
@@ -140,6 +144,7 @@ function App() {
         <Dashboard onEditSetup={() => setShowSetupWizard(true)} />
       )}
     </ToastProvider>
+    </ThemeProvider>
   );
 }
 
