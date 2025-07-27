@@ -434,24 +434,47 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
           
           {/* Global Controls Group */}
           <div className="flex items-center gap-2">
-            <Button 
-              variant="danger"
-              onClick={() => handleGlobalAction('stop-all')}
-              loading={actionLoading.stopAll}
-              disabled={globalActionProgress !== null || selectedServices.length === 0}
-              tooltip={selectedServices.length === 0 ? 'No services to stop' : 'Stop All Services'}
-            >
-              <HiStop className="inline-block mr-1" /> Stop All
-            </Button>
-            <Button 
-              variant="success"
-              onClick={() => handleGlobalAction('start-all')}
-              loading={actionLoading.startAll}
-              disabled={globalActionProgress !== null || selectedServices.length === 0}
-              tooltip={selectedServices.length === 0 ? 'No services to start' : 'Start All Services'}
-            >
-              <HiPlay className="inline-block mr-1" /> Start All
-            </Button>
+            {(() => {
+              const runningServices = selectedServices.filter(service => serviceStatus[service] === 'Running');
+              const stoppedServices = selectedServices.filter(service => serviceStatus[service] !== 'Running');
+              const allRunning = selectedServices.length > 0 && runningServices.length === selectedServices.length;
+              const allStopped = selectedServices.length > 0 && stoppedServices.length === selectedServices.length;
+              
+              return (
+                <>
+                  <Button 
+                    variant="danger"
+                    onClick={() => handleGlobalAction('stop-all')}
+                    loading={actionLoading.stopAll}
+                    disabled={globalActionProgress !== null || selectedServices.length === 0 || allStopped}
+                    tooltip={
+                      selectedServices.length === 0 
+                        ? 'No services to stop' 
+                        : allStopped 
+                          ? 'All services are already stopped' 
+                          : 'Stop All Services'
+                    }
+                  >
+                    <HiStop className="inline-block mr-1" /> Stop All
+                  </Button>
+                  <Button 
+                    variant="success"
+                    onClick={() => handleGlobalAction('start-all')}
+                    loading={actionLoading.startAll}
+                    disabled={globalActionProgress !== null || selectedServices.length === 0 || allRunning}
+                    tooltip={
+                      selectedServices.length === 0 
+                        ? 'No services to start' 
+                        : allRunning 
+                          ? 'All services are already running' 
+                          : 'Start All Services'
+                    }
+                  >
+                    <HiPlay className="inline-block mr-1" /> Start All
+                  </Button>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>
