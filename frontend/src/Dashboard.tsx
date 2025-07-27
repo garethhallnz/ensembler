@@ -5,7 +5,7 @@ import { Card, Button, Badge, Alert, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
-import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPencilAlt } from 'react-icons/hi';
+import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPencilAlt, HiChevronDown, HiChevronUp } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -91,6 +91,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerService, setDrawerService] = useState<string | null>(null);
   const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
+  const [isSystemStatusExpanded, setIsSystemStatusExpanded] = useState(false);
 
   const fetchServiceStatus = useCallback(async () => {
     try {
@@ -649,17 +650,55 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       {/* Combined Docker Status and App Runtime Status */}
       {(dockerStatus || runtimeStatus) && (
         <Card className="mt-6">
-          <Card.Header>
-            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-              <span>System Status</span>
-              {dockerStatus.running && runtimeStatus?.appRunning ? (
-                <span className="text-green-500" title="All systems operational">✔️</span>
-              ) : (
-                <span className="text-yellow-500" title="Attention required">⚠️</span>
-              )}
-            </h2>
+          <Card.Header className="!p-0">
+            <div 
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => {
+                console.log('System Status clicked, current state:', isSystemStatusExpanded);
+                setIsSystemStatusExpanded(!isSystemStatusExpanded);
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">System Status</h2>
+                {dockerStatus.running && runtimeStatus?.appRunning ? (
+                  <span className="text-green-500" title="All systems operational">✔️</span>
+                ) : (
+                  <span className="text-yellow-500" title="Attention required">⚠️</span>
+                )}
+              </div>
+              <div className="flex items-center gap-4">
+                {!isSystemStatusExpanded && (
+                  <div className="flex items-center gap-3 text-sm">
+                    <span className="flex items-center gap-1">
+                      <span className="font-medium text-gray-600 dark:text-gray-400">Docker:</span>
+                      {dockerStatus.running ? (
+                        <Badge variant="running" size="sm">Running</Badge>
+                      ) : (
+                        <Badge variant="stopped" size="sm">Stopped</Badge>
+                      )}
+                    </span>
+                    {runtimeStatus && (
+                      <span className="flex items-center gap-1">
+                        <span className="font-medium text-gray-600 dark:text-gray-400">Runtime:</span>
+                        {runtimeStatus.appRunning ? (
+                          <Badge variant="running" size="sm">Active</Badge>
+                        ) : (
+                          <Badge variant="neutral" size="sm">Inactive</Badge>
+                        )}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {isSystemStatusExpanded ? (
+                  <HiChevronUp className="w-5 h-5 text-gray-500" />
+                ) : (
+                  <HiChevronDown className="w-5 h-5 text-gray-500" />
+                )}
+              </div>
+            </div>
           </Card.Header>
-          <Card.Body>
+          {isSystemStatusExpanded && (
+            <Card.Body>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Docker Status Section */}
               <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-4 shadow-sm border border-green-200 dark:border-green-700">
@@ -764,7 +803,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                 </div>
               )}
             </div>
-          </Card.Body>
+            </Card.Body>
+          )}
         </Card>
       )}
 
