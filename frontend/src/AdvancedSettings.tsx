@@ -511,13 +511,43 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Timezone (TZ):
                   </label>
-                  <TextInput
-                    type="text"
+                  <select
                     value={config.environment.tz}
                     onChange={(e) => handleEnvironmentChange('tz', e.target.value)}
-                    placeholder="e.g., America/New_York"
-                    color={errors.tz ? 'failure' : 'gray'}
-                  />
+                    className={`block w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                      errors.tz 
+                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
+                    } text-gray-900 dark:text-white`}
+                  >
+                    <option value="">Select timezone...</option>
+                    <option value="UTC">UTC</option>
+                    <option value="America/New_York">America/New_York (EST/EDT)</option>
+                    <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                    <option value="America/Denver">America/Denver (MST/MDT)</option>
+                    <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                    <option value="America/Toronto">America/Toronto</option>
+                    <option value="America/Vancouver">America/Vancouver</option>
+                    <option value="Europe/London">Europe/London (GMT/BST)</option>
+                    <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+                    <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
+                    <option value="Europe/Rome">Europe/Rome (CET/CEST)</option>
+                    <option value="Europe/Madrid">Europe/Madrid (CET/CEST)</option>
+                    <option value="Europe/Amsterdam">Europe/Amsterdam (CET/CEST)</option>
+                    <option value="Europe/Stockholm">Europe/Stockholm (CET/CEST)</option>
+                    <option value="Europe/Zurich">Europe/Zurich (CET/CEST)</option>
+                    <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
+                    <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
+                    <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
+                    <option value="Asia/Hong_Kong">Asia/Hong_Kong (HKT)</option>
+                    <option value="Asia/Seoul">Asia/Seoul (KST)</option>
+                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+                    <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                    <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+                    <option value="Australia/Melbourne">Australia/Melbourne (AEST/AEDT)</option>
+                    <option value="Australia/Perth">Australia/Perth (AWST)</option>
+                    <option value="Pacific/Auckland">Pacific/Auckland (NZST/NZDT)</option>
+                  </select>
                   {errors.tz && (
                     <Alert color="red" className="mt-2">{errors.tz}</Alert>
                   )}
