@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button, Modal, TextInput, Spinner, Alert, Card, Badge } from './components';
 import { ToggleSwitch } from 'flowbite-react';
 import { useToast } from './contexts/ToastContext';
+import ConfirmationModal from './components/ConfirmationModal';
 import { HiPlus, HiTrash, HiFolder } from 'react-icons/hi';
 
 interface AdvancedSettingsProps {
@@ -35,9 +36,18 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   const [availableServices, setAvailableServices] = useState<ServiceConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [pathErrors, setPathErrors] = useState<{ [service: string]: string[] }>({});
   const [activeTab, setActiveTab] = useState<'services' | 'environment'>('services');
+  const [openModal, setOpenModal] = useState(false);
+  const [confirmationModal, setConfirmationModal] = useState<{
+    message: string;
+    onConfirm: () => void;
+  }>({
+    message: '',
+    onConfirm: () => {},
+  });
 
   useEffect(() => {
     fetchCurrentConfig();
@@ -247,29 +257,32 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     }
   };
 
-  const handleReset = async () => {
-    if (!confirm('Are you sure you want to reset all settings? This will delete all configuration and stop all services.')) {
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const res = await fetch('http://localhost:3001/api/config/reset', {
-        method: 'POST',
-      });
-
-      if (res.ok) {
-        showToast('Settings reset successfully. Please refresh the page to start setup again.', 'success');
-        window.location.reload();
-      } else {
-        throw new Error('Failed to reset settings');
-      }
-    } catch (error) {
-      console.error('Error resetting settings:', error);
-      showToast('Failed to reset settings. Please try again.', 'error');
-    } finally {
-      setSaving(false);
-    }
+  const handleCompleteReset = () => {
+    setConfirmationModal({
+      message: '⚠️ DESTRUCTIVE ACTION: This will completely reset Dockarr, delete ALL configuration, stop ALL services, and remove ALL data. This action CANNOT be undone. Are you absolutely sure?',
+      onConfirm: async () => {
+        setOpenModal(false);
+        setResetting(true);
+        try {
+          const res = await fetch('http://localhost:3001/api/config/reset', {
+            method: 'POST',
+          });
+          if (res.ok) {
+            showToast('Complete reset successful. Reloading application...', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          } else {
+            throw new Error('Failed to reset application');
+          }
+        } catch (error) {
+          showToast(`Failed to reset application: ${error}`, 'error');
+        } finally {
+          setResetting(false);
+        }
+      },
+    });
+    setOpenModal(true);
   };
 
   if (loading) {
@@ -307,6 +320,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   }
 
   return (
+    <>
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-gray-200 dark:border-gray-600">
         <h3 className="text-xl font-medium text-gray-900 dark:text-white">Settings & Service Management</h3>
@@ -591,10 +605,11 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         <div className="flex space-x-3">
           <Button
             variant="danger"
-            onClick={handleReset}
-            loading={saving}
+            onClick={handleCompleteReset}
+            loading={resetting}
+            tooltip="⚠️ Complete Reset - This will delete everything!"
           >
-            Reset All Settings
+            🗑️ Reset All
           </Button>
           <Button
             variant="secondary"
@@ -613,5 +628,16 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         </div>
       </div>
     </div>
+    
+    {/* Confirmation Modal */}
+    {openModal && (
+      <ConfirmationModal
+        show={openModal}
+        onClose={() => setOpenModal(false)}
+        onConfirm={confirmationModal.onConfirm}
+        message={confirmationModal.message}
+      />
+    )}
+    </>
   );
 }

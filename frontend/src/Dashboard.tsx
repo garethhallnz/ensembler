@@ -333,33 +333,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     setDrawerOpen(false);
   };
 
-  const handleCompleteReset = () => {
-    setConfirmationModal({
-      message: '⚠️ DESTRUCTIVE ACTION: This will completely reset Dockarr, delete ALL configuration, stop ALL services, and remove ALL data. This action CANNOT be undone. Are you absolutely sure?',
-      onConfirm: async () => {
-        setOpenModal(false);
-        setActionLoading(prev => ({ ...prev, reset: true }));
-        try {
-          const res = await fetch('http://localhost:3001/api/config/reset', {
-            method: 'POST',
-          });
-          if (res.ok) {
-            showToast('Complete reset successful. Reloading application...', 'success');
-            setTimeout(() => {
-              window.location.reload();
-            }, 2000);
-          } else {
-            throw new Error('Failed to reset application');
-          }
-        } catch (error) {
-          showToast(`Failed to reset application: ${error}`, 'error');
-        } finally {
-          setActionLoading(prev => ({ ...prev, reset: false }));
-        }
-      },
-    });
-    setOpenModal(true);
-  };
 
   const handleServiceUpdate = (serviceName: string) => {
     setConfirmationModal({
@@ -445,15 +418,6 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               tooltip="Advanced Settings"
             >
               <HiCog className="inline-block mr-1" /> Settings
-            </Button>
-            <Button 
-              variant="danger" 
-              onClick={handleCompleteReset}
-              loading={actionLoading.reset}
-              tooltip="⚠️ Complete Reset - This will delete everything!"
-              outline
-            >
-              🗑️ Reset
             </Button>
           </div>
           
