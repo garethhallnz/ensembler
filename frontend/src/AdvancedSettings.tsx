@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Button, Modal, TextInput, Spinner, Alert, Card, Badge } from './components';
+import { Button, Modal, TextInput, Spinner, Alert, Card, Badge, PathConfiguration, EnvironmentSettings } from './components';
 import { ToggleSwitch } from 'flowbite-react';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { HiPlus, HiTrash, HiFolder } from 'react-icons/hi';
+import { getDefaultPath } from './utils/pathDefaults';
 
 interface AdvancedSettingsProps {
   onClose: () => void;
@@ -142,13 +143,34 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   const toggleService = (serviceKey: string) => {
     if (!config) return;
     
-    setConfig(prev => ({
-      ...prev!,
-      selectedServices: {
-        ...prev!.selectedServices,
-        [serviceKey]: !prev!.selectedServices[serviceKey]
+    const isBeingEnabled = !config.selectedServices[serviceKey];
+    
+    setConfig(prev => {
+      const newConfig = {
+        ...prev!,
+        selectedServices: {
+          ...prev!.selectedServices,
+          [serviceKey]: isBeingEnabled
+        }
+      };
+      
+      // Initialize default paths for newly enabled services that don't have paths set
+      if (isBeingEnabled) {
+        const service = availableServices.find(s => s.key === serviceKey);
+        if (service?.pathRequirements && service.pathRequirements.length > 0) {
+          const existingPaths = prev!.paths[serviceKey] || [];
+          const newPaths = service.pathRequirements.map((field, idx) => 
+            existingPaths[idx] || getDefaultPath(serviceKey, field.label)
+          );
+          newConfig.paths = {
+            ...prev!.paths,
+            [serviceKey]: newPaths
+          };
+        }
       }
-    }));
+      
+      return newConfig;
+    });
   };
 
   const validatePaths = async () => {
@@ -400,41 +422,18 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                             /* Services with paths: Two-column layout */
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                               {/* File Paths Column */}
-                              <div className="space-y-4">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">Paths</span>
-                                  <h4 className="text-sm font-medium text-gray-800 dark:text-white">File Paths</h4>
-                                </div>
-                                {service.pathRequirements.map((field, idx) => (
-                                  <div key={idx} className="space-y-2">
-                                    <label htmlFor={`path-${service.key}-${idx}`} className="block text-xs font-medium text-gray-700 dark:text-gray-300">
-                                      {field.label} {field.required && <span className="text-red-500">*</span>}
-                                    </label>
-                                    <div className="flex gap-2">
-                                      <TextInput
-                                        id={`path-${service.key}-${idx}`}
-                                        type="text"
-                                        value={config?.paths[service.key]?.[idx] || ''}
-                                        onChange={e => handlePathChange(service.key, idx, e.target.value)}
-                                        placeholder={field.description}
-                                        color={pathErrors[service.key]?.[idx] ? 'failure' : 'gray'}
-                                        className="flex-1"
-                                      />
-                                      <Button 
-                                        onClick={() => handleBrowse(service.key, idx)} 
-                                        variant="secondary"
-                                        size="sm"
-                                      >
-                                        Browse
-                                      </Button>
-                                    </div>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">{field.description}</p>
-                                    {pathErrors[service.key]?.[idx] && (
-                                      <Alert color="red" className="text-xs">{pathErrors[service.key][idx]}</Alert>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
+                              <PathConfiguration
+                                serviceKey={service.key}
+                                serviceName={service.name}
+                                pathRequirements={service.pathRequirements}
+                                paths={config?.paths[service.key] || []}
+                                pathErrors={pathErrors[service.key] || []}
+                                onPathChange={(idx, value) => handlePathChange(service.key, idx, value)}
+                                onBrowse={(idx) => handleBrowse(service.key, idx)}
+                                showDefaultButton={true}
+                                showBrowseButton={true}
+                                layout="vertical"
+                              />
                               
                               {/* Port Configuration Column */}
                               <div className="space-y-4">
@@ -520,83 +519,12 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
               </p>
             </Card.Header>
             <Card.Body>
-              <div className="space-y-4">
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Timezone (TZ):
-                  </label>
-                  <select
-                    value={config.environment.tz}
-                    onChange={(e) => handleEnvironmentChange('tz', e.target.value)}
-                    className={`block w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      errors.tz 
-                        ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
-                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
-                    } text-gray-900 dark:text-white`}
-                  >
-                    <option value="">Select timezone...</option>
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">America/New_York (EST/EDT)</option>
-                    <option value="America/Chicago">America/Chicago (CST/CDT)</option>
-                    <option value="America/Denver">America/Denver (MST/MDT)</option>
-                    <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
-                    <option value="America/Toronto">America/Toronto</option>
-                    <option value="America/Vancouver">America/Vancouver</option>
-                    <option value="Europe/London">Europe/London (GMT/BST)</option>
-                    <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
-                    <option value="Europe/Paris">Europe/Paris (CET/CEST)</option>
-                    <option value="Europe/Rome">Europe/Rome (CET/CEST)</option>
-                    <option value="Europe/Madrid">Europe/Madrid (CET/CEST)</option>
-                    <option value="Europe/Amsterdam">Europe/Amsterdam (CET/CEST)</option>
-                    <option value="Europe/Stockholm">Europe/Stockholm (CET/CEST)</option>
-                    <option value="Europe/Zurich">Europe/Zurich (CET/CEST)</option>
-                    <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                    <option value="Asia/Shanghai">Asia/Shanghai (CST)</option>
-                    <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                    <option value="Asia/Hong_Kong">Asia/Hong_Kong (HKT)</option>
-                    <option value="Asia/Seoul">Asia/Seoul (KST)</option>
-                    <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                    <option value="Asia/Dubai">Asia/Dubai (GST)</option>
-                    <option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
-                    <option value="Australia/Melbourne">Australia/Melbourne (AEST/AEDT)</option>
-                    <option value="Australia/Perth">Australia/Perth (AWST)</option>
-                    <option value="Pacific/Auckland">Pacific/Auckland (NZST/NZDT)</option>
-                  </select>
-                  {errors.tz && (
-                    <Alert color="red" className="mt-2">{errors.tz}</Alert>
-                  )}
-                </div>
-                
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    User ID (PUID):
-                  </label>
-                  <TextInput
-                    type="number"
-                    value={String(config.environment.puid)}
-                    onChange={(e) => handleEnvironmentChange('puid', parseInt(e.target.value))}
-                    color={errors.puid ? 'failure' : 'gray'}
-                  />
-                  {errors.puid && (
-                    <Alert color="red" className="mt-2">{errors.puid}</Alert>
-                  )}
-                </div>
-                
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    Group ID (PGID):
-                  </label>
-                  <TextInput
-                    type="number"
-                    value={String(config.environment.pgid)}
-                    onChange={(e) => handleEnvironmentChange('pgid', parseInt(e.target.value))}
-                    color={errors.pgid ? 'failure' : 'gray'}
-                  />
-                  {errors.pgid && (
-                    <Alert color="red" className="mt-2">{errors.pgid}</Alert>
-                  )}
-                </div>
-              </div>
+              <EnvironmentSettings
+                environment={config.environment}
+                errors={errors}
+                onEnvironmentChange={handleEnvironmentChange}
+                layout="vertical"
+              />
             </Card.Body>
           </Card>
         )}
