@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Button, Modal, TextInput, Spinner, Alert, Card, Badge, PathConfiguration, EnvironmentSettings } from './components';
+import { Button, TextInput, Spinner, Alert, Card, Badge, PathConfiguration, EnvironmentSettings } from './components';
 import { ToggleSwitch } from 'flowbite-react';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
-import { HiPlus, HiTrash, HiFolder } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 
 interface AdvancedSettingsProps {
@@ -18,6 +17,7 @@ interface ServiceConfig {
   defaultPort: number;
   pathRequirements: { label: string; required: boolean; description: string }[];
   required: boolean;
+  recommended?: boolean;
 }
 
 interface ConfigType {
@@ -487,8 +487,48 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
               </p>
             </Card.Header>
             <Card.Body>
-              <div className="space-y-4">
-                {availableServices.map(service => {
+
+
+              {/* Services grouped by category */}
+              <div className="space-y-8">
+                {['media', 'management', 'torrent', 'indexer', 'request'].map(category => {
+                  const categoryServices = availableServices.filter(service => service.category === category);
+                  if (categoryServices.length === 0) return null;
+
+                  const getCategoryTitle = (cat: string) => {
+                    switch (cat) {
+                      case 'media': return 'Media Servers';
+                      case 'management': return 'Media Management';
+                      case 'torrent': return 'Download Clients';
+                      case 'indexer': return 'Indexers';
+                      case 'request': return 'Request Management';
+                      default: return cat;
+                    }
+                  };
+
+                  const getCategoryDescription = (cat: string) => {
+                    switch (cat) {
+                      case 'media': return 'Media streaming servers (choose one)';
+                      case 'management': return 'Media collection managers (you can select multiple)';
+                      case 'torrent': return 'BitTorrent download clients (choose one)';
+                      case 'indexer': return 'Torrent indexer management (choose one)';
+                      case 'request': return 'Media request and discovery tools (choose one)';
+                      default: return '';
+                    }
+                  };
+
+                  return (
+                    <div key={category}>
+                      <div className="border-b border-gray-200 dark:border-gray-700 pb-3 mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {getCategoryTitle(category)}
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {getCategoryDescription(category)}
+                        </p>
+                      </div>
+                      <div className="space-y-4">
+                        {categoryServices.map(service => {
                   const isSelected = config?.selectedServices[service.key] || false;
                   const currentPort = config?.ports[service.key] || service.defaultPort;
                   return (
@@ -515,6 +555,14 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                             <Badge variant="info" size="sm">{service.category}</Badge>
                             {service.required && (
                               <Badge variant="warning" size="sm">Required</Badge>
+                            )}
+                            {service.recommended && !service.required && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M10 15.585l-6.327 3.327 1.209-7.046L0 6.944l7.073-1.027L10 0l2.927 5.917L20 6.944l-4.882 4.922 1.209 7.046L10 15.585z" clipRule="evenodd"/>
+                                </svg>
+                                Recommended
+                              </span>
                             )}
                           </div>
                         </div>
@@ -605,6 +653,10 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                           )}
                         </div>
                       )}
+                    </div>
+                  );
+                })}
+                      </div>
                     </div>
                   );
                 })}

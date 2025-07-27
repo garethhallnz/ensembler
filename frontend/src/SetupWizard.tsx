@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Alert, TextInput, Select, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings } from './components';
+import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings } from './components';
 import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch } from 'flowbite-react';
 import { getDefaultPath } from './utils/pathDefaults';
@@ -18,6 +18,7 @@ interface ServiceConfig {
   defaultPort: number;
   pathRequirements: { label: string; required: boolean; description: string }[];
   required: boolean;
+  recommended?: boolean;
 }
 
 interface ServiceConfigResponse {
@@ -79,6 +80,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       if (res.ok) {
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
+          console.log('Service config loaded:', data.services);
           setServiceConfig(data.services);
           setMaxServices(data.maxServices);
           
@@ -154,24 +156,29 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     }
   };
 
-  const handleToggleAll = () => {
-    const selectedServices = Object.keys(selected).filter(key => selected[key]);
-    const allServices = serviceConfig.map(service => service.key);
+  const handleToggleRecommended = () => {
+    const recommendedServices = serviceConfig.filter(service => service.recommended || service.required);
+    const selectedRecommended = recommendedServices.filter(service => selected[service.key]);
     
-    // If all services are selected, deselect all (except required ones)
-    // If not all are selected, select all
-    const shouldSelectAll = selectedServices.length < allServices.length;
+    console.log('Recommended services:', recommendedServices.map(s => s.name));
+    console.log('Selected recommended:', selectedRecommended.map(s => s.name));
     
-    const newSelected: { [key: string]: boolean } = {};
+    // If all recommended services are selected, deselect all (except required ones)
+    // If not all recommended are selected, select all recommended
+    const shouldSelectRecommended = selectedRecommended.length < recommendedServices.length;
+    
+    const newSelected: { [key: string]: boolean } = { ...selected };
     const newPaths: { [service: string]: string[] } = { ...paths };
     
     serviceConfig.forEach(service => {
-      // Keep required services always selected
       if (service.required) {
+        // Keep required services always selected
         newSelected[service.key] = true;
-      } else {
-        newSelected[service.key] = shouldSelectAll;
+      } else if (service.recommended) {
+        // Toggle recommended services
+        newSelected[service.key] = shouldSelectRecommended;
       }
+      // Leave non-recommended services as they are
       
       // Initialize default paths for newly selected services
       if (newSelected[service.key] && service.pathRequirements && service.pathRequirements.length > 0) {
@@ -185,12 +192,11 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     setPaths(newPaths);
   };
 
-  const getToggleAllState = () => {
-    const selectedServices = Object.keys(selected).filter(key => selected[key]);
-    const selectableServices = serviceConfig.filter(service => !service.required);
-    const selectedSelectableServices = selectableServices.filter(service => selected[service.key]);
+  const getToggleRecommendedState = () => {
+    const recommendedServices = serviceConfig.filter(service => service.recommended && !service.required);
+    const selectedRecommendedServices = recommendedServices.filter(service => selected[service.key]);
     
-    return selectedSelectableServices.length === selectableServices.length;
+    return selectedRecommendedServices.length === recommendedServices.length;
   };
 
   const validateServiceSelection = async () => {
@@ -550,49 +556,102 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Select Services</h2>
              <p className="text-gray-600 dark:text-gray-300">Choose the services you want to run:</p>
              
-             {/* Toggle All Option */}
+             {/* Toggle Recommended Option */}
              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                <div className="flex items-center justify-between">
                  <div className="flex-1">
                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h3>
                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                     {getToggleAllState() ? 'Deselect all optional services' : 'Select all available services'}
+                     {getToggleRecommendedState() ? 'Deselect recommended services' : 'Select recommended services for a complete media center'}
                    </p>
                  </div>
                  <div className="flex items-center">
                    <ToggleSwitch
-                     id="toggle-all-services"
-                     checked={getToggleAllState()}
-                     onChange={handleToggleAll}
-                     label="Toggle All"
+                     id="toggle-recommended-services"
+                     checked={getToggleRecommendedState()}
+                     onChange={handleToggleRecommended}
+                     label="Toggle Recommended"
                    />
                  </div>
                </div>
              </div>
              
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {serviceConfig.map((service) => (
-                 <Card key={service.key} className="overflow-hidden">
-                   <Card.Body>
-                     <div className="flex items-start justify-between">
-                       <div className="flex-1 pr-4">
-                         <label htmlFor={`service-${service.key}`} className="block text-lg font-medium text-gray-900 dark:text-white cursor-pointer">
-                           {service.name} {service.required && <Badge color="blue">Required</Badge>}
-                         </label>
-                         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{service.description}</p>
-                       </div>
-                       <div className="flex items-center mt-1">
-                         <ToggleSwitch
-                           id={`service-${service.key}`}
-                           checked={!!selected[service.key]}
-                           onChange={() => handleServiceChange(service.key)}
-                           disabled={service.required}
-                         />
-                       </div>
+
+
+             {/* Services grouped by category */}
+             <div className="space-y-6">
+               {['media', 'management', 'torrent', 'indexer', 'request'].map(category => {
+                 const categoryServices = serviceConfig.filter(service => service.category === category);
+                 if (categoryServices.length === 0) return null;
+
+                 const getCategoryTitle = (cat: string) => {
+                   switch (cat) {
+                     case 'media': return 'Media Servers';
+                     case 'management': return 'Media Management';
+                     case 'torrent': return 'Download Clients';
+                     case 'indexer': return 'Indexers';
+                     case 'request': return 'Request Management';
+                     default: return cat;
+                   }
+                 };
+
+                 const getCategoryDescription = (cat: string) => {
+                   switch (cat) {
+                     case 'media': return 'Media streaming servers (choose one)';
+                     case 'management': return 'Media collection managers (you can select multiple)';
+                     case 'torrent': return 'BitTorrent download clients (choose one)';
+                     case 'indexer': return 'Torrent indexer management (choose one)';
+                     case 'request': return 'Media request and discovery tools (choose one)';
+                     default: return '';
+                   }
+                 };
+
+                 return (
+                   <div key={category} className="space-y-3">
+                     <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                         {getCategoryTitle(category)}
+                       </h3>
+                       <p className="text-sm text-gray-600 dark:text-gray-400">
+                         {getCategoryDescription(category)}
+                       </p>
                      </div>
-                   </Card.Body>
-                 </Card>
-               ))}
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       {categoryServices.map((service) => (
+                         <Card key={service.key} className="overflow-hidden">
+                           <Card.Body>
+                             <div className="flex items-start justify-between">
+                               <div className="flex-1 pr-4">
+                                 <label htmlFor={`service-${service.key}`} className="block text-lg font-medium text-gray-900 dark:text-white cursor-pointer flex items-center gap-2">
+                                   <span>{service.name}</span>
+                                   {service.required && <Badge color="blue">Required</Badge>}
+                                   {service.recommended && !service.required && (
+                                     <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
+                                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                         <path fillRule="evenodd" d="M10 15.585l-6.327 3.327 1.209-7.046L0 6.944l7.073-1.027L10 0l2.927 5.917L20 6.944l-4.882 4.922 1.209 7.046L10 15.585z" clipRule="evenodd"/>
+                                       </svg>
+                                       Recommended
+                                     </span>
+                                   )}
+                                 </label>
+                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{service.description}</p>
+                               </div>
+                               <div className="flex items-center mt-1">
+                                 <ToggleSwitch
+                                   id={`service-${service.key}`}
+                                   checked={!!selected[service.key]}
+                                   onChange={() => handleServiceChange(service.key)}
+                                   disabled={service.required}
+                                 />
+                               </div>
+                             </div>
+                           </Card.Body>
+                         </Card>
+                       ))}
+                     </div>
+                   </div>
+                 );
+               })}
              </div>
              <div className="text-sm text-gray-500 dark:text-gray-400">
                Select at least one service to continue. Maximum {maxServices} services.

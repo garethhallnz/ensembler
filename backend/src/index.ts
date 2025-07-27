@@ -561,7 +561,8 @@ app.get('/api/services/config', (req: Request, res: Response) => {
         category: service.category,
         defaultPort: service.defaultPort,
         pathRequirements: service.pathRequirements,
-        required: service.required
+        required: service.required,
+        recommended: service.recommended
       })),
       maxServices: 6
     });

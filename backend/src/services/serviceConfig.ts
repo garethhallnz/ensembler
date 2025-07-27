@@ -4,9 +4,10 @@ export interface ServiceConfig {
   image: string;
   defaultPort: number;
   internalPort: number;
-  category: 'media' | 'torrent' | 'indexer' | 'request';
+  category: 'media' | 'management' | 'torrent' | 'indexer' | 'request';
   description: string;
   required: boolean;
+  recommended?: boolean;
   pathRequirements: {
     label: string;
     required: boolean;
@@ -39,6 +40,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     category: 'indexer',
     description: 'Indexer manager/proxy built on the popular arr stack',
     required: false,
+    recommended: true,
     pathRequirements: [],
     healthCheck: {
       enabled: true,
@@ -60,9 +62,10 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     image: 'lscr.io/linuxserver/sonarr:latest',
     defaultPort: 8989,
     internalPort: 8989,
-    category: 'media',
+    category: 'management',
     description: 'PVR for Usenet and BitTorrent users',
     required: false,
+    recommended: true,
     pathRequirements: [
       {
         label: 'TV Shows Path',
@@ -95,9 +98,10 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     image: 'lscr.io/linuxserver/radarr:latest',
     defaultPort: 7878,
     internalPort: 7878,
-    category: 'media',
+    category: 'management',
     description: 'Movie collection manager for Usenet and BitTorrent users',
     required: false,
+    recommended: true,
     pathRequirements: [
       {
         label: 'Movies Path',
@@ -133,6 +137,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     category: 'media',
     description: 'Media server for streaming your content',
     required: false,
+    recommended: true,
     pathRequirements: [
       {
         label: 'TV Shows Path',
@@ -179,6 +184,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     category: 'torrent',
     description: 'BitTorrent client',
     required: false,
+    recommended: true,
     pathRequirements: [
       {
         label: 'Downloads Path',
@@ -215,6 +221,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     category: 'request',
     description: 'Request management and media discovery tool',
     required: false,
+    recommended: true,
     pathRequirements: [],
     healthCheck: {
       enabled: true,
@@ -229,11 +236,181 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
         type: 'config'
       }
     ]
-  }
-];
-
-// Future services that can be easily added
-export const FUTURE_SERVICES: ServiceConfig[] = [
+  },
+  {
+    key: 'jellyfin',
+    name: 'Jellyfin',
+    image: 'lscr.io/linuxserver/jellyfin:latest',
+    defaultPort: 8096,
+    internalPort: 8096,
+    category: 'media',
+    description: 'Open-source media server with no licensing fees',
+    required: false,
+    pathRequirements: [
+      {
+        label: 'TV Shows Path',
+        required: true,
+        description: 'Directory containing your TV shows'
+      },
+      {
+        label: 'Movies Path',
+        required: true,
+        description: 'Directory containing your movies'
+      }
+    ],
+    healthCheck: {
+      enabled: true,
+      path: '/health',
+      interval: 30000
+    },
+    updateStrategy: 'latest',
+    volumes: [
+      {
+        hostPath: '{configDir}/jellyfin/config',
+        containerPath: '/config',
+        type: 'config'
+      },
+      {
+        hostPath: '{paths.tv}',
+        containerPath: '/tv',
+        type: 'media'
+      },
+      {
+        hostPath: '{paths.movies}',
+        containerPath: '/movies',
+        type: 'media'
+      }
+    ],
+    launchUrl: '/web'
+  },
+  {
+    key: 'emby',
+    name: 'Emby',
+    image: 'lscr.io/linuxserver/emby:latest',
+    defaultPort: 8920,
+    internalPort: 8920,
+    category: 'media',
+    description: 'Feature-rich media server with mobile apps',
+    required: false,
+    pathRequirements: [
+      {
+        label: 'TV Shows Path',
+        required: true,
+        description: 'Directory containing your TV shows'
+      },
+      {
+        label: 'Movies Path',
+        required: true,
+        description: 'Directory containing your movies'
+      }
+    ],
+    healthCheck: {
+      enabled: true,
+      path: '/health',
+      interval: 30000
+    },
+    updateStrategy: 'latest',
+    volumes: [
+      {
+        hostPath: '{configDir}/emby/config',
+        containerPath: '/config',
+        type: 'config'
+      },
+      {
+        hostPath: '{paths.tv}',
+        containerPath: '/tv',
+        type: 'media'
+      },
+      {
+        hostPath: '{paths.movies}',
+        containerPath: '/movies',
+        type: 'media'
+      }
+    ],
+    launchUrl: '/web'
+  },
+  {
+    key: 'qbittorrent',
+    name: 'qBittorrent',
+    image: 'lscr.io/linuxserver/qbittorrent:latest',
+    defaultPort: 8090,
+    internalPort: 8090,
+    category: 'torrent',
+    description: 'Feature-rich BitTorrent client with web interface',
+    required: false,
+    pathRequirements: [
+      {
+        label: 'Downloads Path',
+        required: true,
+        description: 'Directory where downloads will be stored'
+      }
+    ],
+    additionalPorts: [6881],
+    healthCheck: {
+      enabled: true,
+      path: '/',
+      interval: 30000
+    },
+    updateStrategy: 'latest',
+    volumes: [
+      {
+        hostPath: '{configDir}/qbittorrent/config',
+        containerPath: '/config',
+        type: 'config'
+      },
+      {
+        hostPath: '{paths.downloads}',
+        containerPath: '/downloads',
+        type: 'data'
+      }
+    ]
+  },
+  {
+    key: 'bazarr',
+    name: 'Bazarr',
+    image: 'lscr.io/linuxserver/bazarr:latest',
+    defaultPort: 6767,
+    internalPort: 6767,
+    category: 'management',
+    description: 'Companion app for Sonarr and Radarr to manage subtitles',
+    required: false,
+    pathRequirements: [
+      {
+        label: 'TV Shows Path',
+        required: true,
+        description: 'Directory containing your TV shows (same as Sonarr)'
+      },
+      {
+        label: 'Movies Path',
+        required: true,
+        description: 'Directory containing your movies (same as Radarr)'
+      }
+    ],
+    healthCheck: {
+      enabled: true,
+      path: '/api/system/status',
+      interval: 30000
+    },
+    updateStrategy: 'latest',
+    volumes: [
+      {
+        hostPath: '{configDir}/bazarr/config',
+        containerPath: '/config',
+        type: 'config'
+      },
+      {
+        hostPath: '{paths.tv}',
+        containerPath: '/tv',
+        type: 'media'
+      },
+      {
+        hostPath: '{paths.movies}',
+        containerPath: '/movies',
+        type: 'media'
+      }
+    ],
+    dependencies: ['sonarr', 'radarr']
+  },
   {
     key: 'deluge',
     name: 'Deluge',
@@ -271,51 +448,33 @@ export const FUTURE_SERVICES: ServiceConfig[] = [
     ]
   },
   {
-    key: 'kodi',
-    name: 'Kodi',
-    image: 'lscr.io/linuxserver/kodi-headless:latest',
-    defaultPort: 8080,
-    internalPort: 8080,
-    category: 'media',
-    description: 'Open source media player and entertainment hub',
+    key: 'jackett',
+    name: 'Jackett',
+    image: 'lscr.io/linuxserver/jackett:latest',
+    defaultPort: 9117,
+    internalPort: 9117,
+    category: 'indexer',
+    description: 'API Support for your favorite torrent trackers',
     required: false,
-    pathRequirements: [
-      {
-        label: 'TV Shows Path',
-        required: true,
-        description: 'Directory containing your TV shows'
-      },
-      {
-        label: 'Movies Path',
-        required: true,
-        description: 'Directory containing your movies'
-      }
-    ],
+    pathRequirements: [],
     healthCheck: {
       enabled: true,
-      path: '/jsonrpc',
+      path: '/UI/Dashboard',
       interval: 30000
     },
     updateStrategy: 'latest',
     volumes: [
       {
-        hostPath: '{configDir}/kodi/config',
+        hostPath: '{configDir}/jackett/config',
         containerPath: '/config',
         type: 'config'
-      },
-      {
-        hostPath: '{paths.tv}',
-        containerPath: '/tv',
-        type: 'media'
-      },
-      {
-        hostPath: '{paths.movies}',
-        containerPath: '/movies',
-        type: 'media'
       }
     ]
   }
 ];
+
+// Future services that can be easily added
+export const FUTURE_SERVICES: ServiceConfig[] = [];
 
 export const MAX_SERVICES = 6;
 
