@@ -541,7 +541,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                 >
                   {/* Card Header */}
                   <div className="px-6 pt-6 pb-4">
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white mb-1">{service.name}</h3>
                         <p className="text-left text-sm text-gray-600 dark:text-gray-400">{service.description}</p>
@@ -650,14 +650,11 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       {/* Combined Docker Status and App Runtime Status */}
       {(dockerStatus || runtimeStatus) && (
         <Card className="mt-6">
-          <Card.Header className="!p-0">
-            <div 
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => {
-                console.log('System Status clicked, current state:', isSystemStatusExpanded);
-                setIsSystemStatusExpanded(!isSystemStatusExpanded);
-              }}
-            >
+          <Card.Header 
+            className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            onClick={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
+          >
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">System Status</h2>
                 {dockerStatus.running && runtimeStatus?.appRunning ? (
