@@ -209,6 +209,13 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
           composeServices += `      - PUID=${config.environment.puid || 1000}\n`;
           composeServices += `      - PGID=${config.environment.pgid || 1000}\n`;
           composeServices += `      - TZ=${config.environment.tz || 'UTC'}\n`;
+          
+          // Add service-specific environment variables
+          if (serviceConfig.environmentVars) {
+            Object.entries(serviceConfig.environmentVars).forEach(([key, value]) => {
+              composeServices += `      - ${key}=${value}\n`;
+            });
+          }
           composeServices += `    volumes:\n`;
           
           // Generate volumes based on service configuration

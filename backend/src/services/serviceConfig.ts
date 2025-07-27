@@ -345,6 +345,9 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
         description: 'Directory where downloads will be stored'
       }
     ],
+    environmentVars: {
+      'WEBUI_PORT': '8080'
+    },
     additionalPorts: [6881],
     healthCheck: {
       enabled: false
@@ -361,7 +364,8 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
         containerPath: '/downloads',
         type: 'data'
       }
-    ]
+    ],
+    launchUrl: '/'
   },
   {
     key: 'bazarr',
