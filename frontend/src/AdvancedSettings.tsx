@@ -144,7 +144,26 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     if (!config) return;
     
     const isBeingEnabled = !config.selectedServices[serviceKey];
+    const service = availableServices.find(s => s.key === serviceKey);
     
+    // If disabling a service, show destructive action warning
+    if (!isBeingEnabled && service) {
+      setConfirmationModal({
+        message: `⚠️ DESTRUCTIVE ACTION: Disabling "${service.name}" will stop the service and remove its configuration. Any data stored in service-specific directories may become inaccessible until the service is re-enabled. Are you sure you want to proceed?`,
+        onConfirm: () => {
+          setOpenModal(false);
+          performToggleService(serviceKey, isBeingEnabled);
+        }
+      });
+      setOpenModal(true);
+      return;
+    }
+    
+    // If enabling, proceed directly
+    performToggleService(serviceKey, isBeingEnabled);
+  };
+
+  const performToggleService = (serviceKey: string, isBeingEnabled: boolean) => {
     setConfig(prev => {
       const newConfig = {
         ...prev!,
