@@ -870,31 +870,33 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         )}
       </div>
       <div className="flex justify-between mt-6">
-        {step > 0 ? (
-          <Button color="gray" onClick={() => setStep(s => Math.max(0, s - 1))}>
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Previous
-          </Button>
-        ) : (
-          (<></> /* Empty div to maintain flex layout */)
-        )}
-        {step < steps.length - 1 ? (
-          <Button color="blue" onClick={handleNext}>
-            Next
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Button>
-        ) : (
-          <Button color="green" onClick={handleSaveAndApply} loading={isSaving} size="lg">
-            {isSaving ? 'Saving Configuration...' : 'Save and Apply Configuration'}
-            <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </Button>
-        )}
+        <div>
+          {step > 0 && (
+            <Button color="gray" onClick={() => setStep(s => Math.max(0, s - 1))}>
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </Button>
+          )}
+        </div>
+        <div>
+          {step < steps.length - 1 ? (
+            <Button color="blue" onClick={handleNext}>
+              Next
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Button>
+          ) : (
+            <Button color="green" onClick={handleSaveAndApply} loading={isSaving} size="lg">
+              {isSaving ? 'Saving Configuration...' : 'Save and Apply Configuration'}
+              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
