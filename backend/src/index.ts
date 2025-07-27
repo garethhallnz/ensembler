@@ -98,13 +98,58 @@ app.get('/api/docker/status', async (req: Request, res: Response) => {
   }
 });
 
-app.post('/api/config/save', (req: Request, res: Response) => {
-  const config = req.body;
+app.post('/api/config/save', async (req: Request, res: Response) => {
+  const newConfig = req.body;
   try {
+    // Read existing config to compare service changes
+    let previousConfig = null;
+    if (fs.existsSync(configFile)) {
+      try {
+        previousConfig = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+      } catch (err) {
+        console.warn('Could not read previous config:', err);
+      }
+    }
+
+    // Save new configuration
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
-    fs.writeFileSync(configFile, JSON.stringify(config, null, 2));
+    fs.writeFileSync(configFile, JSON.stringify(newConfig, null, 2));
+
+    // Handle service cleanup if there's a previous config
+    if (previousConfig && previousConfig.selectedServices) {
+      const previousServices = Object.keys(previousConfig.selectedServices).filter(
+        key => previousConfig.selectedServices[key]
+      );
+      const newServices = Object.keys(newConfig.selectedServices).filter(
+        key => newConfig.selectedServices[key]
+      );
+      
+      // Find services that were removed
+      const removedServices = previousServices.filter(service => !newServices.includes(service));
+      
+      if (removedServices.length > 0) {
+        console.log('Stopping and removing disabled services:', removedServices);
+        
+        // Stop and remove containers for disabled services
+        for (const serviceName of removedServices) {
+          try {
+            // Stop the service
+            await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} stop ${serviceName}`);
+            console.log(`Stopped ${serviceName}`);
+            
+            // Remove the container
+            await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} rm -f ${serviceName}`);
+            console.log(`Removed ${serviceName} container`);
+          } catch (err) {
+            console.warn(`Failed to cleanup ${serviceName}:`, err);
+            // Continue with other services even if one fails
+          }
+        }
+      }
+    }
+
     res.json({ success: true, message: 'Configuration saved successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to save configuration.', error: (err as Error).message });
@@ -439,10 +484,11 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
 
 app.post('/api/services/start-all', async (req: Request, res: Response) => {
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d`);
-    res.json({ success: true, message: 'All services started successfully.' });
+    // Use --remove-orphans to clean up any containers from services that are no longer in the compose file
+    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d --remove-orphans`);
+    res.json({ success: true, message: 'All enabled services started successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to start all services.', error: (err as Error).message });
+    res.status(500).json({ success: false, message: 'Failed to start services.', error: (err as Error).message });
   }
 });
 

@@ -249,7 +249,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
     
     setSaving(true);
     try {
-      // Save configuration
+      // Save configuration (this will automatically stop and remove disabled services)
       const saveRes = await fetch('http://localhost:3001/api/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -269,7 +269,19 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
         throw new Error('Failed to regenerate docker-compose files');
       }
 
-      showToast('Settings saved successfully! Services will be restarted with new settings.', 'success');
+      // Start all enabled services (this will start newly enabled services and restart existing ones with new settings)
+      const startRes = await fetch('http://localhost:3001/api/services/start-all', {
+        method: 'POST',
+      });
+
+      if (!startRes.ok) {
+        const startError = await startRes.text();
+        console.warn('Failed to start some services:', startError);
+        showToast('Settings saved! Some services may need to be started manually.', 'warning');
+      } else {
+        showToast('Settings saved successfully! All enabled services have been started.', 'success');
+      }
+
       onClose();
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -551,7 +563,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
             onClick={handleSave}
             loading={saving}
           >
-            Save Settings
+            {saving ? 'Applying Changes...' : 'Save & Apply Settings'}
           </Button>
         </div>
       </div>
