@@ -645,14 +645,14 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
 
     try {
       // Get current local image ID and creation date
-      const { stdout: currentImageInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Id}},{{.Created}}"`);
+      const { stdout: currentImageInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Id}},{{.Created}}"`);
       const [currentImageId, currentCreated] = currentImageInfo.trim().split(',');
       
       // Pull latest image metadata only (not the full image)
-      await execAsync(`docker pull ${imageName}:latest --quiet`);
+      await execAsync(`docker pull ${imageName} --quiet`);
       
       // Get the updated image info after pull
-      const { stdout: updatedImageInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Id}},{{.Created}}"`);
+      const { stdout: updatedImageInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Id}},{{.Created}}"`);
       const [updatedImageId, updatedCreated] = updatedImageInfo.trim().split(',');
       
       // Compare image IDs to determine if there's an update
@@ -677,7 +677,7 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
       console.error(`Error checking updates for ${serviceName}:`, err);
       // Try to get current version info even if update check fails
       try {
-        const { stdout: currentInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Created}}"`);
+        const { stdout: currentInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Created}}"`);
         const currentVersion = currentInfo.trim().split('T')[0];
         
         res.json({ 

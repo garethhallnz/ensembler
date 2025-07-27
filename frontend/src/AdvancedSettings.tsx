@@ -243,12 +243,14 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
           if (usagesForThisPath.length > 1) {
             const currentFieldType = field.label.toLowerCase();
             
-            // Allow sharing of media paths between compatible services
+            // Allow sharing of media paths between compatible services and downloads paths between download clients
             const isMediaPath = currentFieldType.includes('movies') || 
                                currentFieldType.includes('tv') || 
                                currentFieldType.includes('shows') || 
                                currentFieldType.includes('music') ||
                                currentFieldType.includes('books');
+            
+            const isDownloadPath = currentFieldType.includes('download');
             
             if (isMediaPath) {
               // Media paths can be shared between services that consume the same media type
@@ -261,8 +263,23 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
                 serviceErrors[idx] = `Path conflicts with different media type in ${conflictingServices[0].service}`;
                 valid = false;
               }
+            } else if (isDownloadPath) {
+              // Download paths can be shared between download clients (torrent category services)
+              const conflictingServices = usagesForThisPath.filter(usage => {
+                const usageService = availableServices.find(s => s.key === usage.service);
+                const currentService = availableServices.find(s => s.key === svc);
+                return usage.service !== svc && 
+                       (!usageService || !currentService || 
+                        usageService.category !== 'torrent' || currentService.category !== 'torrent' ||
+                        !usage.field.includes('download'));
+              });
+              
+              if (conflictingServices.length > 0) {
+                serviceErrors[idx] = `Download path conflicts with non-download service ${conflictingServices[0].service}`;
+                valid = false;
+              }
             } else {
-              // Non-media paths (like config, downloads) should be unique
+              // Other paths (like config) should be unique
               const conflictingServices = usagesForThisPath.filter(usage => usage.service !== svc);
               if (conflictingServices.length > 0) {
                 serviceErrors[idx] = `Path is already used by ${conflictingServices[0].service}`;

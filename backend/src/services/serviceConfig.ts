@@ -306,7 +306,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     ],
     healthCheck: {
       enabled: true,
-      path: '/health',
+      path: '/System/Info/Public',
       interval: 30000
     },
     updateStrategy: 'latest',
@@ -347,9 +347,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     ],
     additionalPorts: [6881],
     healthCheck: {
-      enabled: true,
-      path: '/',
-      interval: 30000
+      enabled: false
     },
     updateStrategy: 'latest',
     volumes: [

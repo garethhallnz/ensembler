@@ -285,7 +285,7 @@ describe('API Tests with Mocks', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.services).toHaveLength(6);
+      expect(response.body.services).toHaveLength(11);
       expect(response.body.maxServices).toBe(6);
       
       const sonarrService = response.body.services.find((s: any) => s.key === 'sonarr');
@@ -293,14 +293,15 @@ describe('API Tests with Mocks', () => {
         key: 'sonarr',
         name: 'Sonarr',
         description: 'PVR for Usenet and BitTorrent users',
-        category: 'media',
+        category: 'management',
         defaultPort: 8989,
         pathRequirements: [{
           label: 'TV Shows Path',
           required: true,
           description: 'Directory where TV shows will be stored'
         }],
-        required: false
+        required: false,
+        recommended: true
       });
     });
   });

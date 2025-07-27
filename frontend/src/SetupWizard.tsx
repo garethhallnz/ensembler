@@ -80,7 +80,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       if (res.ok) {
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
-          console.log('Service config loaded:', data.services);
           setServiceConfig(data.services);
           setMaxServices(data.maxServices);
           
@@ -159,9 +158,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const handleToggleRecommended = () => {
     const recommendedServices = serviceConfig.filter(service => service.recommended || service.required);
     const selectedRecommended = recommendedServices.filter(service => selected[service.key]);
-    
-    console.log('Recommended services:', recommendedServices.map(s => s.name));
-    console.log('Selected recommended:', selectedRecommended.map(s => s.name));
     
     // If all recommended services are selected, deselect all (except required ones)
     // If not all recommended are selected, select all recommended
@@ -275,6 +271,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                                        currentFieldType.includes('music') ||
                                        currentFieldType.includes('books');
                     
+                    const isDownloadPath = currentFieldType.includes('download');
+                    
                     if (isMediaPath) {
                         const conflictingServices = usagesForThisPath.filter(usage => 
                             usage.service !== svc && 
@@ -283,6 +281,21 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                         
                         if (conflictingServices.length > 0) {
                             serviceErrors[idx] = `Path conflicts with different media type in ${conflictingServices[0].service}`;
+                            hasConflicts = true;
+                        }
+                    } else if (isDownloadPath) {
+                        // Download paths can be shared between download clients (torrent category services)
+                        const conflictingServices = usagesForThisPath.filter(usage => {
+                            const usageService = serviceConfig.find(s => s.key === usage.service);
+                            const currentService = serviceConfig.find(s => s.key === svc);
+                            return usage.service !== svc && 
+                                   (!usageService || !currentService || 
+                                    usageService.category !== 'torrent' || currentService.category !== 'torrent' ||
+                                    !usage.field.includes('download'));
+                        });
+                        
+                        if (conflictingServices.length > 0) {
+                            serviceErrors[idx] = `Download path conflicts with non-download service ${conflictingServices[0].service}`;
                             hasConflicts = true;
                         }
                     } else {
