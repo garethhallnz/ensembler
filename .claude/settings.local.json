@@ -17,7 +17,12 @@
       "Bash(git add:*)",
       "Bash(find:*)",
       "Bash(npm run build:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(curl:*)",
+      "Bash(docker logs:*)",
+      "Bash(ls:*)",
+      "Bash(docker stop:*)",
+      "Bash(docker start:*)"
     ],
     "deny": []
   }

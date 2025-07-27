@@ -330,44 +330,6 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     launchUrl: '/web'
   },
   {
-    key: 'qbittorrent',
-    name: 'qBittorrent',
-    image: 'lscr.io/linuxserver/qbittorrent:latest',
-    defaultPort: 8090,
-    internalPort: 8080,
-    category: 'torrent',
-    description: 'Feature-rich BitTorrent client with web interface',
-    required: false,
-    pathRequirements: [
-      {
-        label: 'Downloads Path',
-        required: true,
-        description: 'Directory where downloads will be stored'
-      }
-    ],
-    environmentVars: {
-      'WEBUI_PORT': '8080'
-    },
-    additionalPorts: [6881],
-    healthCheck: {
-      enabled: false
-    },
-    updateStrategy: 'latest',
-    volumes: [
-      {
-        hostPath: '{configDir}/qbittorrent/config',
-        containerPath: '/config',
-        type: 'config'
-      },
-      {
-        hostPath: '{paths.downloads}',
-        containerPath: '/downloads',
-        type: 'data'
-      }
-    ],
-    launchUrl: '/'
-  },
-  {
     key: 'bazarr',
     name: 'Bazarr',
     image: 'lscr.io/linuxserver/bazarr:latest',

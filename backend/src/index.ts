@@ -254,10 +254,6 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
               } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
                 hostPath = config.paths.jellyfin[1];
               }
-            } else if (serviceKey === 'qbittorrent') {
-              if (containerPath === '/downloads' && config.paths.qbittorrent?.[0]) {
-                hostPath = config.paths.qbittorrent[0];
-              }
             } else if (serviceKey === 'deluge') {
               if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
                 hostPath = config.paths.deluge[0];

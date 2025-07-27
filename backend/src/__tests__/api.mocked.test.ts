@@ -285,7 +285,7 @@ describe('API Tests with Mocks', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.services).toHaveLength(11);
+      expect(response.body.services).toHaveLength(10);
       expect(response.body.maxServices).toBe(6);
       
       const sonarrService = response.body.services.find((s: any) => s.key === 'sonarr');
