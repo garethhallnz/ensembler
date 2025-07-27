@@ -631,7 +631,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             <Card className="border-l-4 border-purple-500">
               <Card.Header>
                 <div className="flex items-center gap-2">
-                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Environment</span>
                   <h3 className="text-xl font-medium text-gray-900 dark:text-white">Environment Settings</h3>
                 </div>
               </Card.Header>
@@ -720,7 +719,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             <Card className="border-l-4 border-purple-500">
               <Card.Header>
                 <div className="flex items-center gap-2">
-                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Environment</span>
                   <h3 className="text-xl font-medium text-gray-900 dark:text-white">Environment Settings</h3>
                 </div>
               </Card.Header>

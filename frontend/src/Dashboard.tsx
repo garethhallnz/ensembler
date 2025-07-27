@@ -414,7 +414,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dockarr Dashboard</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
+          <p className="text-left text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
         </div>
         <div className="flex items-center gap-4">
           
@@ -467,7 +467,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
+            <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured</p>
           </div>
         </div>

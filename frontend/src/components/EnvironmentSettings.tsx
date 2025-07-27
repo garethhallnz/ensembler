@@ -53,12 +53,6 @@ export default function EnvironmentSettings({
 }: EnvironmentSettingsProps) {
   return (
     <div className={`space-y-6 ${className}`}>
-      <div className="flex items-center gap-2 mb-4">
-        <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-xs font-medium">
-          Environment
-        </span>
-        <h4 className="text-sm font-medium text-gray-800 dark:text-white">Environment Settings</h4>
-      </div>
       
       <div className={layout === 'grid' ? 'grid grid-cols-1 lg:grid-cols-3 gap-6' : 'space-y-4'}>
         {/* Timezone */}
