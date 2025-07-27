@@ -193,6 +193,14 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
     }
   }, []);
 
+  const refreshDashboard = useCallback(async () => {
+    await fetchServiceConfig();
+    await fetchServiceStatus();
+    await fetchDockerStatus();
+    const newStatus = await runtimeManager.checkStatus();
+    setRuntimeStatus(newStatus);
+  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -738,9 +746,22 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       )}
 
       {/* Advanced Settings Drawer */}
-      <Drawer open={showAdvancedSettings} onClose={() => setShowAdvancedSettings(false)} position="right" className="!w-[900px] max-w-full">
+      <Drawer 
+        open={showAdvancedSettings} 
+        onClose={async () => {
+          setShowAdvancedSettings(false);
+          // Refresh dashboard data when drawer is closed
+          await refreshDashboard();
+        }} 
+        position="right" 
+        className="!w-[900px] max-w-full"
+      >
         <div className="h-full">
-          <AdvancedSettings onClose={() => setShowAdvancedSettings(false)} />
+          <AdvancedSettings onClose={async () => {
+            setShowAdvancedSettings(false);
+            // Refresh dashboard data after settings are saved
+            await refreshDashboard();
+          }} />
         </div>
       </Drawer>
 
