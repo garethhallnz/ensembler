@@ -34,10 +34,11 @@ export default function Card({
 interface CardSubComponentProps {
   children: React.ReactNode;
   className?: string;
+  onClick?: () => void;
 }
 
-Card.Header = function CardHeader({ children, className = '' }: CardSubComponentProps) {
-  return <div className={`p-4 border-b border-gray-200 dark:border-gray-700 ${className}`}>{children}</div>;
+Card.Header = function CardHeader({ children, className = '', onClick }: CardSubComponentProps) {
+  return <div className={`p-4 border-b border-gray-200 dark:border-gray-700 ${className}`} onClick={onClick}>{children}</div>;
 };
 
 Card.Body = function CardBody({ children, className = '' }: CardSubComponentProps) {

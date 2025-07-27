@@ -652,7 +652,10 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
         <Card className="mt-6">
           <Card.Header 
             className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            onClick={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
+            onClick={() => {
+              console.log('System Status clicked, current state:', isSystemStatusExpanded);
+              setIsSystemStatusExpanded(!isSystemStatusExpanded);
+            }}
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
