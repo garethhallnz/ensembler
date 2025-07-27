@@ -235,6 +235,32 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
               } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
                 hostPath = config.paths.plex[1];
               }
+            } else if (serviceKey === 'emby') {
+              if (containerPath === '/tv' && config.paths.emby?.[0]) {
+                hostPath = config.paths.emby[0];
+              } else if (containerPath === '/movies' && config.paths.emby?.[1]) {
+                hostPath = config.paths.emby[1];
+              }
+            } else if (serviceKey === 'jellyfin') {
+              if (containerPath === '/tv' && config.paths.jellyfin?.[0]) {
+                hostPath = config.paths.jellyfin[0];
+              } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
+                hostPath = config.paths.jellyfin[1];
+              }
+            } else if (serviceKey === 'qbittorrent') {
+              if (containerPath === '/downloads' && config.paths.qbittorrent?.[0]) {
+                hostPath = config.paths.qbittorrent[0];
+              }
+            } else if (serviceKey === 'deluge') {
+              if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
+                hostPath = config.paths.deluge[0];
+              }
+            } else if (serviceKey === 'bazarr') {
+              if (containerPath === '/tv' && config.paths.bazarr?.[0]) {
+                hostPath = config.paths.bazarr[0];
+              } else if (containerPath === '/movies' && config.paths.bazarr?.[1]) {
+                hostPath = config.paths.bazarr[1];
+              }
             }
 
             composeServices += `      - ${hostPath}:${containerPath}\n`;

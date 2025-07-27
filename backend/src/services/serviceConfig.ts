@@ -288,7 +288,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     name: 'Emby',
     image: 'lscr.io/linuxserver/emby:latest',
     defaultPort: 8920,
-    internalPort: 8920,
+    internalPort: 8096,
     category: 'media',
     description: 'Feature-rich media server with mobile apps',
     required: false,
@@ -306,7 +306,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     ],
     healthCheck: {
       enabled: true,
-      path: '/System/Info/Public',
+      path: '/web/index.html',
       interval: 30000
     },
     updateStrategy: 'latest',
@@ -334,7 +334,7 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
     name: 'qBittorrent',
     image: 'lscr.io/linuxserver/qbittorrent:latest',
     defaultPort: 8090,
-    internalPort: 8090,
+    internalPort: 8080,
     category: 'torrent',
     description: 'Feature-rich BitTorrent client with web interface',
     required: false,
