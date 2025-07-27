@@ -174,10 +174,34 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
   };
 
   const validatePaths = async () => {
-    const allPaths: string[] = [];
+    const pathToServices: { [path: string]: Array<{ service: string, field: string }> } = {};
     const newPathErrors: { [service: string]: string[] } = {};
     let valid = true;
 
+    // First pass: collect all paths and which services use them
+    Object.keys(config?.selectedServices || {}).forEach((svc) => {
+      if (!config?.selectedServices[svc]) return;
+      const service = availableServices.find(s => s.key === svc);
+      if (!service) return;
+      
+      const fields = service.pathRequirements || [];
+      
+      fields.forEach((field, idx) => {
+        const val = config.paths[svc]?.[idx] || '';
+        if (val.trim()) {
+          const normalizedPath = val.trim();
+          if (!pathToServices[normalizedPath]) {
+            pathToServices[normalizedPath] = [];
+          }
+          pathToServices[normalizedPath].push({
+            service: svc,
+            field: field.label.toLowerCase()
+          });
+        }
+      });
+    });
+
+    // Second pass: validate paths and check for conflicts
     Object.keys(config?.selectedServices || {}).forEach((svc) => {
       if (!config?.selectedServices[svc]) return;
       const service = availableServices.find(s => s.key === svc);
@@ -188,14 +212,45 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
       
       fields.forEach((field, idx) => {
         const val = config.paths[svc]?.[idx] || '';
+        
         if (field.required && !val.trim()) {
           serviceErrors[idx] = `${field.label} is required`;
           valid = false;
-        } else if (val.trim() && allPaths.includes(val.trim())) {
-          serviceErrors[idx] = `Path is already used by another service`;
-          valid = false;
         } else if (val.trim()) {
-          allPaths.push(val.trim());
+          const normalizedPath = val.trim();
+          const usagesForThisPath = pathToServices[normalizedPath] || [];
+          
+          // Check if this path is used by multiple services
+          if (usagesForThisPath.length > 1) {
+            const currentFieldType = field.label.toLowerCase();
+            
+            // Allow sharing of media paths between compatible services
+            const isMediaPath = currentFieldType.includes('movies') || 
+                               currentFieldType.includes('tv') || 
+                               currentFieldType.includes('shows') || 
+                               currentFieldType.includes('music') ||
+                               currentFieldType.includes('books');
+            
+            if (isMediaPath) {
+              // Media paths can be shared between services that consume the same media type
+              const conflictingServices = usagesForThisPath.filter(usage => 
+                usage.service !== svc && 
+                !isSameMediaType(currentFieldType, usage.field)
+              );
+              
+              if (conflictingServices.length > 0) {
+                serviceErrors[idx] = `Path conflicts with different media type in ${conflictingServices[0].service}`;
+                valid = false;
+              }
+            } else {
+              // Non-media paths (like config, downloads) should be unique
+              const conflictingServices = usagesForThisPath.filter(usage => usage.service !== svc);
+              if (conflictingServices.length > 0) {
+                serviceErrors[idx] = `Path is already used by ${conflictingServices[0].service}`;
+                valid = false;
+              }
+            }
+          }
         }
       });
       
@@ -206,6 +261,25 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
 
     setPathErrors(newPathErrors);
     return valid;
+  };
+
+  // Helper function to determine if two field types represent the same media type
+  const isSameMediaType = (field1: string, field2: string): boolean => {
+    const movieFields = ['movies', 'movie'];
+    const tvFields = ['tv', 'shows', 'series'];
+    const musicFields = ['music', 'audio'];
+    const bookFields = ['books', 'ebooks'];
+    
+    const getMediaType = (field: string) => {
+      const fieldLower = field.toLowerCase();
+      if (movieFields.some(type => fieldLower.includes(type))) return 'movies';
+      if (tvFields.some(type => fieldLower.includes(type))) return 'tv';
+      if (musicFields.some(type => fieldLower.includes(type))) return 'music';
+      if (bookFields.some(type => fieldLower.includes(type))) return 'books';
+      return 'other';
+    };
+    
+    return getMediaType(field1) === getMediaType(field2);
   };
 
   const validateConfig = async () => {

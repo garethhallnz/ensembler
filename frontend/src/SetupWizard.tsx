@@ -213,7 +213,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   };
 
   const validatePaths = async () => {
-    const allPaths: string[] = [];
+    const pathToServices: { [path: string]: Array<{ service: string, field: string }> } = {};
+    const allValidPaths: string[] = [];
+
+    // First pass: collect all paths and detect conflicts using smart validation
     Object.keys(selected).forEach((svc) => {
         if (!selected[svc]) return;
         const service = serviceConfig.find(s => s.key === svc);
@@ -222,21 +225,93 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         const fields = service.pathRequirements || [];
         fields.forEach((field, idx) => {
             const val = paths[svc]?.[idx] || '';
-            if (field.required && val.trim()) {
-                allPaths.push(val.trim());
+            if (val.trim()) {
+                const normalizedPath = val.trim();
+                if (!pathToServices[normalizedPath]) {
+                    pathToServices[normalizedPath] = [];
+                }
+                pathToServices[normalizedPath].push({
+                    service: svc,
+                    field: field.label.toLowerCase()
+                });
+                
+                if (field.required) {
+                    allValidPaths.push(normalizedPath);
+                }
             }
         });
     });
 
-    if (allPaths.length === 0) {
+    // Check for conflicts using same logic as AdvancedSettings
+    const pathConflicts: { [service: string]: string[] } = {};
+    let hasConflicts = false;
+
+    Object.keys(selected).forEach((svc) => {
+        if (!selected[svc]) return;
+        const service = serviceConfig.find(s => s.key === svc);
+        if (!service) return;
+        
+        const fields = service.pathRequirements || [];
+        const serviceErrors: string[] = [];
+        
+        fields.forEach((field, idx) => {
+            const val = paths[svc]?.[idx] || '';
+            if (val.trim()) {
+                const normalizedPath = val.trim();
+                const usagesForThisPath = pathToServices[normalizedPath] || [];
+                
+                if (usagesForThisPath.length > 1) {
+                    const currentFieldType = field.label.toLowerCase();
+                    
+                    const isMediaPath = currentFieldType.includes('movies') || 
+                                       currentFieldType.includes('tv') || 
+                                       currentFieldType.includes('shows') || 
+                                       currentFieldType.includes('music') ||
+                                       currentFieldType.includes('books');
+                    
+                    if (isMediaPath) {
+                        const conflictingServices = usagesForThisPath.filter(usage => 
+                            usage.service !== svc && 
+                            !isSameMediaType(currentFieldType, usage.field)
+                        );
+                        
+                        if (conflictingServices.length > 0) {
+                            serviceErrors[idx] = `Path conflicts with different media type in ${conflictingServices[0].service}`;
+                            hasConflicts = true;
+                        }
+                    } else {
+                        const conflictingServices = usagesForThisPath.filter(usage => usage.service !== svc);
+                        if (conflictingServices.length > 0) {
+                            serviceErrors[idx] = `Path is already used by ${conflictingServices[0].service}`;
+                            hasConflicts = true;
+                        }
+                    }
+                }
+            }
+        });
+        
+        if (serviceErrors.length > 0) {
+            pathConflicts[svc] = serviceErrors;
+        }
+    });
+
+    if (hasConflicts) {
+        setPathErrors(pathConflicts);
+        return;
+    }
+
+    // If no conflicts and no paths to validate, proceed
+    if (allValidPaths.length === 0) {
+        setPathErrors({});
         setStep((s) => Math.min(steps.length - 1, s + 1));
         return;
     }
 
+    // Validate paths with backend
     const res = await fetch('http://localhost:3001/api/paths/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: allPaths }),
+        body: JSON.stringify({ paths: allValidPaths }),
     });
 
     if (res.ok) {
@@ -263,6 +338,25 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         });
         setPathErrors(errors);
     }
+  };
+
+  // Helper function to determine if two field types represent the same media type
+  const isSameMediaType = (field1: string, field2: string): boolean => {
+    const movieFields = ['movies', 'movie'];
+    const tvFields = ['tv', 'shows', 'series'];
+    const musicFields = ['music', 'audio'];
+    const bookFields = ['books', 'ebooks'];
+    
+    const getMediaType = (field: string) => {
+      const fieldLower = field.toLowerCase();
+      if (movieFields.some(type => fieldLower.includes(type))) return 'movies';
+      if (tvFields.some(type => fieldLower.includes(type))) return 'tv';
+      if (musicFields.some(type => fieldLower.includes(type))) return 'music';
+      if (bookFields.some(type => fieldLower.includes(type))) return 'books';
+      return 'other';
+    };
+    
+    return getMediaType(field1) === getMediaType(field2);
   };
 
   const validatePorts = () => {
