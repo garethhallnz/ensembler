@@ -421,7 +421,16 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         throw new Error('Failed to generate docker-compose files');
       }
 
-      showToast('Configuration saved and applied successfully!', 'success');
+      // Start services
+      const startRes = await fetch('http://localhost:3001/api/services/start', {
+        method: 'POST',
+      });
+
+      if (!startRes.ok) {
+        throw new Error('Failed to start services');
+      }
+
+      showToast('Configuration saved and services started successfully!', 'success');
       onComplete();
     } catch (error) {
       console.error('Error saving configuration:', error);
@@ -872,7 +881,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       <div className="flex justify-between mt-6">
         <div>
           {step > 0 && (
-            <Button color="gray" onClick={() => setStep(s => Math.max(0, s - 1))}>
+            <Button color="gray" outline onClick={() => setStep(s => Math.max(0, s - 1))}>
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
@@ -889,8 +898,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
               </svg>
             </Button>
           ) : (
-            <Button color="green" onClick={handleSaveAndApply} loading={isSaving} size="lg">
-              {isSaving ? 'Saving Configuration...' : 'Save and Apply Configuration'}
+            <Button color="green" onClick={handleSaveAndApply} loading={isSaving}>
+              {isSaving ? 'Saving Configuration...' : 'Save and Start Services'}
               <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
