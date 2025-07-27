@@ -507,7 +507,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md w-full p-6">
           <div className="flex flex-col items-center space-y-4">
             <Spinner size="xl" />

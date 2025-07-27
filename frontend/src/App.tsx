@@ -86,12 +86,13 @@ function App() {
   return (
     <CustomThemeProvider>
       <ToastProvider>
-        <div className="fixed top-4 right-4 z-50">
-          <DarkModeToggle />
-        </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+          <div className="fixed top-4 right-4 z-50">
+            <DarkModeToggle />
+          </div>
   
       {status === 'checking' && (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-center min-h-screen">
           <Card className="max-w-md w-full p-6">
             <div className="flex flex-col items-center space-y-4">
               <Spinner size="xl" />
@@ -102,7 +103,7 @@ function App() {
       )}
       
       {status === 'docker-missing' && (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-center min-h-screen">
           <Card className="max-w-md w-full">
             <Card.Header>
               <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Not Running</h3>
@@ -118,7 +119,7 @@ function App() {
       )}
       
       {status === 'compose-missing' && (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-center min-h-screen">
           <Card className="max-w-md w-full">
             <Card.Header>
               <h3 className="text-xl font-medium text-red-600 dark:text-red-500">Docker Compose Not Available</h3>
@@ -146,6 +147,7 @@ function App() {
       {status === 'ok' && setupComplete && !showSetupWizard && (
         <Dashboard onEditSetup={() => setShowSetupWizard(true)} />
       )}
+        </div>
       </ToastProvider>
     </CustomThemeProvider>
   );

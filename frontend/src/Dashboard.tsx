@@ -528,15 +528,15 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
               
               // Determine border color
               const borderColor = alertInfo?.alert
-                ? 'border-red-500'
+                ? 'border-red-500 dark:border-red-400'
                 : status === 'Running'
-                  ? 'border-green-500'
-                  : 'border-gray-300';
+                  ? 'border-green-500 dark:border-green-400'
+                  : 'border-gray-300 dark:border-gray-600';
 
               return (
                 <Card
                   key={serviceKey}
-                  className={`relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 border-l-4 ${borderColor} bg-white dark:bg-gray-800`}
+                  className={`relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 border-l ${borderColor} bg-white dark:bg-gray-800`}
                 >
                   {/* Card Header */}
                   <div className="px-6 pt-6 pb-4">
@@ -650,7 +650,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
       {(dockerStatus || runtimeStatus) && (
         <Card className="mt-6">
           <Card.Header>
-            <h2 className="text-xl font-semibold flex items-center gap-2">
+            <h2 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
               <span>System Status</span>
               {dockerStatus.running && runtimeStatus?.appRunning ? (
                 <span className="text-green-500" title="All systems operational">✔️</span>
@@ -672,7 +672,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                   )}
                 </div>
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="font-semibold">Status:</span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Status:</span>
                   {dockerStatus.running ? (
                     <Badge variant="running">Running</Badge>
                   ) : (
@@ -680,13 +680,13 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                   )}
                 </div>
                 <div className="mb-1 flex items-center gap-2">
-                  <span className="font-semibold">Updates:</span>
-                  <span>{dockerStatus.updates}</span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">Updates:</span>
+                  <span className="text-gray-900 dark:text-white">{dockerStatus.updates}</span>
                 </div>
                 {dockerUpdates && (
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">Docker:</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Docker:</span>
                       {dockerUpdates.docker?.updateAvailable ? (
                         <Badge variant="update">🔄 Update Available</Badge>
                       ) : (
@@ -694,14 +694,14 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">Compose:</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-300">Compose:</span>
                       {dockerUpdates.compose?.updateAvailable ? (
                         <Badge variant="update">🔄 Update Available</Badge>
                       ) : (
                         <Badge variant="success">Up to Date</Badge>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
                     </div>
                   </div>
@@ -719,7 +719,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">App:</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">App:</span>
                     {runtimeStatus.appRunning ? (
                       <Badge variant="running">Active</Badge>
                     ) : (
@@ -727,7 +727,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Backend:</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Backend:</span>
                     {runtimeStatus.backendConnected ? (
                       <Badge variant="success">Connected</Badge>
                     ) : (
@@ -735,7 +735,7 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Docker Available:</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Docker Available:</span>
                     {runtimeStatus.dockerAvailable ? (
                       <Badge variant="success">Yes</Badge>
                     ) : (
@@ -743,11 +743,11 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Services Running:</span>
-                    <span>{runtimeStatus.servicesRunning.length}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Services Running:</span>
+                    <span className="text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</span>
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Services Independent:</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Services Independent:</span>
                     {runtimeManager.areServicesIndependent() ? (
                       <Badge variant="success">Yes</Badge>
                     ) : (
@@ -755,8 +755,8 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                     )}
                   </div>
                   <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold">Last Check:</span>
-                    <span>{runtimeStatus.lastCheck.toLocaleTimeString()}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">Last Check:</span>
+                    <span className="text-gray-900 dark:text-white">{runtimeStatus.lastCheck.toLocaleTimeString()}</span>
                   </div>
                   <Alert color="blue" className="mt-3">
                     <span className="font-semibold">Runtime Behavior:</span> This app is active only when launched. Docker services run independently and continue when the app is closed.
