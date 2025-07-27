@@ -422,7 +422,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       }
 
       // Start services
-      const startRes = await fetch('http://localhost:3001/api/services/start', {
+      const startRes = await fetch('http://localhost:3001/api/services/start-all', {
         method: 'POST',
       });
 
@@ -433,8 +433,9 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       showToast('Configuration saved and services started successfully!', 'success');
       onComplete();
     } catch (error) {
-      console.error('Error saving configuration:', error);
-      showToast('Failed to save configuration. Please try again.', 'error');
+      console.error('Error in setup process:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      showToast(errorMessage, 'error');
     } finally {
       setIsSaving(false);
     }
