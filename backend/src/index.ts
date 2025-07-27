@@ -643,34 +643,60 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
     const imageName = serviceConfig.image;
 
     try {
-      // Get current image info
-      const { stdout: currentInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.RepoDigests}},{{.Created}}"`);
+      // Get current local image ID and creation date
+      const { stdout: currentImageInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Id}},{{.Created}}"`);
+      const [currentImageId, currentCreated] = currentImageInfo.trim().split(',');
       
-      // Pull latest image info without downloading
-      const { stdout: latestInfo } = await execAsync(`docker manifest inspect ${imageName}:latest --verbose`);
+      // Pull latest image metadata only (not the full image)
+      await execAsync(`docker pull ${imageName}:latest --quiet`);
       
-      const currentDigest = currentInfo.split(',')[0];
-      const hasUpdate = !latestInfo.includes(currentDigest);
+      // Get the updated image info after pull
+      const { stdout: updatedImageInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Id}},{{.Created}}"`);
+      const [updatedImageId, updatedCreated] = updatedImageInfo.trim().split(',');
+      
+      // Compare image IDs to determine if there's an update
+      const hasUpdate = currentImageId !== updatedImageId;
+      
+      const currentVersion = currentCreated.split('T')[0];
+      const latestVersion = updatedCreated.split('T')[0];
       
       updateCheckStore.availableUpdates[serviceName] = {
-        current: currentInfo.split(',')[1].split('T')[0],
-        latest: hasUpdate ? 'Update available' : 'Up to date'
+        current: currentVersion,
+        latest: hasUpdate ? latestVersion : currentVersion
       };
       
       res.json({ 
         success: true, 
         hasUpdate,
-        currentVersion: updateCheckStore.availableUpdates[serviceName].current,
-        updateAvailable: updateCheckStore.availableUpdates[serviceName].latest
+        currentVersion: currentVersion,
+        latestVersion: latestVersion,
+        updateAvailable: hasUpdate ? `Update available (${latestVersion})` : 'Up to date'
       });
     } catch (err) {
-      // Fallback for services that might not be running
-      res.json({ 
-        success: true, 
-        hasUpdate: Math.random() > 0.7, // Mock update availability
-        currentVersion: 'unknown',
-        updateAvailable: 'Check manually'
-      });
+      console.error(`Error checking updates for ${serviceName}:`, err);
+      // Try to get current version info even if update check fails
+      try {
+        const { stdout: currentInfo } = await execAsync(`docker image inspect ${imageName}:latest --format "{{.Created}}"`);
+        const currentVersion = currentInfo.trim().split('T')[0];
+        
+        res.json({ 
+          success: true, 
+          hasUpdate: false,
+          currentVersion: currentVersion,
+          latestVersion: 'unknown',
+          updateAvailable: 'Unable to check for updates',
+          error: (err as Error).message
+        });
+      } catch (inspectErr) {
+        res.json({ 
+          success: false, 
+          hasUpdate: false,
+          currentVersion: 'unknown',
+          latestVersion: 'unknown',
+          updateAvailable: 'Service not installed or Docker not available',
+          error: (err as Error).message
+        });
+      }
     }
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to check updates for ${serviceName}.`, error: (err as Error).message });

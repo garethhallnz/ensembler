@@ -237,7 +237,7 @@ export const FUTURE_SERVICES: ServiceConfig[] = [
   {
     key: 'deluge',
     name: 'Deluge',
-    image: 'lscr.io/linuxserver/deluge',
+    image: 'lscr.io/linuxserver/deluge:latest',
     defaultPort: 8112,
     internalPort: 8112,
     category: 'torrent',
@@ -273,7 +273,7 @@ export const FUTURE_SERVICES: ServiceConfig[] = [
   {
     key: 'kodi',
     name: 'Kodi',
-    image: 'lscr.io/linuxserver/kodi-headless',
+    image: 'lscr.io/linuxserver/kodi-headless:latest',
     defaultPort: 8080,
     internalPort: 8080,
     category: 'media',
