@@ -605,16 +605,18 @@ export default function Dashboard({ onEditSetup }: DashboardProps) {
                         
                         {/* Secondary Actions */}
                         <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="warning"
-                            onClick={() => handleServiceAction(serviceKey, 'restart')}
-                            loading={actionLoading[`${serviceKey}:restart`]}
-                            aria-label={`Restart ${service.name}`}
-                            tooltip="Restart Service"
-                          >
-                            <HiRefresh className="inline-block mr-1" /> Restart
-                          </Button>
+                          {status === 'Running' && (
+                            <Button
+                              size="sm"
+                              variant="warning"
+                              onClick={() => handleServiceAction(serviceKey, 'restart')}
+                              loading={actionLoading[`${serviceKey}:restart`]}
+                              aria-label={`Restart ${service.name}`}
+                              tooltip="Restart Service"
+                            >
+                              <HiRefresh className="inline-block mr-1" /> Restart
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="neutral"
