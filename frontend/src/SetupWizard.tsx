@@ -204,11 +204,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       return false;
     }
     
-    // Check service limit
-    if (selectedServices.length > maxServices) {
-      showToast(`Too many services selected. Maximum is ${maxServices} services.`, 'warning');
-      return false;
-    }
     
     // Frontend validation is sufficient - any service is allowed
     return true;
@@ -667,7 +662,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                })}
              </div>
              <div className="text-sm text-gray-500 dark:text-gray-400">
-               Select at least one service to continue. Maximum {maxServices} services.
+               Select at least one service to continue.
              </div>
            </div>
         )}

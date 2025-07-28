@@ -440,18 +440,12 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
 // Future services that can be easily added
 export const FUTURE_SERVICES: ServiceConfig[] = [];
 
-export const MAX_SERVICES = 6;
-
 export function getServiceConfig(serviceKey: string): ServiceConfig | undefined {
   return SUPPORTED_SERVICES.find(service => service.key === serviceKey);
 }
 
 export function getServicesByCategory(category: string): ServiceConfig[] {
   return SUPPORTED_SERVICES.filter(service => service.category === category);
-}
-
-export function validateServiceLimit(selectedServices: string[]): boolean {
-  return selectedServices.length <= MAX_SERVICES;
 }
 
 export function getDefaultPorts(): { [key: string]: number } {
@@ -476,6 +470,5 @@ export function getPathRequirements(serviceKey: string): { label: string; requir
 }
 
 export function canAddMoreServices(currentServices: string[]): boolean {
-  return currentServices.length < MAX_SERVICES && 
-         (SUPPORTED_SERVICES.length + FUTURE_SERVICES.length) > currentServices.length;
+  return (SUPPORTED_SERVICES.length + FUTURE_SERVICES.length) > currentServices.length;
 } 

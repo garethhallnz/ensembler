@@ -59,8 +59,7 @@ const createTestApp = () => {
           pathRequirements: service.pathRequirements,
           required: service.required,
           recommended: service.recommended
-        })),
-        maxServices: 6
+        }))
       });
     } catch (err) {
       res.status(500).json({ success: false, message: 'Failed to get service configuration.', error: (err as Error).message });
@@ -72,14 +71,6 @@ const createTestApp = () => {
       const { selectedServices } = req.body;
       if (!selectedServices || !Array.isArray(selectedServices)) {
         return res.status(400).json({ success: false, message: 'Invalid selectedServices format.' });
-      }
-      
-      const MAX_SERVICES = 6;
-      if (selectedServices.length > MAX_SERVICES) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Too many services selected. Maximum is ${MAX_SERVICES} services.` 
-        });
       }
       
       const hasRequiredService = selectedServices.includes('sonarr') || selectedServices.includes('radarr');
@@ -286,7 +277,6 @@ describe('API Tests with Mocks', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.services).toHaveLength(10);
-      expect(response.body.maxServices).toBe(6);
       
       const sonarrService = response.body.services.find((s: any) => s.key === 'sonarr');
       expect(sonarrService).toEqual({
@@ -331,19 +321,6 @@ describe('API Tests with Mocks', () => {
       });
     });
 
-    it('should reject selection with too many services', async () => {
-      const response = await request(app)
-        .post('/api/services/validate-selection')
-        .send({ 
-          selectedServices: ['sonarr', 'radarr', 'plex', 'transmission', 'prowlarr', 'overseerr', 'extra'] 
-        })
-        .expect(400);
-
-      expect(response.body).toEqual({
-        success: false,
-        message: 'Too many services selected. Maximum is 6 services.'
-      });
-    });
 
     it('should reject invalid input format', async () => {
       const response = await request(app)

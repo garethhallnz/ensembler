@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts, validateServiceLimit } from './services/serviceConfig';
+import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts } from './services/serviceConfig';
 
 const app = express();
 const port = 3001;
@@ -592,8 +592,7 @@ app.get('/api/services/config', (req: Request, res: Response) => {
         pathRequirements: service.pathRequirements,
         required: service.required,
         recommended: service.recommended
-      })),
-      maxServices: 6
+      }))
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to get service configuration.', error: (err as Error).message });
@@ -607,13 +606,6 @@ app.post('/api/services/validate-selection', (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: 'Invalid selectedServices format.' });
     }
     
-    const isValid = validateServiceLimit(selectedServices);
-    if (!isValid) {
-      return res.status(400).json({ 
-        success: false, 
-        message: `Too many services selected. Maximum is 6 services.` 
-      });
-    }
     
     // Check if at least Sonarr or Radarr is selected
     const hasRequiredService = selectedServices.includes('sonarr') || selectedServices.includes('radarr');

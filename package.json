@@ -15,7 +15,9 @@
     "electron-build": "npm run build && electron-builder",
     "electron-dist": "npm run build && electron-builder --publish=never",
     "install-deps": "cd backend && npm install && cd ../frontend && npm install",
-    "test": "cd backend && npm test && cd ../frontend && npm test"
+    "test": "cd backend && npm test && cd ../frontend && npm test",
+    "frontend": "cd frontend && npm run dev",
+    "backend": "cd backend && npm run dev"
   },
   "dependencies": {
     "node-docker-api": "^1.1.22"
