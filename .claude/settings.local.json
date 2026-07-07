@@ -22,7 +22,9 @@
       "Bash(docker logs:*)",
       "Bash(ls:*)",
       "Bash(docker stop:*)",
-      "Bash(docker start:*)"
+      "Bash(docker start:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs"
     ],
     "deny": []
   }

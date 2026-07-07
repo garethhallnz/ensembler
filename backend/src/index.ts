@@ -879,9 +879,11 @@ const scheduleWeeklyUpdateChecks = () => {
   }, checkInterval);
 };
 
-// Start the weekly update check scheduler
-scheduleWeeklyUpdateChecks();
+if (process.env.NODE_ENV !== 'test') {
+  // Start the weekly update check scheduler
+  scheduleWeeklyUpdateChecks();
 
-app.listen(port, () => console.log(`Backend listening on port ${port}`));
+  app.listen(port, () => console.log(`Backend listening on port ${port}`));
+}
 
 export default app;

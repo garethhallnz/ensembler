@@ -24,7 +24,6 @@ interface ServiceConfig {
 interface ServiceConfigResponse {
   success: boolean;
   services: ServiceConfig[];
-  maxServices: number;
 }
 
 const steps = [
@@ -59,7 +58,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const [envErrors, setEnvErrors] = useState<{[key: string]: string}>({});
   const [isSaving, setIsSaving] = useState(false);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
-  const [maxServices, setMaxServices] = useState(6);
   const [loading, setLoading] = useState(true);
 
   // Load service configuration on mount
@@ -81,8 +79,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
           setServiceConfig(data.services);
-          setMaxServices(data.maxServices);
-          
+
           // Initialize default ports
           const defaultPorts: { [key: string]: number } = {};
           const defaultSelected: { [key: string]: boolean } = {};

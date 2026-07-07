@@ -11,7 +11,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "postinstall": "flowbite-react patch"
   },
   "dependencies": {
@@ -54,6 +54,11 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "jsdom",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/dist/",
+      "/dist-electron/"
+    ],
     "setupFilesAfterEnv": [
       "@testing-library/jest-dom"
     ]

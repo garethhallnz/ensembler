@@ -1,6 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+// Use requireActual so importing this module never triggers the jest.mock('fs'|'path'|'os')
+// factories that reference it — that circularity throws a TDZ ReferenceError.
+const fs = jest.requireActual('fs') as typeof import('fs');
+const path = jest.requireActual('path') as typeof import('path');
 
 // Mock file system state
 export interface MockFile {

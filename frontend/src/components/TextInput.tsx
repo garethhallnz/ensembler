@@ -14,6 +14,8 @@ interface TextInputProps {
   color?: 'base' | 'gray' | 'info' | 'failure' | 'warning' | 'success';
   sizing?: 'sm' | 'md' | 'lg';
   className?: string;
+  min?: string | number;
+  max?: string | number;
 }
 
 export default function TextInput({
@@ -29,6 +31,8 @@ export default function TextInput({
   color = 'gray',
   sizing = 'md',
   className = '',
+  min,
+  max,
 }: TextInputProps) {
   return (
     <FlowbiteTextInput
@@ -44,6 +48,8 @@ export default function TextInput({
       color={color}
       sizing={sizing}
       className={className}
+      min={min}
+      max={max}
     />
   );
 }

@@ -4,7 +4,7 @@ import type { FC, SVGProps } from 'react';
 
 interface AlertProps {
   children: React.ReactNode;
-  color?: 'blue' | 'red' | 'green' | 'yellow' | 'gray' | 'dark';
+  color?: 'blue' | 'red' | 'green' | 'yellow' | 'gray' | 'dark' | 'info';
   icon?: FC<SVGProps<SVGSVGElement>>;
   onDismiss?: () => void;
   rounded?: boolean;

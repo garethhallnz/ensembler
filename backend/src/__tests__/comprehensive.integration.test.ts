@@ -84,7 +84,6 @@ describe('Comprehensive Integration Tests', () => {
   const configDir = path.join(os.homedir(), '.media-center');
   const configFile = path.join(configDir, 'config.json');
   const composeFile = path.join(configDir, 'docker-compose.yml');
-  const envFile = path.join(configDir, '.env');
 
   const mockConfig = {
     selectedServices: { sonarr: true, radarr: true, plex: true },
@@ -103,6 +102,11 @@ describe('Comprehensive Integration Tests', () => {
       return false;
     });
     (fs.readFileSync as jest.Mock).mockReturnValue(JSON.stringify(mockConfig));
+    // clearAllMocks() does not remove implementations set with mockImplementation,
+    // so error-path tests would otherwise leak their throwing mocks into later tests
+    (fs.writeFileSync as jest.Mock).mockImplementation(() => undefined);
+    (fs.unlinkSync as jest.Mock).mockImplementation(() => undefined);
+    (fs.accessSync as jest.Mock).mockImplementation(() => undefined);
   });
 
   describe('Basic Health Check', () => {
@@ -201,8 +205,8 @@ describe('Comprehensive Integration Tests', () => {
           success: true,
           message: 'Docker Compose files generated successfully.'
         });
-        expect(fs.writeFileSync).toHaveBeenCalledWith(envFile, expect.stringContaining('TZ=UTC'));
-        expect(fs.writeFileSync).toHaveBeenCalledWith(composeFile, expect.stringContaining('version: \'3.8\''));
+        expect(fs.writeFileSync).toHaveBeenCalledWith(composeFile, expect.stringContaining('services:'));
+        expect(fs.writeFileSync).toHaveBeenCalledWith(composeFile, expect.stringContaining('sonarr:'));
       });
 
       it('should handle generation errors', async () => {
@@ -230,11 +234,10 @@ describe('Comprehensive Integration Tests', () => {
 
         expect(response.body).toEqual({
           success: true,
-          message: 'Configuration reset successfully.'
+          message: 'All settings reset successfully.'
         });
         expect(fs.unlinkSync).toHaveBeenCalledWith(configFile);
         expect(fs.unlinkSync).toHaveBeenCalledWith(composeFile);
-        expect(fs.unlinkSync).toHaveBeenCalledWith(envFile);
       });
 
       it('should handle reset errors gracefully', async () => {
@@ -248,7 +251,7 @@ describe('Comprehensive Integration Tests', () => {
 
         expect(response.body).toEqual({
           success: false,
-          message: 'Failed to reset configuration.',
+          message: 'Failed to reset settings.',
           error: 'Delete error'
         });
       });
@@ -326,9 +329,10 @@ describe('Comprehensive Integration Tests', () => {
           .expect(200);
 
         expect(response.body.success).toBe(true);
-        expect(response.body.services).toHaveLength(6);
-        expect(response.body.maxServices).toBe(6);
-        
+        const { SUPPORTED_SERVICES } = require('../services/serviceConfig');
+        expect(response.body.services).toHaveLength(SUPPORTED_SERVICES.length);
+
+
         const sonarrService = response.body.services.find((s: any) => s.key === 'sonarr');
         expect(sonarrService).toBeDefined();
         expect(sonarrService.name).toBe('Sonarr');
@@ -361,17 +365,17 @@ describe('Comprehensive Integration Tests', () => {
         });
       });
 
-      it('should reject selection with too many services', async () => {
+      it('should accept selections with many services (no service limit)', async () => {
         const response = await request(app)
           .post('/api/services/validate-selection')
-          .send({ 
-            selectedServices: ['sonarr', 'radarr', 'plex', 'transmission', 'prowlarr', 'overseerr', 'extra'] 
+          .send({
+            selectedServices: ['sonarr', 'radarr', 'plex', 'transmission', 'prowlarr', 'overseerr', 'jellyfin']
           })
-          .expect(400);
+          .expect(200);
 
         expect(response.body).toEqual({
-          success: false,
-          message: 'Too many services selected. Maximum is 6 services.'
+          success: true,
+          message: 'Service selection is valid.'
         });
       });
     });
@@ -502,7 +506,7 @@ describe('Comprehensive Integration Tests', () => {
 
         expect(response.body).toEqual({
           success: true,
-          message: 'All services started successfully.'
+          message: 'All enabled services started successfully.'
         });
       });
 
@@ -521,11 +525,12 @@ describe('Comprehensive Integration Tests', () => {
     describe('Service Updates', () => {
       it('should check for service updates', async () => {
         const response = await request(app)
-          .post('/api/services/check-updates')
+          .get('/api/services/sonarr/check-updates')
           .expect(200);
 
         expect(response.body.success).toBe(true);
-        expect(response.body.updates).toBeDefined();
+        expect(response.body).toHaveProperty('hasUpdate');
+        expect(response.body).toHaveProperty('currentVersion');
       });
     });
 

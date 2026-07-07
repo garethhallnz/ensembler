@@ -29,7 +29,6 @@ interface PathConfigurationProps {
 
 export default function PathConfiguration({
   serviceKey,
-  serviceName,
   pathRequirements,
   paths,
   pathErrors = [],
@@ -92,8 +91,8 @@ export default function PathConfiguration({
             <div className="flex gap-2">
               {showDefaultButton && (
                 <Button 
-                  onClick={() => onPathChange(idx, getDefaultPath(serviceKey, field.label))} 
-                  variant="outline"
+                  onClick={() => onPathChange(idx, getDefaultPath(serviceKey, field.label))}
+                  outline
                   size="sm"
                   title="Use default path"
                 >

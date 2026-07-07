@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, Spinner } from './components';
+import { Card, Button, Badge, Alert } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -56,11 +56,7 @@ interface DockerUpdatesType {
   lastChecked: string;
 }
 
-interface DashboardProps {
-  onEditSetup: () => void;
-}
-
-export default function Dashboard({ onEditSetup }: DashboardProps) {
+export default function Dashboard() {
   const { showToast } = useToast();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
   const [serviceVersions, setServiceVersions] = useState<ServiceVersionType>({});

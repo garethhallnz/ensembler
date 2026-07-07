@@ -270,6 +270,19 @@ export const mockExec = jest.fn().mockImplementation((command: string, callback?
   }
 });
 
+// Real child_process.exec defines promisify.custom so util.promisify(exec)
+// resolves { stdout, stderr }; the mock needs the same or destructuring breaks.
+(mockExec as any)[Symbol.for('nodejs.util.promisify.custom')] = (command: string) =>
+  new Promise((resolve, reject) => {
+    mockExec(command, (error: Error | null, stdout: string, stderr: string) => {
+      if (error) {
+        reject(Object.assign(error, { stdout, stderr }));
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
+
 // Setup default mock state
 export const setupDefaultMockState = () => {
   mockDockerState.reset();

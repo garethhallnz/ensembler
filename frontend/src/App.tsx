@@ -197,7 +197,7 @@ function App() {
       )}
 
       {status === 'ok' && setupComplete && !showSetupWizard && (
-        <Dashboard onEditSetup={() => setShowSetupWizard(true)} />
+        <Dashboard />
       )}
         </div>
       </ToastProvider>
