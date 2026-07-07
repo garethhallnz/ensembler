@@ -13,6 +13,7 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
   unlinkSync: jest.fn(),
   accessSync: jest.fn(),
+  rmSync: jest.fn(),
 }));
 
 jest.mock('child_process', () => ({
@@ -107,6 +108,7 @@ describe('Comprehensive Integration Tests', () => {
     (fs.writeFileSync as jest.Mock).mockImplementation(() => undefined);
     (fs.unlinkSync as jest.Mock).mockImplementation(() => undefined);
     (fs.accessSync as jest.Mock).mockImplementation(() => undefined);
+    (fs.rmSync as jest.Mock).mockImplementation(() => undefined);
   });
 
   describe('Basic Health Check', () => {
@@ -238,6 +240,15 @@ describe('Comprehensive Integration Tests', () => {
         });
         expect(fs.unlinkSync).toHaveBeenCalledWith(configFile);
         expect(fs.unlinkSync).toHaveBeenCalledWith(composeFile);
+        // Service data directories are wiped so services start fresh
+        expect(fs.rmSync).toHaveBeenCalledWith(
+          path.join(configDir, 'sonarr'),
+          { recursive: true, force: true }
+        );
+        expect(fs.rmSync).toHaveBeenCalledWith(
+          path.join(configDir, 'transmission'),
+          { recursive: true, force: true }
+        );
       });
 
       it('should handle reset errors gracefully', async () => {

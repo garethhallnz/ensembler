@@ -63,6 +63,7 @@ export default function Dashboard() {
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [prowlarrNeedsIndexers, setProwlarrNeedsIndexers] = useState(false);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
     running: true,
@@ -241,6 +242,29 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, [selectedServices, fetchServiceAlerts]);
+
+  // Check whether the user still needs to add an indexer in Prowlarr — the
+  // one setup step Dockarr deliberately leaves to the user
+  useEffect(() => {
+    let cancelled = false;
+    const checkIndexers = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/services/prowlarr/indexer-status');
+        const data = await res.json();
+        if (!cancelled) {
+          setProwlarrNeedsIndexers(data.enabled === true && data.hasIndexers === false);
+        }
+      } catch {
+        if (!cancelled) {
+          setProwlarrNeedsIndexers(false);
+        }
+      }
+    };
+    checkIndexers();
+    return () => {
+      cancelled = true;
+    };
+  }, [serviceStatus.prowlarr]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -475,6 +499,23 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* One remaining setup step: the user chooses their own indexers */}
+      {prowlarrNeedsIndexers && (
+        <div className="mb-6">
+          <Alert color="info">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-left">
+                <span className="font-semibold">One step left:</span> add an indexer in Prowlarr so Sonarr and Radarr can search for content.
+                Your indexer choices sync to all services automatically.
+              </div>
+              <Button size="sm" onClick={() => handleLaunchService('prowlarr')}>
+                <HiExternalLink className="inline-block mr-1" /> Open Prowlarr
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      )}
 
       {/* Progress bar for global actions (above service list, no container/title) */}
       {globalActionProgress !== null && (

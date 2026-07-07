@@ -6,9 +6,11 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts } from './services/serviceConfig';
+import { setupConnections } from './services/setup/orchestrator';
+import { readArrApiKey } from './services/setup/apiKeyReader';
 
 const app = express();
-const port = 3001;
+const port = Number(process.env.PORT) || 3001;
 
 // CORS middleware to allow frontend requests
 app.use((req, res, next) => {
@@ -521,6 +523,47 @@ app.post('/api/services/start-all', async (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/services/setup-connections', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ success: false, message: 'config.json not found.' });
+    }
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    const result = await setupConnections(config, configDir);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to set up service connections.', error: (err as Error).message });
+  }
+});
+
+// Tells the dashboard whether the user still needs to add an indexer in
+// Prowlarr (the one remaining manual setup step). hasIndexers is null when
+// the answer is unknown (Prowlarr disabled, not started, or unreachable).
+app.get('/api/services/prowlarr/indexer-status', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.json({ success: true, enabled: false, hasIndexers: null });
+    }
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    if (!config.selectedServices?.prowlarr) {
+      return res.json({ success: true, enabled: false, hasIndexers: null });
+    }
+
+    const apiKey = await readArrApiKey(configDir, 'prowlarr', 3000, 500);
+    const prowlarrPort = config.ports?.prowlarr || getServiceConfig('prowlarr')!.defaultPort;
+    const response = await fetch(`http://localhost:${prowlarrPort}/api/v1/indexer`, {
+      headers: { 'X-Api-Key': apiKey }
+    });
+    if (!response.ok) {
+      throw new Error(`Prowlarr responded with ${response.status}`);
+    }
+    const indexers = await response.json() as unknown[];
+    res.json({ success: true, enabled: true, hasIndexers: indexers.length > 0 });
+  } catch (err) {
+    res.json({ success: true, enabled: true, hasIndexers: null });
+  }
+});
+
 app.post('/api/services/stop-all', async (req: Request, res: Response) => {
   try {
     await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} stop`);
@@ -637,9 +680,21 @@ app.post('/api/config/reset', async (req: Request, res: Response) => {
     if (fs.existsSync(configFile)) {
       fs.unlinkSync(configFile);
     }
-    
+
     if (fs.existsSync(composeFile)) {
       fs.unlinkSync(composeFile);
+    }
+
+    // Delete each service's data directory (settings, databases, API keys) so
+    // services start completely fresh after a reset. Media files live outside
+    // configDir and are never touched.
+    for (const service of SUPPORTED_SERVICES) {
+      const serviceDir = path.join(configDir, service.key);
+      try {
+        fs.rmSync(serviceDir, { recursive: true, force: true });
+      } catch (err) {
+        console.warn(`Failed to remove service data for ${service.key}:`, err);
+      }
     }
 
     res.json({ success: true, message: 'All settings reset successfully.' });

@@ -505,6 +505,33 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         throw new Error('Failed to start services');
       }
 
+      showToast('Services started. Connecting services to each other…', 'info');
+
+      // Wire the services together (Sonarr/Radarr → Transmission, root folders).
+      // Failures here are warnings, not errors — the services still run and can
+      // be connected manually or by re-running setup.
+      try {
+        const connectRes = await fetch('http://localhost:3001/api/services/setup-connections', {
+          method: 'POST',
+        });
+        const connectData = await connectRes.json();
+
+        if (connectData.results?.length > 0) {
+          if (connectData.success) {
+            showToast('Services connected successfully!', 'success');
+          } else {
+            const failures = connectData.results
+              .filter((r: { success: boolean }) => !r.success)
+              .map((r: { service: string; message: string }) => `${r.service}: ${r.message}`)
+              .join('; ');
+            showToast(`Some services could not be connected automatically: ${failures}`, 'warning');
+          }
+        }
+      } catch (connectError) {
+        console.error('Service connection setup failed:', connectError);
+        showToast('Automatic service connection failed — services are running but may need manual configuration.', 'warning');
+      }
+
       showToast('Configuration saved and services started successfully!', 'success');
       onComplete();
     } catch (error) {

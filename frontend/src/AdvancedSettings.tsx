@@ -403,7 +403,7 @@ export default function AdvancedSettings({ onClose }: AdvancedSettingsProps) {
 
   const handleCompleteReset = () => {
     setConfirmationModal({
-      message: '⚠️ DESTRUCTIVE ACTION: This will completely reset Dockarr, delete ALL configuration, stop ALL services, and remove ALL data. This action CANNOT be undone. Are you absolutely sure?',
+      message: '⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning Dockarr to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?',
       onConfirm: async () => {
         setOpenModal(false);
         setResetting(true);
