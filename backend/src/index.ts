@@ -6,8 +6,9 @@ import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts } from './services/serviceConfig';
-import { setupConnections } from './services/setup/orchestrator';
-import { readArrApiKey } from './services/setup/apiKeyReader';
+import { setupConnections, setupPlexConnections } from './services/setup/orchestrator';
+import { tryReadArrApiKey } from './services/setup/apiKeyReader';
+import { readPlexToken, getPlexLibraries, plexLibrariesConfigured, DEFAULT_PLEX_LIBRARIES } from './services/setup/plexSetup';
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -549,7 +550,11 @@ app.get('/api/services/prowlarr/indexer-status', async (req: Request, res: Respo
       return res.json({ success: true, enabled: false, hasIndexers: null });
     }
 
-    const apiKey = await readArrApiKey(configDir, 'prowlarr', 3000, 500);
+    const apiKey = tryReadArrApiKey(configDir, 'prowlarr');
+    if (!apiKey) {
+      // Prowlarr hasn't written its config yet — status unknown, not "no indexers"
+      return res.json({ success: true, enabled: true, hasIndexers: null });
+    }
     const prowlarrPort = config.ports?.prowlarr || getServiceConfig('prowlarr')!.defaultPort;
     const response = await fetch(`http://localhost:${prowlarrPort}/api/v1/indexer`, {
       headers: { 'X-Api-Key': apiKey }
@@ -561,6 +566,52 @@ app.get('/api/services/prowlarr/indexer-status', async (req: Request, res: Respo
     res.json({ success: true, enabled: true, hasIndexers: indexers.length > 0 });
   } catch (err) {
     res.json({ success: true, enabled: true, hasIndexers: null });
+  }
+});
+
+// Drives the dashboard's Plex banner: whether the user still needs to do the
+// one-time plex.tv sign-in, and whether the default libraries exist yet.
+// Values are null when unknown (Plex disabled, not started, or unreachable).
+app.get('/api/services/plex/setup-status', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.json({ success: true, enabled: false, signedIn: null, librariesConfigured: null });
+    }
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    if (!config.selectedServices?.plex) {
+      return res.json({ success: true, enabled: false, signedIn: null, librariesConfigured: null });
+    }
+
+    const token = readPlexToken(configDir);
+    if (!token) {
+      return res.json({ success: true, enabled: true, signedIn: false, librariesConfigured: false });
+    }
+
+    const plexPort = config.ports?.plex || getServiceConfig('plex')!.defaultPort;
+    try {
+      const sections = await getPlexLibraries(`http://localhost:${plexPort}`, token);
+      const librariesConfigured = plexLibrariesConfigured(sections, DEFAULT_PLEX_LIBRARIES);
+      res.json({ success: true, enabled: true, signedIn: true, librariesConfigured });
+    } catch {
+      res.json({ success: true, enabled: true, signedIn: true, librariesConfigured: null });
+    }
+  } catch (err) {
+    res.json({ success: true, enabled: true, signedIn: null, librariesConfigured: null });
+  }
+});
+
+// Runs only the Plex library setup — used by the dashboard once it detects the
+// user has signed in, so it need not re-run the full multi-service wiring.
+app.post('/api/services/plex/setup', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ success: false, message: 'config.json not found.' });
+    }
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    const result = await setupPlexConnections(config, configDir);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to set up Plex.', error: (err as Error).message });
   }
 });
 
@@ -685,15 +736,21 @@ app.post('/api/config/reset', async (req: Request, res: Response) => {
       fs.unlinkSync(composeFile);
     }
 
-    // Delete each service's data directory (settings, databases, API keys) so
-    // services start completely fresh after a reset. Media files live outside
-    // configDir and are never touched.
-    for (const service of SUPPORTED_SERVICES) {
-      const serviceDir = path.join(configDir, service.key);
-      try {
-        fs.rmSync(serviceDir, { recursive: true, force: true });
-      } catch (err) {
-        console.warn(`Failed to remove service data for ${service.key}:`, err);
+    // Delete every service data directory actually present in configDir
+    // (settings, databases, API keys) so services start completely fresh.
+    // Enumerating the directory rather than the current service catalog means
+    // data for services since removed from Dockarr (e.g. qBittorrent) is also
+    // cleared. Media files live outside configDir and are never touched.
+    if (fs.existsSync(configDir)) {
+      for (const entry of fs.readdirSync(configDir, { withFileTypes: true })) {
+        if (!entry.isDirectory()) {
+          continue;
+        }
+        try {
+          fs.rmSync(path.join(configDir, entry.name), { recursive: true, force: true });
+        } catch (err) {
+          console.warn(`Failed to remove service data for ${entry.name}:`, err);
+        }
       }
     }
 

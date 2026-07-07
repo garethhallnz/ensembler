@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, Alert } from './components';
@@ -64,6 +64,8 @@ export default function Dashboard() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [prowlarrNeedsIndexers, setProwlarrNeedsIndexers] = useState(false);
+  const [plexNeedsSignIn, setPlexNeedsSignIn] = useState(false);
+  const plexWiringInFlight = useRef(false);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
     running: true,
@@ -261,10 +263,54 @@ export default function Dashboard() {
       }
     };
     checkIndexers();
+    const interval = setInterval(checkIndexers, 15000);
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [serviceStatus.prowlarr]);
+
+  // Plex needs a one-time plex.tv sign-in that only the user can do. Poll its
+  // status: show the banner until they sign in, then automatically run the
+  // connection setup to create the default libraries.
+  useEffect(() => {
+    let cancelled = false;
+    const checkPlex = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/services/plex/setup-status');
+        const data = await res.json();
+        if (cancelled) return;
+        setPlexNeedsSignIn(data.enabled === true && data.signedIn === false);
+
+        // Sign-in just detected but libraries not yet created: run only the
+        // Plex step (not the whole multi-service orchestration). The in-flight
+        // guard prevents overlapping runs on successive polls.
+        if (
+          data.enabled === true &&
+          data.signedIn === true &&
+          data.librariesConfigured === false &&
+          !plexWiringInFlight.current
+        ) {
+          plexWiringInFlight.current = true;
+          try {
+            await fetch('http://localhost:3001/api/services/plex/setup', { method: 'POST' });
+          } finally {
+            plexWiringInFlight.current = false;
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          setPlexNeedsSignIn(false);
+        }
+      }
+    };
+    checkPlex();
+    const interval = setInterval(checkPlex, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [serviceStatus.plex]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -511,6 +557,23 @@ export default function Dashboard() {
               </div>
               <Button size="sm" onClick={() => handleLaunchService('prowlarr')}>
                 <HiExternalLink className="inline-block mr-1" /> Open Prowlarr
+              </Button>
+            </div>
+          </Alert>
+        </div>
+      )}
+
+      {/* Plex requires a one-time account sign-in only the user can do */}
+      {plexNeedsSignIn && (
+        <div className="mb-6">
+          <Alert color="info">
+            <div className="flex items-center justify-between gap-4">
+              <div className="text-left">
+                <span className="font-semibold">One step left for Plex:</span> sign in with your Plex account.
+                Your TV and Movies libraries will then be set up automatically.
+              </div>
+              <Button size="sm" onClick={() => handleLaunchService('plex')}>
+                <HiExternalLink className="inline-block mr-1" /> Open Plex
               </Button>
             </div>
           </Alert>

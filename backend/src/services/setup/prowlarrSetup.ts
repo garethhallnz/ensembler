@@ -88,7 +88,7 @@ export async function setupProwlarr(setup: ProwlarrSetupOptions): Promise<SetupS
 
   if (setup.transmission) {
     try {
-      const { created } = await ensureTransmissionDownloadClient(options, setup.transmission);
+      const { created } = await ensureTransmissionDownloadClient(options, setup.transmission, 'prowlarr');
       results.push({
         service: 'prowlarr',
         step: 'download-client',

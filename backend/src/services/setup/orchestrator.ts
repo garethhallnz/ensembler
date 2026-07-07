@@ -2,6 +2,7 @@ import { getServiceConfig } from '../serviceConfig';
 import { readArrApiKey } from './apiKeyReader';
 import { setupArrService } from './arrSetup';
 import { setupProwlarr, ProwlarrApplication } from './prowlarrSetup';
+import { readPlexToken, setupPlex } from './plexSetup';
 import { SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
 
 // Root folders are container-side paths fixed by the volume mappings in
@@ -71,16 +72,26 @@ export async function setupConnections(
   const results: SetupStepResult[] = [];
   const isEnabled = (key: string) => !!config.selectedServices?.[key];
 
-  // API keys first — every other step depends on them
+  // API keys first — every other step depends on them. Read in parallel so
+  // several never-started services cost one timeout, not one each.
   const apiKeys: { [serviceKey: string]: string } = {};
   const keyedServices = [...ARR_SERVICES.map(s => s.key), 'prowlarr'].filter(isEnabled);
-  for (const serviceKey of keyedServices) {
-    try {
-      apiKeys[serviceKey] = await readArrApiKey(configDir, serviceKey, timeouts.keyTimeoutMs);
-    } catch (err) {
-      results.push({ service: serviceKey, step: 'api-key', success: false, message: (err as Error).message });
+  const keyReads = await Promise.allSettled(
+    keyedServices.map(serviceKey => readArrApiKey(configDir, serviceKey, timeouts.keyTimeoutMs))
+  );
+  keyedServices.forEach((serviceKey, i) => {
+    const read = keyReads[i];
+    if (read.status === 'fulfilled') {
+      apiKeys[serviceKey] = read.value;
+    } else {
+      results.push({
+        service: serviceKey,
+        step: 'api-key',
+        success: false,
+        message: (read.reason as Error).message
+      });
     }
-  }
+  });
 
   let transmission: { host: string; port: number } | undefined;
   if (isEnabled('transmission')) {
@@ -138,8 +149,50 @@ export async function setupConnections(
     results.push(...stepResults);
   }
 
+  if (isEnabled('plex')) {
+    results.push(...await runPlexSetup(config, configDir, timeouts));
+  }
+
   return {
     success: results.every(result => result.success),
     results
   };
+}
+
+// Plex requires a one-time plex.tv sign-in that only the user can do. Until the
+// token appears this reports a pending step; the dashboard triggers Plex setup
+// (via setupPlexConnections) once sign-in is detected. Split out so that step
+// can run on its own without re-running every other service's wiring.
+async function runPlexSetup(
+  config: UserConfig,
+  configDir: string,
+  timeouts: SetupTimeouts
+): Promise<SetupStepResult[]> {
+  const token = readPlexToken(configDir);
+  if (!token) {
+    return [{
+      service: 'plex',
+      step: 'sign-in',
+      success: false,
+      message: 'Plex needs a one-time sign-in — open Plex from the Dashboard and log in; libraries are then created automatically'
+    }];
+  }
+  return setupPlex({
+    baseUrl: `http://localhost:${hostPort(config, 'plex')}`,
+    token,
+    readyTimeoutMs: timeouts.readyTimeoutMs
+  });
+}
+
+// Run only the Plex step. Called after the user completes sign-in, so the
+// dashboard does not re-run the full multi-service orchestration each poll.
+export async function setupPlexConnections(
+  config: UserConfig,
+  configDir: string,
+  timeouts: SetupTimeouts = {}
+): Promise<SetupConnectionsResult> {
+  const results = config.selectedServices?.plex
+    ? await runPlexSetup(config, configDir, timeouts)
+    : [];
+  return { success: results.every(result => result.success), results };
 }

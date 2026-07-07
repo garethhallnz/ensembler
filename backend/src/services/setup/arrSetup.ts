@@ -65,25 +65,29 @@ export async function ensureRootFolder(
   return { created: true };
 }
 
+// Prowlarr and Sonarr/Radarr expose the download-client API under different
+// contracts; the caller states which explicitly rather than us inferring it
+// from the API path (that would misfire for other apps sharing an API version).
+export type DownloadClientContract = 'arr' | 'prowlarr';
+
 // Point the app at Transmission over the compose network (container name as
 // host, internal port) unless a Transmission client is already configured.
-// Prowlarr (/api/v1) and Sonarr/Radarr (/api/v3) use slightly different
-// download client contracts — sending the wrong shape returns a 400.
+// Sending the wrong contract's shape returns a 400.
 export async function ensureTransmissionDownloadClient(
   options: ArrRequestOptions,
-  transmission: { host: string; port: number }
+  transmission: { host: string; port: number },
+  contract: DownloadClientContract = 'arr'
 ): Promise<{ created: boolean }> {
   const existing = await arrRequest<{ implementation: string }[]>(options, 'GET', '/downloadclient');
   if (existing.some(client => client.implementation === 'Transmission')) {
     return { created: false };
   }
 
-  const isProwlarr = options.apiBase === '/api/v1';
   await arrRequest(options, 'POST', '/downloadclient', {
     enable: true,
     protocol: 'torrent',
     priority: 1,
-    ...(isProwlarr
+    ...(contract === 'prowlarr'
       ? { categories: [] }
       : { removeCompletedDownloads: true, removeFailedDownloads: true }),
     name: 'Transmission',

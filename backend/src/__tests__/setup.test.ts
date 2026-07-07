@@ -1,7 +1,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { readArrApiKey } from '../services/setup/apiKeyReader';
+import { readArrApiKey, tryReadArrApiKey } from '../services/setup/apiKeyReader';
 import {
   waitForArrReady,
   ensureRootFolder,
@@ -9,7 +9,8 @@ import {
   setupArrService
 } from '../services/setup/arrSetup';
 import { ensureApplication, setupProwlarr } from '../services/setup/prowlarrSetup';
-import { setupConnections } from '../services/setup/orchestrator';
+import { readPlexToken, ensurePlexLibrary, setupPlex } from '../services/setup/plexSetup';
+import { setupConnections, setupPlexConnections } from '../services/setup/orchestrator';
 import { UserConfig } from '../services/setup/types';
 
 const jsonResponse = (data: unknown, status = 200, headers: { [key: string]: string } = {}) => ({
@@ -69,6 +70,17 @@ describe('Service connection setup', () => {
 
       await expect(readArrApiKey(tempDir, 'sonarr', 50, 10))
         .rejects.toThrow(/Timed out waiting for API key/);
+    });
+  });
+
+  describe('tryReadArrApiKey (one-shot, non-polling)', () => {
+    it('returns the key immediately when present', () => {
+      writeConfigXml('prowlarr', 'prowlarr-key');
+      expect(tryReadArrApiKey(tempDir, 'prowlarr')).toBe('prowlarr-key');
+    });
+
+    it('returns null immediately when config.xml is absent', () => {
+      expect(tryReadArrApiKey(tempDir, 'prowlarr')).toBeNull();
     });
   });
 
@@ -150,11 +162,12 @@ describe('Service connection setup', () => {
 
       await ensureTransmissionDownloadClient(
         { baseUrl: 'http://localhost:9696', apiKey: 'key', apiBase: '/api/v1' },
-        { host: 'transmission', port: 9091 }
+        { host: 'transmission', port: 9091 },
+        'prowlarr'
       );
 
       const payload = JSON.parse(fetchMock.mock.calls[1][1].body);
-      // v1 contract: categories required, removal flags absent
+      // prowlarr contract: categories required, removal flags absent
       expect(payload.categories).toEqual([]);
       expect(payload.removeCompletedDownloads).toBeUndefined();
     });
@@ -294,6 +307,101 @@ describe('Service connection setup', () => {
 
       expect(results).toEqual([
         expect.objectContaining({ service: 'prowlarr', step: 'ready', success: false })
+      ]);
+    });
+  });
+
+  describe('readPlexToken', () => {
+    const writePreferences = (attrs: string) => {
+      const dir = path.join(tempDir, 'plex', 'config', 'Library', 'Application Support', 'Plex Media Server');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'Preferences.xml'), `<?xml version="1.0"?>\n<Preferences ${attrs}/>`);
+    };
+
+    it('returns the token once the user has signed in', () => {
+      writePreferences('MachineIdentifier="abc" PlexOnlineToken="plex-token-123"');
+      expect(readPlexToken(tempDir)).toBe('plex-token-123');
+    });
+
+    it('returns null before sign-in (no token attribute yet)', () => {
+      writePreferences('MachineIdentifier="abc"');
+      expect(readPlexToken(tempDir)).toBeNull();
+    });
+
+    it('returns null when Preferences.xml does not exist', () => {
+      expect(readPlexToken(tempDir)).toBeNull();
+    });
+  });
+
+  describe('ensurePlexLibrary', () => {
+    const library = {
+      name: 'TV Shows',
+      type: 'show' as const,
+      location: '/tv',
+      agent: 'tv.plex.agents.series',
+      scanner: 'Plex TV Series'
+    };
+
+    it('creates the library when missing', async () => {
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse({ MediaContainer: { Directory: [] } }))
+        .mockResolvedValueOnce(jsonResponse({}, 200));
+
+      const result = await ensurePlexLibrary('http://localhost:32400', 'token', library);
+
+      expect(result.created).toBe(true);
+      const [url, init] = fetchMock.mock.calls[1];
+      expect(init.method).toBe('POST');
+      expect(url).toContain('/library/sections?');
+      expect(url).toContain('type=show');
+      expect(url).toContain('location=%2Ftv');
+      expect(url).toContain('agent=tv.plex.agents.series');
+      expect(init.headers['X-Plex-Token']).toBe('token');
+    });
+
+    it('skips when a library of the same type already covers the path, whatever its name', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({
+        MediaContainer: { Directory: [{ type: 'show', title: 'My Telly', Location: [{ path: '/tv' }] }] }
+      }));
+
+      const result = await ensurePlexLibrary('http://localhost:32400', 'token', library);
+
+      expect(result.created).toBe(false);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('setupPlex', () => {
+    it('creates both default libraries', async () => {
+      fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
+        if (url.includes('/identity')) return jsonResponse({});
+        if (url.includes('/library/sections')) {
+          return init?.method === 'POST'
+            ? jsonResponse({})
+            : jsonResponse({ MediaContainer: { Directory: [] } });
+        }
+        return jsonResponse({}, 404);
+      });
+
+      const results = await setupPlex({ baseUrl: 'http://localhost:32400', token: 'token' });
+
+      expect(results).toEqual([
+        expect.objectContaining({ service: 'plex', step: 'library-show', success: true }),
+        expect.objectContaining({ service: 'plex', step: 'library-movie', success: true })
+      ]);
+    });
+
+    it('reports a ready failure without attempting library creation', async () => {
+      fetchMock.mockRejectedValue(new Error('connection refused'));
+
+      const results = await setupPlex({
+        baseUrl: 'http://localhost:32400',
+        token: 'token',
+        readyTimeoutMs: 50
+      });
+
+      expect(results).toEqual([
+        expect.objectContaining({ service: 'plex', step: 'ready', success: false })
       ]);
     });
   });
@@ -500,9 +608,85 @@ describe('Service connection setup', () => {
       );
     });
 
-    it('does nothing when no Phase 1 services are enabled', async () => {
+    it('reports Plex sign-in as pending when no token exists yet', async () => {
       const result = await setupConnections(
         { ...config, selectedServices: { plex: true } },
+        tempDir,
+        { keyTimeoutMs: 50, readyTimeoutMs: 50 }
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.results).toEqual([
+        expect.objectContaining({ service: 'plex', step: 'sign-in', success: false })
+      ]);
+      expect(result.results[0].message).toContain('one-time sign-in');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('creates Plex libraries once the sign-in token exists', async () => {
+      const dir = path.join(tempDir, 'plex', 'config', 'Library', 'Application Support', 'Plex Media Server');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'Preferences.xml'), '<Preferences PlexOnlineToken="plex-token"/>');
+
+      fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
+        if (url.includes('/identity')) return jsonResponse({});
+        if (url.includes('/library/sections')) {
+          return init?.method === 'POST'
+            ? jsonResponse({})
+            : jsonResponse({ MediaContainer: { Directory: [] } });
+        }
+        return jsonResponse({}, 404);
+      });
+
+      const result = await setupConnections(
+        { ...config, selectedServices: { plex: true }, ports: { plex: 32400 } },
+        tempDir,
+        { keyTimeoutMs: 50, readyTimeoutMs: 100 }
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.results).toContainEqual(
+        expect.objectContaining({ service: 'plex', step: 'library-show', success: true })
+      );
+      expect(result.results).toContainEqual(
+        expect.objectContaining({ service: 'plex', step: 'library-movie', success: true })
+      );
+    });
+
+    it('setupPlexConnections runs only Plex, not other services', async () => {
+      const dir = path.join(tempDir, 'plex', 'config', 'Library', 'Application Support', 'Plex Media Server');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'Preferences.xml'), '<Preferences PlexOnlineToken="plex-token"/>');
+
+      fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
+        if (url.includes('/identity')) return jsonResponse({});
+        if (url.includes('/library/sections')) {
+          return init?.method === 'POST' ? jsonResponse({}) : jsonResponse({ MediaContainer: { Directory: [] } });
+        }
+        return jsonResponse({}, 404);
+      });
+
+      const result = await setupPlexConnections(
+        {
+          ...config,
+          selectedServices: { sonarr: true, transmission: true, plex: true },
+          ports: { plex: 32400 }
+        },
+        tempDir,
+        { readyTimeoutMs: 100 }
+      );
+
+      expect(result.success).toBe(true);
+      // Only Plex steps — no transmission/sonarr wiring despite being enabled
+      expect(result.results.every(r => r.service === 'plex')).toBe(true);
+      const calledUrls = fetchMock.mock.calls.map(c => c[0]);
+      expect(calledUrls.some((u: string) => u.includes('/transmission/'))).toBe(false);
+      expect(calledUrls.some((u: string) => u.includes(':8989'))).toBe(false);
+    });
+
+    it('does nothing when no automatable services are enabled', async () => {
+      const result = await setupConnections(
+        { ...config, selectedServices: { jackett: true } },
         tempDir
       );
 

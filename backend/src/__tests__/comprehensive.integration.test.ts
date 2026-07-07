@@ -14,6 +14,7 @@ jest.mock('fs', () => ({
   unlinkSync: jest.fn(),
   accessSync: jest.fn(),
   rmSync: jest.fn(),
+  readdirSync: jest.fn(() => []),
 }));
 
 jest.mock('child_process', () => ({
@@ -109,6 +110,7 @@ describe('Comprehensive Integration Tests', () => {
     (fs.unlinkSync as jest.Mock).mockImplementation(() => undefined);
     (fs.accessSync as jest.Mock).mockImplementation(() => undefined);
     (fs.rmSync as jest.Mock).mockImplementation(() => undefined);
+    (fs.readdirSync as jest.Mock).mockReturnValue([]);
   });
 
   describe('Basic Health Check', () => {
@@ -230,6 +232,17 @@ describe('Comprehensive Integration Tests', () => {
 
     describe('POST /api/config/reset', () => {
       it('should reset configuration successfully', async () => {
+        // configDir exists and contains service data plus a stale dir for a
+        // service no longer in the catalog
+        (fs.existsSync as jest.Mock).mockImplementation((p: string) =>
+          p === configFile || p === composeFile || p === configDir
+        );
+        (fs.readdirSync as jest.Mock).mockReturnValue([
+          { name: 'sonarr', isDirectory: () => true },
+          { name: 'qbittorrent', isDirectory: () => true },
+          { name: 'config.json', isDirectory: () => false }
+        ]);
+
         const response = await request(app)
           .post('/api/config/reset')
           .expect(200);
@@ -240,14 +253,20 @@ describe('Comprehensive Integration Tests', () => {
         });
         expect(fs.unlinkSync).toHaveBeenCalledWith(configFile);
         expect(fs.unlinkSync).toHaveBeenCalledWith(composeFile);
-        // Service data directories are wiped so services start fresh
+        // Every service data directory present is wiped — including one for a
+        // service since removed from the catalog (qbittorrent)
         expect(fs.rmSync).toHaveBeenCalledWith(
           path.join(configDir, 'sonarr'),
           { recursive: true, force: true }
         );
         expect(fs.rmSync).toHaveBeenCalledWith(
-          path.join(configDir, 'transmission'),
+          path.join(configDir, 'qbittorrent'),
           { recursive: true, force: true }
+        );
+        // Non-directory entries are left alone
+        expect(fs.rmSync).not.toHaveBeenCalledWith(
+          path.join(configDir, 'config.json'),
+          expect.anything()
         );
       });
 
