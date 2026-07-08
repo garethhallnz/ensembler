@@ -9,6 +9,7 @@ import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts
 import { setupConnections, setupPlexConnections } from './services/setup/orchestrator';
 import { tryReadArrApiKey } from './services/setup/apiKeyReader';
 import { readPlexToken, getPlexLibraries, plexLibrariesConfigured, DEFAULT_PLEX_LIBRARIES } from './services/setup/plexSetup';
+import { findPortConflicts, parseContainerPorts } from './services/ports';
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -83,6 +84,36 @@ app.post('/api/paths/validate', (req, res) => {
       res.json({ success: true, results });
     }
   });
+
+// Check that the host ports the user picked are actually free before we
+// generate a compose file that would fail to start. Ports already held by
+// Dockarr's own running containers are not conflicts.
+app.post('/api/ports/validate', async (req: Request, res: Response) => {
+  const { ports } = req.body;
+  if (!ports || typeof ports !== 'object') {
+    return res.status(400).json({ success: false, message: 'Invalid input' });
+  }
+
+  const requested = Object.entries(ports).map(([service, port]) => ({
+    service,
+    port: Number(port)
+  }));
+
+  let ownPorts = new Map<number, string>();
+  try {
+    const { stdout } = await execAsync('docker ps --format "{{.Names}}\t{{.Ports}}"');
+    ownPorts = parseContainerPorts(stdout);
+  } catch {
+    // Docker not running/available — treat all ports as owned by nobody
+  }
+
+  try {
+    const conflicts = await findPortConflicts(requested, ownPorts);
+    res.json({ success: conflicts.length === 0, conflicts });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to validate ports.', error: (err as Error).message });
+  }
+});
 
 app.get('/api/docker/status', async (req: Request, res: Response) => {
   try {

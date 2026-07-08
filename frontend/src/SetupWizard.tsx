@@ -395,6 +395,61 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     return valid;
   };
 
+  // Check the chosen ports against what is actually in use on the user's
+  // machine (something outside Dockarr — a reverse proxy, another app). On a
+  // conflict we fill in a free port for them and explain, so they only need to
+  // click Next again rather than find a free port themselves. Returns true when
+  // every port is free.
+  const validateHostPorts = async () => {
+    const selectedPorts: { [key: string]: number } = {};
+    Object.keys(selected).forEach(svc => {
+      if (!selected[svc]) return;
+      const service = serviceConfig.find(s => s.key === svc);
+      if (service) selectedPorts[svc] = ports[svc] || service.defaultPort;
+    });
+
+    let conflicts: { service: string; port: number; suggestion: number | null }[] = [];
+    try {
+      const res = await fetch('http://localhost:3001/api/ports/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ports: selectedPorts }),
+      });
+      const data = await res.json();
+      conflicts = data.conflicts || [];
+    } catch (err) {
+      // If the check itself fails, don't block setup — compose start will
+      // surface any genuine problem.
+      console.error('Port availability check failed:', err);
+      return true;
+    }
+
+    if (conflicts.length === 0) return true;
+
+    const newErrors: { [key: string]: string } = {};
+    const newPorts: { [key: string]: number } = {};
+    const changed: string[] = [];
+    conflicts.forEach(({ service, port, suggestion }) => {
+      const name = serviceConfig.find(s => s.key === service)?.name || service;
+      if (suggestion) {
+        newPorts[service] = suggestion;
+        newErrors[service] = `Port ${port} is already in use on your computer — switched to ${suggestion}.`;
+        changed.push(`${name}: ${port} → ${suggestion}`);
+      } else {
+        newErrors[service] = `Port ${port} is already in use and no free port could be found. Please choose another.`;
+      }
+    });
+
+    if (Object.keys(newPorts).length > 0) {
+      setPorts(prev => ({ ...prev, ...newPorts }));
+    }
+    setPortErrors(prev => ({ ...prev, ...newErrors }));
+    if (changed.length > 0) {
+      showToast(`Adjusted ports already in use: ${changed.join(', ')}. Click Next to continue.`, 'warning');
+    }
+    return false;
+  };
+
   const handlePathChange = (svc: string, idx: number, value: string) => {
     const service = serviceConfig.find(s => s.key === svc);
     if (!service) return;
@@ -455,6 +510,9 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         await validatePaths();
         if (!validatePorts()) return;
         if (!validateEnvironment()) return;
+        // Check ports are actually free on the host (may adjust and ask the
+        // user to click Next again)
+        if (!(await validateHostPorts())) return;
         // Continue to next step if validations pass
         setStep((s) => Math.min(steps.length - 1, s + 1));
         return;
