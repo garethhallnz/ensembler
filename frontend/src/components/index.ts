@@ -15,3 +15,4 @@ export { default as Toggle } from './Toggle';
 export { default as PathConfiguration } from './PathConfiguration';
 export { default as EnvironmentSettings } from './EnvironmentSettings';
 export { default as ServiceConfiguration } from './ServiceConfiguration';
+export { default as SetupBanner } from './SetupBanner';

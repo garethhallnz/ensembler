@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert } from './components';
+import { Card, Button, Badge, Alert, SetupBanner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -548,36 +548,26 @@ export default function Dashboard() {
 
       {/* One remaining setup step: the user chooses their own indexers */}
       {prowlarrNeedsIndexers && (
-        <div className="mb-6">
-          <Alert color="info">
-            <div className="flex items-center justify-between gap-4">
-              <div className="text-left">
-                <span className="font-semibold">One step left:</span> add an indexer in Prowlarr so Sonarr and Radarr can search for content.
-                Your indexer choices sync to all services automatically.
-              </div>
-              <Button size="sm" onClick={() => handleLaunchService('prowlarr')}>
-                <HiExternalLink className="inline-block mr-1" /> Open Prowlarr
-              </Button>
-            </div>
-          </Alert>
-        </div>
+        <SetupBanner
+          actionLabel="Open Prowlarr"
+          onAction={() => handleLaunchService('prowlarr')}
+          message={<>
+            <span className="font-semibold">One step left:</span> add an indexer in Prowlarr so Sonarr and Radarr can search for content.
+            Your indexer choices sync to all services automatically.
+          </>}
+        />
       )}
 
       {/* Plex requires a one-time account sign-in only the user can do */}
       {plexNeedsSignIn && (
-        <div className="mb-6">
-          <Alert color="info">
-            <div className="flex items-center justify-between gap-4">
-              <div className="text-left">
-                <span className="font-semibold">One step left for Plex:</span> sign in with your Plex account.
-                Your TV and Movies libraries will then be set up automatically.
-              </div>
-              <Button size="sm" onClick={() => handleLaunchService('plex')}>
-                <HiExternalLink className="inline-block mr-1" /> Open Plex
-              </Button>
-            </div>
-          </Alert>
-        </div>
+        <SetupBanner
+          actionLabel="Open Plex"
+          onAction={() => handleLaunchService('plex')}
+          message={<>
+            <span className="font-semibold">One step left for Plex:</span> sign in with your Plex account.
+            Your TV and Movies libraries will then be set up automatically.
+          </>}
+        />
       )}
 
       {/* Progress bar for global actions (above service list, no container/title) */}

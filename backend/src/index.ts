@@ -561,7 +561,13 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
       return res.status(404).json({ success: false, message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-    const result = await setupConnections(config, configDir);
+    // Jellyfin admin credentials arrive in the request body from the wizard and
+    // are used transiently — never written to config.json or anywhere on disk.
+    const jellyfin = req.body?.jellyfin;
+    const secrets = jellyfin?.username && jellyfin?.password
+      ? { jellyfin: { username: jellyfin.username, password: jellyfin.password } }
+      : {};
+    const result = await setupConnections(config, configDir, {}, secrets);
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to set up service connections.', error: (err as Error).message });

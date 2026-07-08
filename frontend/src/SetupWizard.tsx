@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings } from './components';
+import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput } from './components';
 import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch } from 'flowbite-react';
 import { getDefaultPath } from './utils/pathDefaults';
@@ -55,6 +55,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   });
   const [puid, setPuid] = useState(1000);
   const [pgid, setPgid] = useState(1000);
+  // Jellyfin admin account — collected here so Dockarr can complete Jellyfin's
+  // first-run setup automatically. Passed transiently to setup and never saved.
+  const [jellyfinUsername, setJellyfinUsername] = useState('admin');
+  const [jellyfinPassword, setJellyfinPassword] = useState('');
   const [envErrors, setEnvErrors] = useState<{[key: string]: string}>({});
   const [isSaving, setIsSaving] = useState(false);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
@@ -499,6 +503,17 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       valid = false;
     }
 
+    if (selected['jellyfin']) {
+      if (!jellyfinUsername.trim()) {
+        currentEnvErrors.jellyfinUsername = 'Jellyfin admin username is required.';
+        valid = false;
+      }
+      if (jellyfinPassword.length < 4) {
+        currentEnvErrors.jellyfinPassword = 'Jellyfin admin password must be at least 4 characters.';
+        valid = false;
+      }
+    }
+
     setEnvErrors(currentEnvErrors);
     return valid;
   };
@@ -571,8 +586,15 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       // reflecting the actual outcome so a warning is never overwritten by a
       // blanket success message.
       try {
+        // Jellyfin admin credentials are sent only in this request body and
+        // never persisted — used once to complete Jellyfin's first-run setup.
+        const body = selected['jellyfin']
+          ? { jellyfin: { username: jellyfinUsername, password: jellyfinPassword } }
+          : {};
         const connectRes = await fetch('http://localhost:3001/api/services/setup-connections', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
         });
         const connectData = await connectRes.json();
 
@@ -795,6 +817,43 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 />
               </Card.Body>
             </Card>
+
+            {selected['jellyfin'] && (
+              <Card className="border-l-4 border-purple-500">
+                <Card.Header>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Jellyfin</span>
+                    <h3 className="text-xl font-medium text-gray-900 dark:text-white">Jellyfin Admin Account</h3>
+                  </div>
+                </Card.Header>
+                <Card.Body>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 text-left">
+                    Choose the admin login for Jellyfin. Dockarr uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">Admin username</label>
+                      <TextInput
+                        value={jellyfinUsername}
+                        onChange={e => setJellyfinUsername(e.target.value)}
+                        color={envErrors.jellyfinUsername ? 'failure' : 'gray'}
+                      />
+                      {envErrors.jellyfinUsername && <p className="text-sm text-red-500 mt-1 text-left">{envErrors.jellyfinUsername}</p>}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">Admin password</label>
+                      <TextInput
+                        type="password"
+                        value={jellyfinPassword}
+                        onChange={e => setJellyfinPassword(e.target.value)}
+                        color={envErrors.jellyfinPassword ? 'failure' : 'gray'}
+                      />
+                      {envErrors.jellyfinPassword && <p className="text-sm text-red-500 mt-1 text-left">{envErrors.jellyfinPassword}</p>}
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            )}
           </div>
         )}
         {step === 2 && (
