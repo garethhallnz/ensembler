@@ -42,7 +42,16 @@ export default function ConfirmationModal({
           <p className="mb-6 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             {message}
           </p>
+          {/* Primary action on the right to match the wizard (Next/Apply),
+              so the button that mirrors the user's intent is consistently
+              placed; cancel sits on the left. */}
           <div className="flex justify-center gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+            >
+              {cancelText}
+            </button>
             <button
               onClick={onConfirm}
               className={`px-6 py-2 text-white text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
@@ -52,12 +61,6 @@ export default function ConfirmationModal({
               }`}
             >
               {confirmText}
-            </button>
-            <button
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
-            >
-              {cancelText}
             </button>
           </div>
         </div>
