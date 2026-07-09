@@ -64,22 +64,54 @@ function createWindow() {
   });
 }
 
-function startBackend() {
-  console.log('[Electron] process.env.PATH:', process.env.PATH);
-  const isDev = process.env.NODE_ENV === 'development';
-  const backendPath = isDev 
-    ? path.join(__dirname, 'backend', 'src', 'index.ts')
-    : path.join(__dirname, 'backend', 'dist', 'index.js');
-  
-  // Use 'node' as the command in production for best compatibility with NVM and PATH
-  const command = isDev ? 'ts-node' : 'node';
-  const args = [backendPath];
+// When launched from Finder/Dock (not a terminal), a macOS/Linux GUI app gets a
+// minimal PATH that omits where Docker lives (e.g. /usr/local/bin). The backend
+// shells out to `docker`/`docker compose`, so prepend the common locations to
+// PATH — otherwise Docker appears "not available" even when it's installed.
+function backendPath() {
+  if (process.platform === 'win32') {
+    return process.env.PATH;
+  }
+  const extra = [
+    '/usr/local/bin',
+    '/opt/homebrew/bin',
+    '/Applications/Docker.app/Contents/Resources/bin',
+    '/Applications/OrbStack.app/Contents/MacOS/xbin',
+  ];
+  return [...extra, process.env.PATH || ''].filter(Boolean).join(path.delimiter);
+}
 
-  backendProcess = spawn(command, args, {
-    stdio: 'inherit',
-    cwd: path.join(__dirname, 'backend'),
-    shell: true
-  });
+function startBackend() {
+  const isDev = process.env.NODE_ENV === 'development';
+
+  let command;
+  let args;
+  let options;
+
+  if (isDev) {
+    command = 'ts-node';
+    args = [path.join(__dirname, 'backend', 'src', 'index.ts')];
+    options = {
+      stdio: 'inherit',
+      cwd: path.join(__dirname, 'backend'),
+      shell: true,
+      env: { ...process.env, PATH: backendPath() },
+    };
+  } else {
+    // Run the bundled backend with Electron's own Node runtime (no system Node
+    // required). ELECTRON_RUN_AS_NODE makes the Electron binary behave as node.
+    // The bundle is shipped via extraResources, so it lives under resourcesPath.
+    const bundlePath = path.join(process.resourcesPath, 'backend', 'server.bundle.js');
+    command = process.execPath;
+    args = [bundlePath];
+    options = {
+      stdio: 'inherit',
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath() },
+      shell: false
+    };
+  }
+
+  backendProcess = spawn(command, args, options);
 
   backendProcess.on('error', (error) => {
     console.error('Backend process error:', error);

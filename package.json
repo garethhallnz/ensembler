@@ -40,15 +40,11 @@
     ],
     "extraResources": [
       {
-        "from": "backend/dist",
-        "to": "backend",
-        "filter": [
-          "**/*"
-        ]
+        "from": "backend/dist/server.bundle.js",
+        "to": "backend/server.bundle.js"
       }
     ],
     "mac": {
-      "icon": "frontend/src/assets/icon.png",
       "category": "public.app-category.utilities",
       "target": {
         "target": "dmg",
@@ -59,7 +55,6 @@
       }
     },
     "win": {
-      "icon": "frontend/src/assets/icon.ico",
       "target": {
         "target": "nsis",
         "arch": [
@@ -68,7 +63,6 @@
       }
     },
     "linux": {
-      "icon": "frontend/src/assets/icon.png",
       "target": {
         "target": "AppImage",
         "arch": [

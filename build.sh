@@ -29,8 +29,9 @@ npm install
 npm run build
 cd ..
 
-# Package with Electron
+# Package with Electron (call electron-builder directly — do NOT use a script
+# that re-runs this build, or it recurses).
 echo "Packaging with Electron..."
-npm run electron-dist
+npx electron-builder --publish=never
 
 echo "Build complete! Check dist-electron for the packaged application." 
