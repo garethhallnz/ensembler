@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [prowlarrNeedsIndexers, setProwlarrNeedsIndexers] = useState(false);
   const [plexNeedsSignIn, setPlexNeedsSignIn] = useState(false);
+  const [overseerrNeedsSetup, setOverseerrNeedsSetup] = useState(false);
   const plexWiringInFlight = useRef(false);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
@@ -311,6 +312,31 @@ export default function Dashboard() {
       clearInterval(interval);
     };
   }, [serviceStatus.plex]);
+
+  // Overseerr finishes its own setup (Plex sign-in + auto-discovery); prompt
+  // the user until it reports initialized.
+  useEffect(() => {
+    let cancelled = false;
+    const checkOverseerr = async () => {
+      try {
+        const res = await fetch('http://localhost:3001/api/services/overseerr/setup-status');
+        const data = await res.json();
+        if (!cancelled) {
+          setOverseerrNeedsSetup(data.enabled === true && data.initialized === false);
+        }
+      } catch {
+        if (!cancelled) {
+          setOverseerrNeedsSetup(false);
+        }
+      }
+    };
+    checkOverseerr();
+    const interval = setInterval(checkOverseerr, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [serviceStatus.overseerr]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -566,6 +592,18 @@ export default function Dashboard() {
           message={<>
             <span className="font-semibold">One step left for Plex:</span> sign in with your Plex account.
             Your TV and Movies libraries will then be set up automatically.
+          </>}
+        />
+      )}
+
+      {/* Overseerr finishes setup in its own wizard */}
+      {overseerrNeedsSetup && (
+        <SetupBanner
+          actionLabel="Open Overseerr"
+          onAction={() => handleLaunchService('overseerr')}
+          message={<>
+            <span className="font-semibold">One step left for Overseerr:</span> finish its setup — sign in with Plex and it will
+            find your other services automatically.
           </>}
         />
       )}

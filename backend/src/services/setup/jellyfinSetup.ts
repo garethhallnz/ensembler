@@ -1,4 +1,5 @@
-import { SetupStepResult } from './types';
+import { ensureMediaServerNotification } from './arrSetup';
+import { ArrTarget, SetupStepResult } from './types';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -201,11 +202,46 @@ export async function ensureLibrary(
   return { created: true };
 }
 
+// Create (or reuse) an API key so Sonarr/Radarr can call back into Jellyfin.
+// POST /Auth/Keys returns 204, so the key is retrieved by listing afterward.
+export async function ensureApiKey(baseUrl: string, token: string, appName = 'Dockarr'): Promise<string> {
+  const authHeader = { 'X-Emby-Token': token };
+  const list = async (): Promise<{ AccessToken: string; AppName: string }[]> => {
+    const res = await fetch(`${baseUrl}/Auth/Keys`, { headers: authHeader });
+    if (!res.ok) {
+      throw new Error(`GET /Auth/Keys returned ${res.status}`);
+    }
+    const data = await res.json() as { Items?: { AccessToken: string; AppName: string }[] };
+    return data.Items ?? [];
+  };
+
+  const existing = (await list()).find(k => k.AppName === appName);
+  if (existing) {
+    return existing.AccessToken;
+  }
+  const create = await fetch(`${baseUrl}/Auth/Keys?app=${encodeURIComponent(appName)}`, {
+    method: 'POST',
+    headers: authHeader
+  });
+  if (!create.ok) {
+    throw new Error(`POST /Auth/Keys returned ${create.status}`);
+  }
+  const created = (await list()).find(k => k.AppName === appName);
+  if (!created) {
+    throw new Error('Created API key could not be found');
+  }
+  return created.AccessToken;
+}
+
 export interface JellyfinSetupOptions {
   baseUrl: string;
   credentials?: JellyfinCredentials;
   libraries?: JellyfinLibrary[];
   readyTimeoutMs?: number;
+  // *arr instances that should notify Jellyfin on import, plus Jellyfin's
+  // address on the container network they reach it at.
+  arrTargets?: ArrTarget[];
+  networkHost?: { host: string; port: number };
 }
 
 export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupStepResult[]> {
@@ -264,6 +300,31 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
       });
     } catch (err) {
       results.push({ service: 'jellyfin', step, success: false, message: (err as Error).message });
+    }
+  }
+
+  // Let each *arr notify Jellyfin (and trigger a scan) on import, via an API key.
+  if (setup.arrTargets?.length && setup.networkHost) {
+    try {
+      const apiKey = await ensureApiKey(setup.baseUrl, token);
+      for (const target of setup.arrTargets) {
+        try {
+          const { created } = await ensureMediaServerNotification(
+            { baseUrl: target.baseUrl, apiKey: target.apiKey },
+            { kind: 'jellyfin', name: 'Jellyfin', host: setup.networkHost.host, port: setup.networkHost.port, credential: apiKey }
+          );
+          results.push({
+            service: 'jellyfin',
+            step: `notify-${target.service}`,
+            success: true,
+            message: created ? `${target.service} will refresh Jellyfin on import` : `${target.service} already notifies Jellyfin`
+          });
+        } catch (err) {
+          results.push({ service: 'jellyfin', step: `notify-${target.service}`, success: false, message: (err as Error).message });
+        }
+      }
+    } catch (err) {
+      results.push({ service: 'jellyfin', step: 'api-key', success: false, message: (err as Error).message });
     }
   }
 

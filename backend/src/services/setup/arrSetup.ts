@@ -104,6 +104,64 @@ export async function ensureTransmissionDownloadClient(
   return { created: true };
 }
 
+// A media server the *arr should notify (and tell to rescan) when media is
+// imported, so new content appears without a manual library scan.
+export interface MediaServerNotificationTarget {
+  // 'plex' → PlexServer contract with authToken; 'jellyfin'/'emby' → MediaBrowser with apiKey
+  kind: 'plex' | 'jellyfin' | 'emby';
+  name: string;
+  host: string;
+  port: number;
+  // Plex auth token or Jellyfin/Emby API key
+  credential: string;
+}
+
+export async function ensureMediaServerNotification(
+  options: ArrRequestOptions,
+  target: MediaServerNotificationTarget
+): Promise<{ created: boolean }> {
+  const existing = await arrRequest<{ implementation: string; fields?: { name: string; value: unknown }[] }[]>(
+    options, 'GET', '/notification'
+  );
+
+  const implementation = target.kind === 'plex' ? 'PlexServer' : 'MediaBrowser';
+  const alreadyPresent = existing.some(n =>
+    n.implementation === implementation &&
+    (n.fields ?? []).some(f => f.name === 'host' && f.value === target.host)
+  );
+  if (alreadyPresent) {
+    return { created: false };
+  }
+
+  // Only trigger flags common to both Sonarr and Radarr; unknown flags 400.
+  const triggers = { onGrab: false, onDownload: true, onUpgrade: true, onRename: false };
+  const fields = target.kind === 'plex'
+    ? [
+        { name: 'host', value: target.host },
+        { name: 'port', value: target.port },
+        { name: 'useSsl', value: false },
+        { name: 'authToken', value: target.credential },
+        { name: 'updateLibrary', value: true }
+      ]
+    : [
+        { name: 'host', value: target.host },
+        { name: 'port', value: target.port },
+        { name: 'useSsl', value: false },
+        { name: 'apiKey', value: target.credential },
+        { name: 'updateLibrary', value: true }
+      ];
+
+  await arrRequest(options, 'POST', '/notification', {
+    ...triggers,
+    name: target.name,
+    implementation,
+    configContract: target.kind === 'plex' ? 'PlexServerSettings' : 'MediaBrowserSettings',
+    tags: [],
+    fields
+  });
+  return { created: true };
+}
+
 export interface ArrSetupOptions {
   serviceKey: string;
   baseUrl: string;

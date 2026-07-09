@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
-import { SetupStepResult } from './types';
+import { ensureMediaServerNotification } from './arrSetup';
+import { ArrTarget, SetupStepResult } from './types';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -146,6 +147,10 @@ export interface PlexSetupOptions {
   token: string;
   libraries?: PlexLibrary[];
   readyTimeoutMs?: number;
+  // *arr instances that should be told to notify Plex on import, and Plex's
+  // address on the container network they reach it at.
+  arrTargets?: ArrTarget[];
+  networkHost?: { host: string; port: number };
 }
 
 export async function setupPlex(setup: PlexSetupOptions): Promise<SetupStepResult[]> {
@@ -177,6 +182,26 @@ export async function setupPlex(setup: PlexSetupOptions): Promise<SetupStepResul
       });
     } catch (err) {
       results.push({ service: 'plex', step, success: false, message: (err as Error).message });
+    }
+  }
+
+  // Tell each *arr to notify Plex (and trigger a library scan) on import.
+  if (setup.arrTargets?.length && setup.networkHost) {
+    for (const target of setup.arrTargets) {
+      try {
+        const { created } = await ensureMediaServerNotification(
+          { baseUrl: target.baseUrl, apiKey: target.apiKey },
+          { kind: 'plex', name: 'Plex', host: setup.networkHost.host, port: setup.networkHost.port, credential: setup.token }
+        );
+        results.push({
+          service: 'plex',
+          step: `notify-${target.service}`,
+          success: true,
+          message: created ? `${target.service} will refresh Plex on import` : `${target.service} already notifies Plex`
+        });
+      } catch (err) {
+        results.push({ service: 'plex', step: `notify-${target.service}`, success: false, message: (err as Error).message });
+      }
     }
   }
 

@@ -3,11 +3,22 @@ export interface SetupStepResult {
   step: string;
   success: boolean;
   message: string;
+  // Set when a step mutated on-disk state that needs a container restart to
+  // take effect (e.g. seeding Bazarr's config.yaml).
+  needsRestart?: boolean;
 }
 
 export interface SetupConnectionsResult {
   success: boolean;
   results: SetupStepResult[];
+}
+
+// An *arr instance a media server should register itself with (as an import
+// notification target). baseUrl is the host-side address Dockarr calls.
+export interface ArrTarget {
+  service: string;
+  baseUrl: string;
+  apiKey: string;
 }
 
 export interface UserConfig {

@@ -399,58 +399,80 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     return valid;
   };
 
-  // Check the chosen ports against what is actually in use on the user's
-  // machine (something outside Dockarr — a reverse proxy, another app). On a
-  // conflict we fill in a free port for them and explain, so they only need to
-  // click Next again rather than find a free port themselves. Returns true when
-  // every port is free.
-  const validateHostPorts = async () => {
-    const selectedPorts: { [key: string]: number } = {};
-    Object.keys(selected).forEach(svc => {
-      if (!selected[svc]) return;
-      const service = serviceConfig.find(s => s.key === svc);
-      if (service) selectedPorts[svc] = ports[svc] || service.defaultPort;
-    });
+  interface PortConflict { service: string; port: number; suggestion: number | null }
 
-    let conflicts: { service: string; port: number; suggestion: number | null }[] = [];
+  // Ask the backend which of the given host ports are actually in use on this
+  // machine (by something outside Dockarr). Cross-platform: the backend probes
+  // by connecting to each port. Returns [] if the check itself can't run so it
+  // never blocks setup.
+  const fetchPortConflicts = async (portsMap: { [key: string]: number }): Promise<PortConflict[]> => {
     try {
       const res = await fetch('http://localhost:3001/api/ports/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ports: selectedPorts }),
+        body: JSON.stringify({ ports: portsMap }),
       });
       const data = await res.json();
-      conflicts = data.conflicts || [];
+      return data.conflicts || [];
     } catch (err) {
-      // If the check itself fails, don't block setup — compose start will
-      // surface any genuine problem.
       console.error('Port availability check failed:', err);
-      return true;
+      return [];
     }
+  };
 
+  const selectedPortMap = () => {
+    const map: { [key: string]: number } = {};
+    Object.keys(selected).forEach(svc => {
+      if (!selected[svc]) return;
+      const service = serviceConfig.find(s => s.key === svc);
+      if (service) map[svc] = ports[svc] || service.defaultPort;
+    });
+    return map;
+  };
+
+  // Before the user reaches the configuration step, quietly pre-select free
+  // ports for any default that's already taken, so the values shown are ready
+  // to use rather than corrected after the fact.
+  const prefillAvailablePorts = async () => {
+    const conflicts = await fetchPortConflicts(selectedPortMap());
+    const newPorts: { [key: string]: number } = {};
+    const changed: string[] = [];
+    conflicts.forEach(({ service, suggestion }) => {
+      if (suggestion) {
+        newPorts[service] = suggestion;
+        const name = serviceConfig.find(s => s.key === service)?.name || service;
+        changed.push(`${name}: ${suggestion}`);
+      }
+    });
+    if (Object.keys(newPorts).length > 0) {
+      setPorts(prev => ({ ...prev, ...newPorts }));
+    }
+    if (changed.length > 0) {
+      showToast(`Some default ports were already in use, so we've pre-selected free ones (${changed.join(', ')}). You can change these below.`, 'info');
+    }
+  };
+
+  // Safety net at the configuration step for ports the user typed manually.
+  // Normally a no-op because prefill already picked free ports. Returns true
+  // when every port is free.
+  const validateHostPorts = async () => {
+    const conflicts = await fetchPortConflicts(selectedPortMap());
     if (conflicts.length === 0) return true;
 
     const newErrors: { [key: string]: string } = {};
     const newPorts: { [key: string]: number } = {};
-    const changed: string[] = [];
     conflicts.forEach(({ service, port, suggestion }) => {
-      const name = serviceConfig.find(s => s.key === service)?.name || service;
       if (suggestion) {
         newPorts[service] = suggestion;
-        newErrors[service] = `Port ${port} is already in use on your computer — switched to ${suggestion}.`;
-        changed.push(`${name}: ${port} → ${suggestion}`);
+        newErrors[service] = `Port ${port} is in use — switched to a free port, ${suggestion}.`;
       } else {
-        newErrors[service] = `Port ${port} is already in use and no free port could be found. Please choose another.`;
+        newErrors[service] = `Port ${port} is in use and no free port could be found. Please choose another.`;
       }
     });
-
     if (Object.keys(newPorts).length > 0) {
       setPorts(prev => ({ ...prev, ...newPorts }));
     }
     setPortErrors(prev => ({ ...prev, ...newErrors }));
-    if (changed.length > 0) {
-      showToast(`Adjusted ports already in use: ${changed.join(', ')}. Click Next to continue.`, 'warning');
-    }
     return false;
   };
 
@@ -519,14 +541,21 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   };
 
   const handleNext = async () => {
-    if (step === 0 && !(await validateServiceSelection())) return;
+    if (step === 0) {
+      if (!(await validateServiceSelection())) return;
+      // Pre-select free ports before showing the configuration step so the
+      // user sees ready-to-use values rather than a late conflict correction.
+      await prefillAvailablePorts();
+      setStep(1);
+      return;
+    }
     if (step === 1) {
         // Validate paths, ports, and environment in the configuration step
         await validatePaths();
         if (!validatePorts()) return;
         if (!validateEnvironment()) return;
-        // Check ports are actually free on the host (may adjust and ask the
-        // user to click Next again)
+        // Safety net for manually-edited ports (prefill already handled the
+        // defaults); adjusts any that are now taken and re-prompts.
         if (!(await validateHostPorts())) return;
         // Continue to next step if validations pass
         setStep((s) => Math.min(steps.length - 1, s + 1));

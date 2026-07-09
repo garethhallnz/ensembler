@@ -1,10 +1,11 @@
 import { getServiceConfig } from '../serviceConfig';
-import { readArrApiKey } from './apiKeyReader';
+import { readArrApiKey, tryReadArrApiKey } from './apiKeyReader';
 import { setupArrService } from './arrSetup';
 import { setupProwlarr, ProwlarrApplication } from './prowlarrSetup';
 import { readPlexToken, setupPlex } from './plexSetup';
 import { setupJellyfin, JellyfinCredentials } from './jellyfinSetup';
-import { SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
+import { seedBazarrConfig } from './bazarrSetup';
+import { ArrTarget, SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
 
 // Root folders are container-side paths fixed by the volume mappings in
 // serviceConfig, not the user's host paths.
@@ -24,6 +25,24 @@ const networkUrl = (serviceKey: string): string => {
 
 const hostPort = (config: UserConfig, serviceKey: string): number =>
   config.ports?.[serviceKey] || getServiceConfig(serviceKey)!.defaultPort;
+
+// The enabled *arr instances whose API keys are readable — the media servers
+// register themselves with these as import-notification targets. Uses a
+// one-shot read so it works from the standalone Plex step too (arrs are up by
+// the time a media server is being configured).
+function buildArrTargets(config: UserConfig, configDir: string): ArrTarget[] {
+  const targets: ArrTarget[] = [];
+  for (const arr of ARR_SERVICES) {
+    if (!config.selectedServices?.[arr.key]) {
+      continue;
+    }
+    const apiKey = tryReadArrApiKey(configDir, arr.key);
+    if (apiKey) {
+      targets.push({ service: arr.key, baseUrl: `http://localhost:${hostPort(config, arr.key)}`, apiKey });
+    }
+  }
+  return targets;
+}
 
 // Poll like the *arr readiness check does — Transmission's web server can take
 // several seconds to start listening after its container is up. The probe must
@@ -157,6 +176,20 @@ export async function setupConnections(
     results.push(...stepResults);
   }
 
+  // Bazarr reads Sonarr/Radarr from its config.yaml; seed it (Bazarr is then
+  // restarted by the endpoint so it picks up the change).
+  if (isEnabled('bazarr')) {
+    const bazarrConns = buildArrTargets(config, configDir).map(t => ({
+      service: t.service,
+      host: t.service,
+      port: getServiceConfig(t.service)!.internalPort,
+      apiKey: t.apiKey
+    }));
+    if (bazarrConns.length > 0) {
+      results.push(seedBazarrConfig(configDir, bazarrConns));
+    }
+  }
+
   if (isEnabled('plex')) {
     results.push(...await runPlexSetup(config, configDir, timeouts));
   }
@@ -165,7 +198,9 @@ export async function setupConnections(
     results.push(...await setupJellyfin({
       baseUrl: `http://localhost:${hostPort(config, 'jellyfin')}`,
       credentials: secrets.jellyfin,
-      readyTimeoutMs: timeouts.readyTimeoutMs
+      readyTimeoutMs: timeouts.readyTimeoutMs,
+      arrTargets: buildArrTargets(config, configDir),
+      networkHost: { host: 'jellyfin', port: getServiceConfig('jellyfin')!.internalPort }
     }));
   }
 
@@ -196,7 +231,9 @@ async function runPlexSetup(
   return setupPlex({
     baseUrl: `http://localhost:${hostPort(config, 'plex')}`,
     token,
-    readyTimeoutMs: timeouts.readyTimeoutMs
+    readyTimeoutMs: timeouts.readyTimeoutMs,
+    arrTargets: buildArrTargets(config, configDir),
+    networkHost: { host: 'plex', port: getServiceConfig('plex')!.internalPort }
   });
 }
 

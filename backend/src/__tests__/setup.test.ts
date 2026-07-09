@@ -6,11 +6,13 @@ import {
   waitForArrReady,
   ensureRootFolder,
   ensureTransmissionDownloadClient,
+  ensureMediaServerNotification,
   setupArrService
 } from '../services/setup/arrSetup';
 import { ensureApplication, setupProwlarr } from '../services/setup/prowlarrSetup';
 import { readPlexToken, ensurePlexLibrary, setupPlex } from '../services/setup/plexSetup';
-import { isLibraryCovered, setupJellyfin } from '../services/setup/jellyfinSetup';
+import { isLibraryCovered, ensureApiKey, setupJellyfin } from '../services/setup/jellyfinSetup';
+import { setYamlValue, seedBazarrConfig } from '../services/setup/bazarrSetup';
 import { setupConnections, setupPlexConnections } from '../services/setup/orchestrator';
 import { UserConfig } from '../services/setup/types';
 
@@ -177,6 +179,55 @@ describe('Service connection setup', () => {
       fetchMock.mockResolvedValueOnce(jsonResponse([{ id: 1, implementation: 'Transmission' }]));
 
       const result = await ensureTransmissionDownloadClient(options, { host: 'transmission', port: 9091 });
+
+      expect(result.created).toBe(false);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('ensureMediaServerNotification', () => {
+    const options = { baseUrl: 'http://localhost:8989', apiKey: 'key' };
+
+    it('adds a Plex notification with the auth token and library-update on', async () => {
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse([]))
+        .mockResolvedValueOnce(jsonResponse({ id: 1 }));
+
+      const result = await ensureMediaServerNotification(options, {
+        kind: 'plex', name: 'Plex', host: 'plex', port: 32400, credential: 'plex-token'
+      });
+
+      expect(result.created).toBe(true);
+      const payload = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(payload.implementation).toBe('PlexServer');
+      expect(payload.configContract).toBe('PlexServerSettings');
+      expect(payload.onDownload).toBe(true);
+      expect(payload.fields).toContainEqual({ name: 'authToken', value: 'plex-token' });
+      expect(payload.fields).toContainEqual({ name: 'updateLibrary', value: true });
+    });
+
+    it('adds a Jellyfin notification with the api key via MediaBrowser', async () => {
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse([]))
+        .mockResolvedValueOnce(jsonResponse({ id: 1 }));
+
+      await ensureMediaServerNotification(options, {
+        kind: 'jellyfin', name: 'Jellyfin', host: 'jellyfin', port: 8096, credential: 'jf-key'
+      });
+
+      const payload = JSON.parse(fetchMock.mock.calls[1][1].body);
+      expect(payload.implementation).toBe('MediaBrowser');
+      expect(payload.fields).toContainEqual({ name: 'apiKey', value: 'jf-key' });
+    });
+
+    it('does not duplicate a notification already pointing at the same host', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse([
+        { implementation: 'PlexServer', fields: [{ name: 'host', value: 'plex' }] }
+      ]));
+
+      const result = await ensureMediaServerNotification(options, {
+        kind: 'plex', name: 'Plex', host: 'plex', port: 32400, credential: 'plex-token'
+      });
 
       expect(result.created).toBe(false);
       expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -511,6 +562,154 @@ describe('Service connection setup', () => {
       expect(results).toEqual([
         expect.objectContaining({ service: 'jellyfin', step: 'sign-in', success: false })
       ]);
+    });
+
+    it('mints an API key and registers notifications for arr targets', async () => {
+      let keyCreated = false;
+      fetchMock.mockImplementation(async (url: string, init?: { method?: string }) => {
+        if (url.includes('/System/Info/Public')) return jsonResponse({ StartupWizardCompleted: true });
+        if (url.includes('/Users/AuthenticateByName')) return jsonResponse({ AccessToken: 'tok' });
+        if (url.includes('/Library/VirtualFolders')) {
+          return init?.method === 'POST' ? jsonResponse({}, 204) : jsonResponse([]);
+        }
+        if (url.includes('/Auth/Keys')) {
+          if (init?.method === 'POST') { keyCreated = true; return jsonResponse({}, 204); }
+          return jsonResponse({ Items: keyCreated ? [{ AccessToken: 'jf-api-key', AppName: 'Dockarr' }] : [] });
+        }
+        // arr endpoints
+        if (url.includes('/notification')) {
+          return init?.method === 'POST' ? jsonResponse({ id: 1 }) : jsonResponse([]);
+        }
+        return jsonResponse({}, 404);
+      });
+
+      const results = await setupJellyfin({
+        baseUrl: 'http://localhost:8096',
+        credentials,
+        arrTargets: [{ service: 'sonarr', baseUrl: 'http://localhost:8989', apiKey: 'sonarr-key' }],
+        networkHost: { host: 'jellyfin', port: 8096 }
+      });
+
+      expect(results).toContainEqual(expect.objectContaining({ step: 'notify-sonarr', success: true }));
+      // The notification carries the minted key, not the admin password
+      const notifPost = fetchMock.mock.calls.find(c => c[0].includes('/notification') && c[1]?.method === 'POST');
+      const payload = JSON.parse(notifPost[1].body);
+      expect(payload.fields).toContainEqual({ name: 'apiKey', value: 'jf-api-key' });
+    });
+  });
+
+  describe('ensureApiKey', () => {
+    it('reuses an existing Dockarr key', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'existing', AppName: 'Dockarr' }] }));
+      const key = await ensureApiKey('http://localhost:8096', 'tok');
+      expect(key).toBe('existing');
+      expect(fetchMock).toHaveBeenCalledTimes(1); // no POST needed
+    });
+
+    it('mints a new key when none exists', async () => {
+      fetchMock
+        .mockResolvedValueOnce(jsonResponse({ Items: [] }))
+        .mockResolvedValueOnce(jsonResponse({}, 204))
+        .mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'fresh', AppName: 'Dockarr' }] }));
+      const key = await ensureApiKey('http://localhost:8096', 'tok');
+      expect(key).toBe('fresh');
+    });
+  });
+
+  describe('bazarr setYamlValue', () => {
+    // Mirrors Bazarr's config: repeated keys (apikey) across sections
+    const sample = () => [
+      'general:',
+      '  use_sonarr: false',
+      '  use_radarr: false',
+      'plex:',
+      "  apikey: ''",
+      '  ip: 127.0.0.1',
+      'sonarr:',
+      "  apikey: ''",
+      '  ip: 127.0.0.1',
+      '  port: 8989',
+      'radarr:',
+      "  apikey: ''",
+      '  ip: 127.0.0.1'
+    ];
+
+    it('updates a key only within the named section', () => {
+      const lines = sample();
+      const changed = setYamlValue(lines, 'sonarr', 'apikey', "'abc'");
+      expect(changed).toBe(true);
+      // plex apikey (same key name, earlier section) is untouched
+      expect(lines[4]).toBe("  apikey: ''");
+      expect(lines[7]).toBe("  apikey: 'abc'");
+    });
+
+    it('updates the general use flag', () => {
+      const lines = sample();
+      setYamlValue(lines, 'general', 'use_sonarr', 'true');
+      expect(lines[1]).toBe('  use_sonarr: true');
+    });
+
+    it('returns false when the value is already set', () => {
+      const lines = sample();
+      expect(setYamlValue(lines, 'sonarr', 'ip', '127.0.0.1')).toBe(false);
+    });
+  });
+
+  describe('seedBazarrConfig', () => {
+    const writeBazarrConfig = (content: string) => {
+      const dir = path.join(tempDir, 'bazarr', 'config', 'config');
+      fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(path.join(dir, 'config.yaml'), content);
+    };
+    const readBazarrConfig = () =>
+      fs.readFileSync(path.join(tempDir, 'bazarr', 'config', 'config', 'config.yaml'), 'utf-8');
+
+    const baseConfig = [
+      'general:',
+      '  use_sonarr: false',
+      '  use_radarr: false',
+      'sonarr:',
+      "  apikey: ''",
+      '  ip: 127.0.0.1',
+      '  port: 8989',
+      'radarr:',
+      "  apikey: ''",
+      '  ip: 127.0.0.1',
+      '  port: 7878',
+      ''
+    ].join('\n');
+
+    it('seeds Sonarr and Radarr connections and flags a restart', () => {
+      writeBazarrConfig(baseConfig);
+      const result = seedBazarrConfig(tempDir, [
+        { service: 'sonarr', host: 'sonarr', port: 8989, apiKey: 'sk' },
+        { service: 'radarr', host: 'radarr', port: 7878, apiKey: 'rk' }
+      ]);
+
+      expect(result.success).toBe(true);
+      expect(result.needsRestart).toBe(true);
+      const out = readBazarrConfig();
+      expect(out).toContain("ip: 'sonarr'");
+      expect(out).toContain("apikey: 'sk'");
+      expect(out).toContain("ip: 'radarr'");
+      expect(out).toContain("apikey: 'rk'");
+      expect(out).toContain('use_sonarr: true');
+      expect(out).toContain('use_radarr: true');
+    });
+
+    it('is idempotent — no restart when already seeded', () => {
+      writeBazarrConfig(baseConfig);
+      const conns = [{ service: 'sonarr', host: 'sonarr', port: 8989, apiKey: 'sk' }];
+      seedBazarrConfig(tempDir, conns);
+      const second = seedBazarrConfig(tempDir, conns);
+      expect(second.needsRestart).toBe(false);
+      expect(second.message).toContain('already connected');
+    });
+
+    it('fails gracefully when the config file is missing', () => {
+      const result = seedBazarrConfig(tempDir, [{ service: 'sonarr', host: 'sonarr', port: 8989, apiKey: 'sk' }]);
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not found');
     });
   });
 

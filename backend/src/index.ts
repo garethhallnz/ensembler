@@ -568,6 +568,23 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
       ? { jellyfin: { username: jellyfin.username, password: jellyfin.password } }
       : {};
     const result = await setupConnections(config, configDir, {}, secrets);
+
+    // Any step that seeded on-disk config (Bazarr) needs its container
+    // restarted to take effect.
+    if (result.results.some(r => r.needsRestart)) {
+      try {
+        await execAsync(`docker compose -f ${composeFile} restart bazarr`);
+      } catch (err) {
+        result.results.push({
+          service: 'bazarr',
+          step: 'restart',
+          success: false,
+          message: `Seeded config but failed to restart Bazarr: ${(err as Error).message}`
+        });
+        result.success = false;
+      }
+    }
+
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to set up service connections.', error: (err as Error).message });
@@ -634,6 +651,31 @@ app.get('/api/services/plex/setup-status', async (req: Request, res: Response) =
     }
   } catch (err) {
     res.json({ success: true, enabled: true, signedIn: null, librariesConfigured: null });
+  }
+});
+
+// Overseerr configures itself through its own wizard (which auto-discovers
+// Sonarr/Radarr/Plex and requires a Plex sign-in only the user can do). This
+// tells the dashboard whether that wizard still needs finishing. initialized
+// is null when unknown (disabled, not started, or unreachable).
+app.get('/api/services/overseerr/setup-status', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.json({ success: true, enabled: false, initialized: null });
+    }
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    if (!config.selectedServices?.overseerr) {
+      return res.json({ success: true, enabled: false, initialized: null });
+    }
+    const port = config.ports?.overseerr || getServiceConfig('overseerr')!.defaultPort;
+    const response = await fetch(`http://localhost:${port}/api/v1/settings/public`);
+    if (!response.ok) {
+      throw new Error(`Overseerr responded with ${response.status}`);
+    }
+    const data = await response.json() as { initialized?: boolean };
+    res.json({ success: true, enabled: true, initialized: data.initialized === true });
+  } catch {
+    res.json({ success: true, enabled: true, initialized: null });
   }
 });
 
