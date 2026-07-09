@@ -197,7 +197,11 @@ function App() {
       )}
 
       {status === 'ok' && setupComplete && !showSetupWizard && (
-        <Dashboard />
+        <Dashboard onResetComplete={() => {
+          // Return to the wizard in place after a reset — no window reload.
+          setSetupComplete(false);
+          setShowSetupWizard(false);
+        }} />
       )}
         </div>
       </ToastProvider>

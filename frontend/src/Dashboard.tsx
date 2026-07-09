@@ -56,7 +56,12 @@ interface DockerUpdatesType {
   lastChecked: string;
 }
 
-export default function Dashboard() {
+interface DashboardProps {
+  // Called after a complete reset so the app can return to the wizard in place.
+  onResetComplete: () => void;
+}
+
+export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { showToast } = useToast();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
   const [serviceVersions, setServiceVersions] = useState<ServiceVersionType>({});
@@ -950,11 +955,14 @@ export default function Dashboard() {
         className="!w-[900px] max-w-full"
       >
         <div className="h-full">
-          <AdvancedSettings onClose={async () => {
-            setShowAdvancedSettings(false);
-            // Refresh dashboard data after settings are saved
-            await refreshDashboard();
-          }} />
+          <AdvancedSettings
+            onResetComplete={onResetComplete}
+            onClose={async () => {
+              setShowAdvancedSettings(false);
+              // Refresh dashboard data after settings are saved
+              await refreshDashboard();
+            }}
+          />
         </div>
       </Drawer>
 

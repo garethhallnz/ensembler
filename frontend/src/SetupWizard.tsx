@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput } from './components';
 import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch } from 'flowbite-react';
+import { HiCheckCircle, HiXCircle, HiExclamationCircle } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 
 declare global {
@@ -29,8 +30,17 @@ interface ServiceConfigResponse {
 const steps = [
   'Service Selection',
   'Configuration',
-  'Summary',
+  'Apply',
 ];
+
+type PhaseStatus = 'pending' | 'active' | 'done' | 'error';
+interface ApplyPhase {
+  key: string;
+  label: string;
+  detail?: string;
+  status: PhaseStatus;
+}
+interface ConnectResult { service: string; step: string; success: boolean; message: string }
 
 
 interface SetupWizardProps {
@@ -60,7 +70,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   const [jellyfinUsername, setJellyfinUsername] = useState('admin');
   const [jellyfinPassword, setJellyfinPassword] = useState('');
   const [envErrors, setEnvErrors] = useState<{[key: string]: string}>({});
-  const [isSaving, setIsSaving] = useState(false);
+  const [applyPhases, setApplyPhases] = useState<ApplyPhase[]>([]);
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const [applyDone, setApplyDone] = useState(false);
+  const [connectResults, setConnectResults] = useState<ConnectResult[]>([]);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -540,114 +553,98 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     return valid;
   };
 
+  // Advance from Service Selection to Configuration, pre-selecting free ports
+  // so the configuration step shows ready-to-use values.
   const handleNext = async () => {
-    if (step === 0) {
-      if (!(await validateServiceSelection())) return;
-      // Pre-select free ports before showing the configuration step so the
-      // user sees ready-to-use values rather than a late conflict correction.
-      await prefillAvailablePorts();
-      setStep(1);
-      return;
-    }
-    if (step === 1) {
-        // Validate paths, ports, and environment in the configuration step
-        await validatePaths();
-        if (!validatePorts()) return;
-        if (!validateEnvironment()) return;
-        // Safety net for manually-edited ports (prefill already handled the
-        // defaults); adjusts any that are now taken and re-prompts.
-        if (!(await validateHostPorts())) return;
-        // Continue to next step if validations pass
-        setStep((s) => Math.min(steps.length - 1, s + 1));
-        return;
-    }
-    setStep((s) => Math.min(steps.length - 1, s + 1));
+    if (!(await validateServiceSelection())) return;
+    await prefillAvailablePorts();
+    setStep(1);
   };
 
-  const handleSaveAndApply = async () => {
-    setIsSaving(true);
-    try {
-      const config = {
-        selectedServices: selected,
-        paths: paths,
-        ports: ports,
-        environment: {
-          tz: tz,
-          puid: puid,
-          pgid: pgid,
-        },
-      };
+  // Validate the configuration step, then move to the Apply step and run it.
+  const handleApply = async () => {
+    await validatePaths();
+    if (!validatePorts()) return;
+    if (!validateEnvironment()) return;
+    if (!(await validateHostPorts())) return;
+    setStep(2);
+    runApply();
+  };
 
-      // Save configuration
+  // Drive the apply as visible, checked-off phases rather than a single spinner.
+  const runApply = async () => {
+    const phases: ApplyPhase[] = [
+      { key: 'save', label: 'Saving your configuration', status: 'pending' },
+      { key: 'compose', label: 'Generating Docker setup', status: 'pending' },
+      {
+        key: 'start',
+        label: 'Starting services',
+        detail: 'Downloading images and starting containers. On the first run this can take a few minutes.',
+        status: 'pending'
+      },
+      {
+        key: 'connect',
+        label: 'Connecting services together',
+        detail: 'Waiting for each service to be ready, then linking them. This can take a minute.',
+        status: 'pending'
+      }
+    ];
+    setApplyPhases(phases);
+    setApplyError(null);
+    setApplyDone(false);
+    setConnectResults([]);
+
+    const setPhase = (key: string, status: PhaseStatus) =>
+      setApplyPhases(prev => prev.map(p => (p.key === key ? { ...p, status } : p)));
+
+    try {
+      setPhase('save', 'active');
       const saveRes = await fetch('http://localhost:3001/api/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config),
+        body: JSON.stringify({
+          selectedServices: selected,
+          paths,
+          ports,
+          environment: { tz, puid, pgid }
+        })
       });
+      if (!saveRes.ok) throw new Error('Could not save your configuration.');
+      setPhase('save', 'done');
 
-      if (!saveRes.ok) {
-        throw new Error('Failed to save configuration');
-      }
+      setPhase('compose', 'active');
+      const composeRes = await fetch('http://localhost:3001/api/config/generate-compose', { method: 'POST' });
+      if (!composeRes.ok) throw new Error('Could not generate the Docker setup.');
+      setPhase('compose', 'done');
 
-      // Generate docker-compose.yml
-      const composeRes = await fetch('http://localhost:3001/api/config/generate-compose', {
-        method: 'POST',
-      });
+      setPhase('start', 'active');
+      const startRes = await fetch('http://localhost:3001/api/services/start-all', { method: 'POST' });
+      if (!startRes.ok) throw new Error('Could not start the services.');
+      setPhase('start', 'done');
 
-      if (!composeRes.ok) {
-        throw new Error('Failed to generate docker-compose files');
-      }
-
-      // Start services
-      const startRes = await fetch('http://localhost:3001/api/services/start-all', {
-        method: 'POST',
-      });
-
-      if (!startRes.ok) {
-        throw new Error('Failed to start services');
-      }
-
-      showToast('Services started. Connecting services to each other…', 'info');
-
-      // Wire the services together (Sonarr/Radarr → Transmission, root folders).
-      // Failures here are warnings, not errors — the services still run and can
-      // be connected manually or by re-running setup. Emit a single final toast
-      // reflecting the actual outcome so a warning is never overwritten by a
-      // blanket success message.
+      // Wiring failures are warnings, not errors — services still run. The
+      // per-service outcomes are shown in the completion panel below.
+      setPhase('connect', 'active');
+      const body = selected['jellyfin']
+        ? { jellyfin: { username: jellyfinUsername, password: jellyfinPassword } }
+        : {};
       try {
-        // Jellyfin admin credentials are sent only in this request body and
-        // never persisted — used once to complete Jellyfin's first-run setup.
-        const body = selected['jellyfin']
-          ? { jellyfin: { username: jellyfinUsername, password: jellyfinPassword } }
-          : {};
         const connectRes = await fetch('http://localhost:3001/api/services/setup-connections', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
+          body: JSON.stringify(body)
         });
         const connectData = await connectRes.json();
-
-        if (connectData.success) {
-          showToast('Setup complete — your services are running and connected!', 'success');
-        } else {
-          const failures = connectData.results
-            .filter((r: { success: boolean }) => !r.success)
-            .map((r: { service: string; message: string }) => `${r.service}: ${r.message}`)
-            .join('; ');
-          showToast(`Services are running, but some connections need attention: ${failures}`, 'warning');
-        }
+        setConnectResults(connectData.results || []);
       } catch (connectError) {
         console.error('Service connection setup failed:', connectError);
-        showToast('Services are running, but automatic connection failed — you can finish setup manually or re-run it.', 'warning');
       }
-
-      onComplete();
+      setPhase('connect', 'done');
+      setApplyDone(true);
     } catch (error) {
       console.error('Error in setup process:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      showToast(errorMessage, 'error');
-    } finally {
-      setIsSaving(false);
+      setApplyPhases(prev => prev.map(p => (p.status === 'active' ? { ...p, status: 'error' } : p)));
+      setApplyError(error instanceof Error ? error.message : 'Something went wrong during setup.');
     }
   };
 
@@ -682,8 +679,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           {steps.map((stepName, idx) => (
             <div 
               key={idx} 
-              className={`text-sm cursor-pointer ${idx === step ? 'font-bold text-blue-600' : idx < step ? 'text-green-600' : 'text-gray-500'}`}
-              onClick={() => idx < step && setStep(idx)}
+              className={`text-sm ${step === 2 ? '' : 'cursor-pointer'} ${idx === step ? 'font-bold text-blue-600' : idx < step ? 'text-green-600' : 'text-gray-500'}`}
+              onClick={() => idx < step && step !== 2 && setStep(idx)}
             >
               {stepName}
             </div>
@@ -883,132 +880,145 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 </Card.Body>
               </Card>
             )}
-          </div>
-        )}
-        {step === 2 && (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Configuration Summary</h2>
-              <p className="text-gray-600 dark:text-gray-300">Review your settings before applying the configuration:</p>
-            </div>
 
-            {/* Services with Configuration */}
-            <Card className="border-l-4 border-green-500">
-              <Card.Header>
-                <div className="flex items-center gap-2">
-                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-sm font-medium">Services</span>
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white">Service Configuration</h3>
-                </div>
-              </Card.Header>
+            {/* Compact review folded into configuration, so applying is one
+                click from here rather than a separate review step. */}
+            <Card>
               <Card.Body>
-                <div className="space-y-6">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-left">Ready to set up</h3>
+                <div className="space-y-1.5">
                   {Object.keys(selected).filter(key => selected[key]).map((key) => {
                     const service = serviceConfig.find(s => s.key === key);
-                    const servicePaths = paths[key] || [];
-                    const hasValidPaths = service?.pathRequirements && service.pathRequirements.some((_, idx) => servicePaths[idx]);
-                    
+                    const primaryPath = (paths[key] || []).find(Boolean);
                     return (
-                      <div key={key} className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        {/* Service Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h4 className="text-lg font-medium text-gray-900 dark:text-white">{service?.name}</h4>
-                              <Badge color="blue">Port {ports[key] || service?.defaultPort}</Badge>
-                              {service?.required && <Badge color="gray">Required</Badge>}
-                            </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{service?.description}</p>
-                          </div>
-                        </div>
-
-                        {/* File Paths for this service */}
-                        {hasValidPaths && (
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">Paths</span>
-                              <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">File Configuration</h5>
-                            </div>
-                            <div className="space-y-3">
-                              {service?.pathRequirements?.map((field, idx) => {
-                                const path = servicePaths[idx];
-                                if (!path) return null;
-                                return (
-                                  <div key={idx} className="bg-white dark:bg-gray-900 rounded p-3 border border-gray-200 dark:border-gray-700">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{field.label}</span>
-                                    </div>
-                                    <p className="text-sm text-gray-900 dark:text-white font-mono mt-1">{path}</p>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
+                      <div key={key} className="flex items-center gap-2 text-sm text-left">
+                        <span className="font-medium text-gray-900 dark:text-white min-w-[120px]">{service?.name || key}</span>
+                        <Badge color="blue">Port {ports[key] || service?.defaultPort}</Badge>
+                        {primaryPath && <span className="text-gray-500 dark:text-gray-400 font-mono truncate">{primaryPath}</span>}
                       </div>
                     );
                   })}
                 </div>
               </Card.Body>
             </Card>
+          </div>
+        )}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-left">
+                {applyDone ? 'Your media center is ready' : applyError ? 'Setup ran into a problem' : 'Setting things up'}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300 text-left">
+                {applyDone
+                  ? 'Everything is running. Here is how the automatic setup went.'
+                  : applyError
+                    ? 'Your services may be partly set up. You can go back and try again.'
+                    : 'Applying your configuration and starting your media center.'}
+              </p>
+            </div>
 
-            {/* Environment Variables */}
-            <Card className="border-l-4 border-purple-500">
-              <Card.Header>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white">Environment Settings</h3>
-                </div>
-              </Card.Header>
+            <Card>
               <Card.Body>
-                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Timezone:</span>
-                      <p className="text-sm text-gray-900 dark:text-white font-mono bg-white dark:bg-gray-900 px-2 py-1 rounded mt-1">{tz}</p>
+                <div className="space-y-4">
+                  {applyPhases.map((phase) => (
+                    <div key={phase.key} className="flex items-start gap-3 text-left">
+                      <div className="mt-0.5 shrink-0">
+                        {phase.status === 'done' && <HiCheckCircle className="w-6 h-6 text-green-500" />}
+                        {phase.status === 'error' && <HiXCircle className="w-6 h-6 text-red-500" />}
+                        {phase.status === 'active' && (
+                          <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-blue-500 dark:border-gray-600 dark:border-t-blue-400 animate-spin" />
+                        )}
+                        {phase.status === 'pending' && <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600" />}
+                      </div>
+                      <div className="flex-1">
+                        <div className={`font-medium ${
+                          phase.status === 'pending' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {phase.label}
+                        </div>
+                        {phase.status === 'active' && phase.detail && (
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{phase.detail}</p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">PUID:</span>
-                      <p className="text-sm text-gray-900 dark:text-white font-mono bg-white dark:bg-gray-900 px-2 py-1 rounded mt-1">{puid}</p>
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">PGID:</span>
-                      <p className="text-sm text-gray-900 dark:text-white font-mono bg-white dark:bg-gray-900 px-2 py-1 rounded mt-1">{pgid}</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </Card.Body>
             </Card>
+
+            {applyError && (
+              <Card className="border-l-4 border-red-500">
+                <Card.Body>
+                  <div className="flex items-start gap-3 text-left">
+                    <HiExclamationCircle className="w-6 h-6 text-red-500 shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-gray-900 dark:text-white font-medium">{applyError}</p>
+                      <Button color="gray" outline className="mt-3" onClick={() => setStep(1)}>
+                        Back to configuration
+                      </Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            )}
+
+            {applyDone && (
+              <Card className="border-l-4 border-green-500">
+                <Card.Body>
+                  {connectResults.length > 0 && (
+                    <div className="space-y-1.5 mb-4">
+                      {connectResults.map((r, idx) => (
+                        <div key={idx} className="flex items-center gap-2 text-sm text-left">
+                          {r.success
+                            ? <HiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
+                            : <HiExclamationCircle className="w-4 h-4 text-yellow-500 shrink-0" />}
+                          <span className="text-gray-700 dark:text-gray-300">{r.message}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button color="green" onClick={onComplete}>
+                    Go to Dashboard
+                  </Button>
+                </Card.Body>
+              </Card>
+            )}
           </div>
         )}
       </div>
-      <div className="flex justify-between mt-6">
-        <div>
-          {step > 0 && (
-            <Button color="gray" outline onClick={() => setStep(s => Math.max(0, s - 1))}>
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Previous
-            </Button>
-          )}
+      {/* The Apply step (2) drives its own actions; no wizard nav there. */}
+      {step < 2 && (
+        <div className="flex justify-between mt-6">
+          <div>
+            {step > 0 && (
+              <Button color="gray" outline onClick={() => setStep(s => Math.max(0, s - 1))}>
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Previous
+              </Button>
+            )}
+          </div>
+          <div>
+            {step === 0 ? (
+              <Button color="blue" onClick={handleNext}>
+                Next
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Button>
+            ) : (
+              <Button color="green" onClick={handleApply}>
+                Apply Setup
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </Button>
+            )}
+          </div>
         </div>
-        <div>
-          {step < steps.length - 1 ? (
-            <Button color="blue" onClick={handleNext}>
-              Next
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </Button>
-          ) : (
-            <Button color="green" onClick={handleSaveAndApply} loading={isSaving}>
-              {isSaving ? 'Saving Configuration...' : 'Save and Start Services'}
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            </Button>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }
