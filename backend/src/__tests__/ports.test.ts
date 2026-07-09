@@ -67,7 +67,7 @@ describe('findPortConflicts', () => {
     expect(await isPortFree(conflicts[0].suggestion!)).toBe(true);
   });
 
-  it('does not flag a port held by Dockarr\'s own container for that service', async () => {
+  it('does not flag a port held by Ensembler\'s own container for that service', async () => {
     const taken = await freePort();
     await occupy(taken);
     const ownPorts = new Map<number, string>([[taken, 'sonarr']]);

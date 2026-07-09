@@ -48,7 +48,7 @@ async function suggestPort(start: number, taken: Set<number>): Promise<number | 
 }
 
 // Validate the requested host ports against what is actually bound on the
-// machine. `ownPorts` maps a host port to the name of a container Dockarr
+// machine. `ownPorts` maps a host port to the name of a container Ensembler
 // already runs there — those are not conflicts (re-running the wizard while
 // a service is up must not flag that service's own port).
 export async function findPortConflicts(
@@ -60,7 +60,7 @@ export async function findPortConflicts(
 
   for (const { service, port } of requested) {
     if (ownPorts.get(port) === service) {
-      continue; // Dockarr's own container already holds this port
+      continue; // Ensembler's own container already holds this port
     }
     if (await isPortFree(port)) {
       continue;

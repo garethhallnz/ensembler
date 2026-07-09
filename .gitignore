@@ -20,6 +20,7 @@ pnpm-lock.yaml
 /backend/dist
 /frontend/dist
 /frontend/dist-electron/
+/dist-electron/
 build/
 dist/
 out/

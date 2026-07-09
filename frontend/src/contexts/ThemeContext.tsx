@@ -21,7 +21,7 @@ interface ThemeProviderProps {
 
 export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    const savedTheme = localStorage.getItem('dockarr-theme') as 'light' | 'dark' | null;
+    const savedTheme = localStorage.getItem('ensembler-theme') as 'light' | 'dark' | null;
     if (savedTheme) {
       return savedTheme;
     }
@@ -39,7 +39,7 @@ export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) 
     }
     
     // Save theme preference
-    localStorage.setItem('dockarr-theme', theme);
+    localStorage.setItem('ensembler-theme', theme);
   }, [theme]);
 
   const toggleTheme = () => {

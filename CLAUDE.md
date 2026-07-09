@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Dockarr** is an Electron-based desktop application that simplifies the setup and management of home media center services (Sonarr, Radarr, Plex, Transmission, Prowlarr, Overseerr). It provides a guided setup wizard and unified dashboard for Docker-based media services without requiring Docker/YAML expertise.
+**Ensembler** is an Electron-based desktop application that simplifies the setup and management of home media center services (Sonarr, Radarr, Plex, Transmission, Prowlarr, Overseerr). It provides a guided setup wizard and unified dashboard for Docker-based media services without requiring Docker/YAML expertise.
 
 ## Architecture
 
@@ -38,7 +38,7 @@ npm run dev
 
 # Alternative: Browser development
 cd backend && npm run dev  # Terminal 1: Backend on :3001
-cd frontend && npm run dev # Terminal 2: Frontend on :5173
+cd frontend && npm run dev # Terminal 2: Frontend on :5180
 ```
 
 ### Building and Testing

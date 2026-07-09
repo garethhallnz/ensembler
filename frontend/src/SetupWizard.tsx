@@ -65,7 +65,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   });
   const [puid, setPuid] = useState(1000);
   const [pgid, setPgid] = useState(1000);
-  // Jellyfin admin account — collected here so Dockarr can complete Jellyfin's
+  // Jellyfin admin account — collected here so Ensembler can complete Jellyfin's
   // first-run setup automatically. Passed transiently to setup and never saved.
   const [jellyfinUsername, setJellyfinUsername] = useState('admin');
   const [jellyfinPassword, setJellyfinPassword] = useState('');
@@ -415,7 +415,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   interface PortConflict { service: string; port: number; suggestion: number | null }
 
   // Ask the backend which of the given host ports are actually in use on this
-  // machine (by something outside Dockarr). Cross-platform: the backend probes
+  // machine (by something outside Ensembler). Cross-platform: the backend probes
   // by connecting to each port. Returns [] if the check itself can't run so it
   // never blocks setup.
   const fetchPortConflicts = async (portsMap: { [key: string]: number }): Promise<PortConflict[]> => {
@@ -664,7 +664,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   return (
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dockarr Setup</h1>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ensembler Setup</h1>
       </div>
       
       <div className="mb-8">
@@ -854,7 +854,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 </Card.Header>
                 <Card.Body>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 text-left">
-                    Choose the admin login for Jellyfin. Dockarr uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.
+                    Choose the admin login for Jellyfin. Ensembler uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>

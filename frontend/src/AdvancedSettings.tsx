@@ -100,7 +100,7 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
   const handleCompleteReset = () => {
     setConfirmationModal({
-      message: '⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning Dockarr to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?',
+      message: '⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning Ensembler to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?',
       onConfirm: async () => {
         setOpenModal(false);
         setResetStage('running');
@@ -154,7 +154,7 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
           ) : (
             <>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">Resetting your setup</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">Returning Dockarr to a fresh install. Your media files are not affected.</p>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">Returning Ensembler to a fresh install. Your media files are not affected.</p>
               <div className="space-y-4">
                 {resetPhases.map((phase) => (
                   <div key={phase.key} className="flex items-center gap-3">
@@ -256,7 +256,7 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
                 <div className="text-left">
                   <p className="font-medium text-gray-900 dark:text-white">Reset everything</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Removes all services and their settings, returning Dockarr to a fresh install. Media files are kept.
+                    Removes all services and their settings, returning Ensembler to a fresh install. Media files are kept.
                   </p>
                 </div>
                 <Button variant="danger" onClick={handleCompleteReset} className="shrink-0">

@@ -276,7 +276,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   }, [selectedServices, fetchServiceAlerts]);
 
   // Check whether the user still needs to add an indexer in Prowlarr — the
-  // one setup step Dockarr deliberately leaves to the user
+  // one setup step Ensembler deliberately leaves to the user
   useEffect(() => {
     let cancelled = false;
     const checkIndexers = async () => {
@@ -535,7 +535,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dockarr Dashboard</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Ensembler Dashboard</h1>
           <p className="text-left text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
         </div>
         <div className="flex items-center gap-4">

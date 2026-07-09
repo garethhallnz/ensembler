@@ -1,5 +1,5 @@
 {
-  "name": "dockarr",
+  "name": "ensembler",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "Dockarr: A self-hosted media center orchestrator",
+  "description": "Ensembler: A self-hosted media center orchestrator",
   "dependencies": {
     "express": "^4.17.1",
     "node-docker-api": "^1.1.22"

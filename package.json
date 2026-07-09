@@ -1,6 +1,6 @@
 {
-  "name": "dockarr",
-  "description": "Dockarr: A self-hosted media center orchestrator",
+  "name": "ensembler",
+  "description": "Ensembler: A self-hosted media center orchestrator",
   "author": "Gemini",
   "private": true,
   "version": "1.0.0",
@@ -27,8 +27,8 @@
     "electron-builder": "^25.1.8"
   },
   "build": {
-    "appId": "com.mediacenter.app",
-    "productName": "Dockarr",
+    "appId": "com.ensembler.app",
+    "productName": "Ensembler",
     "directories": {
       "output": "dist-electron"
     },

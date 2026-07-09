@@ -14,9 +14,11 @@ import { findPortConflicts, parseContainerPorts } from './services/ports';
 const app = express();
 const port = Number(process.env.PORT) || 3001;
 
-// CORS middleware to allow frontend requests
+// CORS middleware to allow frontend requests. This is a localhost-only backend
+// with no cookies/credentials, and the frontend origin varies (dev server port,
+// or file:// in the packaged app), so allow any origin rather than pinning one.
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   
@@ -142,7 +144,7 @@ app.post('/api/paths/validate', (req, res) => {
 
 // Check that the host ports the user picked are actually free before we
 // generate a compose file that would fail to start. Ports already held by
-// Dockarr's own running containers are not conflicts.
+// Ensembler's own running containers are not conflicts.
 app.post('/api/ports/validate', async (req: Request, res: Response) => {
   const { ports } = req.body;
   if (!ports || typeof ports !== 'object') {
@@ -862,10 +864,10 @@ async function resetStopServices(): Promise<void> {
   }
 }
 
-// Delete Dockarr's config files and every service data directory present in
+// Delete Ensembler's config files and every service data directory present in
 // configDir (settings, databases, API keys) so services start completely
 // fresh. Enumerating the directory rather than the current service catalog
-// means data for services since removed from Dockarr is also cleared. Media
+// means data for services since removed from Ensembler is also cleared. Media
 // files live outside configDir and are never touched.
 function resetCleanFilesAndData(): void {
   if (fs.existsSync(configFile)) {

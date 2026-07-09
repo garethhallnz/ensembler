@@ -34,7 +34,7 @@ describe('Service connection setup', () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'dockarr-setup-test-'));
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ensembler-setup-test-'));
     fetchMock = jest.fn();
     global.fetch = fetchMock as unknown as typeof fetch;
   });
@@ -574,7 +574,7 @@ describe('Service connection setup', () => {
         }
         if (url.includes('/Auth/Keys')) {
           if (init?.method === 'POST') { keyCreated = true; return jsonResponse({}, 204); }
-          return jsonResponse({ Items: keyCreated ? [{ AccessToken: 'jf-api-key', AppName: 'Dockarr' }] : [] });
+          return jsonResponse({ Items: keyCreated ? [{ AccessToken: 'jf-api-key', AppName: 'Ensembler' }] : [] });
         }
         // arr endpoints
         if (url.includes('/notification')) {
@@ -599,8 +599,8 @@ describe('Service connection setup', () => {
   });
 
   describe('ensureApiKey', () => {
-    it('reuses an existing Dockarr key', async () => {
-      fetchMock.mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'existing', AppName: 'Dockarr' }] }));
+    it('reuses an existing Ensembler key', async () => {
+      fetchMock.mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'existing', AppName: 'Ensembler' }] }));
       const key = await ensureApiKey('http://localhost:8096', 'tok');
       expect(key).toBe('existing');
       expect(fetchMock).toHaveBeenCalledTimes(1); // no POST needed
@@ -610,7 +610,7 @@ describe('Service connection setup', () => {
       fetchMock
         .mockResolvedValueOnce(jsonResponse({ Items: [] }))
         .mockResolvedValueOnce(jsonResponse({}, 204))
-        .mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'fresh', AppName: 'Dockarr' }] }));
+        .mockResolvedValueOnce(jsonResponse({ Items: [{ AccessToken: 'fresh', AppName: 'Ensembler' }] }));
       const key = await ensureApiKey('http://localhost:8096', 'tok');
       expect(key).toBe('fresh');
     });

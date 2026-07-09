@@ -14,7 +14,7 @@ export interface SetupConnectionsResult {
 }
 
 // An *arr instance a media server should register itself with (as an import
-// notification target). baseUrl is the host-side address Dockarr calls.
+// notification target). baseUrl is the host-side address Ensembler calls.
 export interface ArrTarget {
   service: string;
   baseUrl: string;

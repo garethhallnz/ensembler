@@ -1,6 +1,6 @@
 {
-  "name": "dockarr",
-  "description": "Dockarr: A self-hosted media center orchestrator",
+  "name": "ensembler",
+  "description": "Ensembler: A self-hosted media center orchestrator",
   "author": "Gemini",
   "private": true,
   "version": "1.0.0",

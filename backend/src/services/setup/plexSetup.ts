@@ -8,7 +8,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // Plex writes its account token into Preferences.xml once the user completes
 // the one-time plex.tv sign-in. The /config volume is mapped to
 // {configDir}/plex/config on the host, so presence of the token is how
-// Dockarr knows the sign-in has happened. Returns null until then.
+// Ensembler knows the sign-in has happened. Returns null until then.
 export function readPlexToken(configDir: string): string | null {
   const preferencesPath = path.join(
     configDir,

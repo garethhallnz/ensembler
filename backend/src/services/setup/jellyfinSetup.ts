@@ -3,9 +3,9 @@ import { ArrTarget, SetupStepResult } from './types';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Identifies Dockarr to Jellyfin on the authentication call.
+// Identifies Ensembler to Jellyfin on the authentication call.
 const AUTH_HEADER =
-  'MediaBrowser Client="Dockarr", Device="Dockarr", DeviceId="dockarr-setup", Version="1.0.0"';
+  'MediaBrowser Client="Ensembler", Device="Ensembler", DeviceId="ensembler-setup", Version="1.0.0"';
 
 export interface JellyfinCredentials {
   username: string;
@@ -204,7 +204,7 @@ export async function ensureLibrary(
 
 // Create (or reuse) an API key so Sonarr/Radarr can call back into Jellyfin.
 // POST /Auth/Keys returns 204, so the key is retrieved by listing afterward.
-export async function ensureApiKey(baseUrl: string, token: string, appName = 'Dockarr'): Promise<string> {
+export async function ensureApiKey(baseUrl: string, token: string, appName = 'Ensembler'): Promise<string> {
   const authHeader = { 'X-Emby-Token': token };
   const list = async (): Promise<{ AccessToken: string; AppName: string }[]> => {
     const res = await fetch(`${baseUrl}/Auth/Keys`, { headers: authHeader });

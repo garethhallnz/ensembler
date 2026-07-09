@@ -41,7 +41,7 @@ function createWindow() {
   const isDev = process.env.NODE_ENV === 'development';
   if (isDev) {
     console.log('[Electron] Loading frontend from dev server...');
-    mainWindow.loadURL('http://localhost:5173')
+    mainWindow.loadURL('http://localhost:5180')
       .then(() => console.log('[Electron] Dev frontend loaded.'))
       .catch(err => console.error('[Electron] Error loading dev frontend:', err));
     // Open DevTools in development
@@ -185,7 +185,7 @@ app.on('web-contents-created', (event, contents) => {
     const parsedUrl = new URL(navigationUrl);
     
     // Allow navigation within the app
-    if (parsedUrl.origin !== 'http://localhost:5173' && parsedUrl.origin !== 'file://') {
+    if (parsedUrl.origin !== 'http://localhost:5180' && parsedUrl.origin !== 'file://') {
       event.preventDefault();
     }
   });

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Build script for Dockarr application
+# Build script for Ensembler application
 set -e
 
-echo "Building Dockarr application..."
+echo "Building Ensembler application..."
 
 # Clean previous builds
 echo "Cleaning previous builds..."
