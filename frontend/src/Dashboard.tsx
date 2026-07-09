@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, SetupBanner } from './components';
+import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
-import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPencilAlt, HiChevronDown, HiChevronUp } from 'react-icons/hi';
+import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -83,6 +83,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
   const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
+  // Per-service config ('edit') and add-service ('add') both use one modal.
+  const [configModal, setConfigModal] = useState<{ service: ServiceConfig; mode: 'edit' | 'add' } | null>(null);
+  const [showAddService, setShowAddService] = useState(false);
   const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState<{
@@ -488,7 +491,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           </div>
           <div className="mb-8">
             <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-32 mb-4"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {[1, 2, 3].map(i => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
                   <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-24 mb-3"></div>
@@ -627,6 +630,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured</p>
           </div>
+          {serviceConfig.some(s => !selectedServices.includes(s.key)) && (
+            <Button variant="primary" onClick={() => setShowAddService(true)} tooltip="Add another service">
+              <HiPlus className="inline-block mr-1" /> Add Service
+            </Button>
+          )}
         </div>
         {selectedServices.length === 0 ? (
           <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
@@ -638,18 +646,18 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   Get started by adding and configuring your media center services. 
                   You can add services individually as needed.
                 </p>
-                <Button 
-                  variant="primary" 
-                  onClick={() => setShowAdvancedSettings(true)}
+                <Button
+                  variant="primary"
+                  onClick={() => setShowAddService(true)}
                   className="mt-4"
                 >
-                  <HiPencilAlt className="inline-block mr-2" /> Add Services
+                  <HiPlus className="inline-block mr-2" /> Add Service
                 </Button>
               </div>
             </Card.Body>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {selectedServices.map(serviceKey => {
               const service = serviceConfig.find(s => s.key === serviceKey);
               if (!service) return null;
@@ -758,6 +766,15 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                             tooltip="Show Logs"
                           >
                             <HiDocumentText className="inline-block mr-1" /> Logs
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="neutral"
+                            onClick={() => setConfigModal({ service, mode: 'edit' })}
+                            aria-label={`Configure ${service.name}`}
+                            tooltip="Configure Service"
+                          >
+                            <HiCog className="inline-block mr-1" /> Configure
                           </Button>
                           {updateInfo?.hasUpdate && (
                             <Button
@@ -973,6 +990,29 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           onClose={() => setOpenModal(false)}
           onConfirm={confirmationModal.onConfirm}
           message={confirmationModal.message}
+        />
+      )}
+
+      {/* Add-service picker → opens the config modal in 'add' mode */}
+      {showAddService && (
+        <AddServiceModal
+          available={serviceConfig.filter(s => !selectedServices.includes(s.key))}
+          onClose={() => setShowAddService(false)}
+          onPick={(service) => {
+            setShowAddService(false);
+            setConfigModal({ service: service as ServiceConfig, mode: 'add' });
+          }}
+        />
+      )}
+
+      {/* Per-service configuration / add-service modal */}
+      {configModal && (
+        <ServiceConfigModal
+          service={configModal.service}
+          mode={configModal.mode}
+          onClose={() => setConfigModal(null)}
+          onSaved={refreshDashboard}
+          onToast={showToast}
         />
       )}
 

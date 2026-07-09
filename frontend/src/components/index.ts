@@ -16,3 +16,5 @@ export { default as PathConfiguration } from './PathConfiguration';
 export { default as EnvironmentSettings } from './EnvironmentSettings';
 export { default as ServiceConfiguration } from './ServiceConfiguration';
 export { default as SetupBanner } from './SetupBanner';
+export { default as ServiceConfigModal } from './ServiceConfigModal';
+export { default as AddServiceModal } from './AddServiceModal';
