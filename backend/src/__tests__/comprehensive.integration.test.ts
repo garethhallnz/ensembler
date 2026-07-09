@@ -286,6 +286,36 @@ describe('Comprehensive Integration Tests', () => {
         });
       });
     });
+
+    describe('Stepped reset endpoints', () => {
+      it('stop-services removes the containers', async () => {
+        (fs.existsSync as jest.Mock).mockImplementation((p: string) => p === composeFile);
+        const response = await request(app)
+          .post('/api/config/reset/stop-services')
+          .expect(200);
+        expect(response.body.success).toBe(true);
+      });
+
+      it('clean deletes config files and service data directories', async () => {
+        (fs.existsSync as jest.Mock).mockImplementation((p: string) =>
+          p === configFile || p === composeFile || p === configDir
+        );
+        (fs.readdirSync as jest.Mock).mockReturnValue([
+          { name: 'sonarr', isDirectory: () => true }
+        ]);
+
+        const response = await request(app)
+          .post('/api/config/reset/clean')
+          .expect(200);
+
+        expect(response.body.success).toBe(true);
+        expect(fs.unlinkSync).toHaveBeenCalledWith(configFile);
+        expect(fs.rmSync).toHaveBeenCalledWith(
+          path.join(configDir, 'sonarr'),
+          { recursive: true, force: true }
+        );
+      });
+    });
   });
 
   describe('Path Validation', () => {

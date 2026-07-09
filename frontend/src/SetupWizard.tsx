@@ -662,7 +662,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md min-w-[800px]">
+    <div className="max-w-6xl mx-auto px-6 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dockarr Setup</h1>
       </div>

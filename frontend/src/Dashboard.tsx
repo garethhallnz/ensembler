@@ -473,7 +473,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="animate-pulse">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -508,7 +508,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-6 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dockarr Dashboard</h1>

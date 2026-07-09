@@ -795,44 +795,68 @@ app.post('/api/services/validate-selection', (req: Request, res: Response) => {
   }
 });
 
+// Stop and remove all service containers. Tolerant of `down` failing (e.g.
+// nothing is running) — that must not block the rest of a reset.
+async function resetStopServices(): Promise<void> {
+  if (fs.existsSync(composeFile)) {
+    try {
+      await execAsync(`docker compose -f ${composeFile} down`);
+    } catch (err) {
+      console.warn('Failed to stop services during reset:', err);
+    }
+  }
+}
+
+// Delete Dockarr's config files and every service data directory present in
+// configDir (settings, databases, API keys) so services start completely
+// fresh. Enumerating the directory rather than the current service catalog
+// means data for services since removed from Dockarr is also cleared. Media
+// files live outside configDir and are never touched.
+function resetCleanFilesAndData(): void {
+  if (fs.existsSync(configFile)) {
+    fs.unlinkSync(configFile);
+  }
+  if (fs.existsSync(composeFile)) {
+    fs.unlinkSync(composeFile);
+  }
+  if (fs.existsSync(configDir)) {
+    for (const entry of fs.readdirSync(configDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) {
+        continue;
+      }
+      try {
+        fs.rmSync(path.join(configDir, entry.name), { recursive: true, force: true });
+      } catch (err) {
+        console.warn(`Failed to remove service data for ${entry.name}:`, err);
+      }
+    }
+  }
+}
+
+// Stepped reset endpoints so the UI can show progress one phase at a time,
+// matching the setup flow. The combined endpoint below runs both.
+app.post('/api/config/reset/stop-services', async (req: Request, res: Response) => {
+  try {
+    await resetStopServices();
+    res.json({ success: true, message: 'Services stopped and removed.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to stop services.', error: (err as Error).message });
+  }
+});
+
+app.post('/api/config/reset/clean', async (req: Request, res: Response) => {
+  try {
+    resetCleanFilesAndData();
+    res.json({ success: true, message: 'Configuration and data removed.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to remove configuration and data.', error: (err as Error).message });
+  }
+});
+
 app.post('/api/config/reset', async (req: Request, res: Response) => {
   try {
-    // Stop all services first
-    if (fs.existsSync(composeFile)) {
-      try {
-        await execAsync(`docker compose -f ${composeFile} down`);
-      } catch (err) {
-        console.warn('Failed to stop services:', err);
-      }
-    }
-
-    // Delete configuration files
-    if (fs.existsSync(configFile)) {
-      fs.unlinkSync(configFile);
-    }
-
-    if (fs.existsSync(composeFile)) {
-      fs.unlinkSync(composeFile);
-    }
-
-    // Delete every service data directory actually present in configDir
-    // (settings, databases, API keys) so services start completely fresh.
-    // Enumerating the directory rather than the current service catalog means
-    // data for services since removed from Dockarr (e.g. qBittorrent) is also
-    // cleared. Media files live outside configDir and are never touched.
-    if (fs.existsSync(configDir)) {
-      for (const entry of fs.readdirSync(configDir, { withFileTypes: true })) {
-        if (!entry.isDirectory()) {
-          continue;
-        }
-        try {
-          fs.rmSync(path.join(configDir, entry.name), { recursive: true, force: true });
-        } catch (err) {
-          console.warn(`Failed to remove service data for ${entry.name}:`, err);
-        }
-      }
-    }
-
+    await resetStopServices();
+    resetCleanFilesAndData();
     res.json({ success: true, message: 'All settings reset successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to reset settings.', error: (err as Error).message });

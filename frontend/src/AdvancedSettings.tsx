@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button, TextInput, Spinner, Alert, Card, Badge, PathConfiguration, EnvironmentSettings } from './components';
 import { ToggleSwitch } from 'flowbite-react';
-import { HiCheckCircle } from 'react-icons/hi';
+import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { getDefaultPath } from './utils/pathDefaults';
@@ -40,10 +40,11 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
-  // 'running' while the reset is in flight, 'done' briefly before returning to
-  // the wizard. Drives a full-screen progress overlay so the user sees what's
-  // happening instead of the window blanking on reload.
-  const [resetStage, setResetStage] = useState<'idle' | 'running' | 'done'>('idle');
+  // Reset runs as visible phases (mirroring the setup flow) in a full-screen
+  // overlay, so the user sees what's happening instead of the window blanking.
+  type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
+  const [resetPhases, setResetPhases] = useState<{ key: string; label: string; status: ResetPhaseStatus }[]>([]);
+  const [resetStage, setResetStage] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [pathErrors, setPathErrors] = useState<{ [service: string]: string[] }>({});
   const [activeTab, setActiveTab] = useState<'services' | 'environment'>('services');
@@ -414,19 +415,34 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
         setOpenModal(false);
         setResetting(true);
         setResetStage('running');
-        try {
-          const res = await fetch('http://localhost:3001/api/config/reset', {
-            method: 'POST',
-          });
+
+        const phases = [
+          { key: 'stop', label: 'Stopping and removing services', status: 'pending' as ResetPhaseStatus },
+          { key: 'clean', label: 'Removing configuration and data', status: 'pending' as ResetPhaseStatus }
+        ];
+        setResetPhases(phases);
+        const setPhase = (key: string, status: ResetPhaseStatus) =>
+          setResetPhases(prev => prev.map(p => (p.key === key ? { ...p, status } : p)));
+
+        const step = async (key: string, url: string) => {
+          setPhase(key, 'active');
+          const res = await fetch(url, { method: 'POST' });
           if (!res.ok) {
-            throw new Error('Failed to reset application');
+            setPhase(key, 'error');
+            throw new Error(`Reset step failed (${key})`);
           }
-          // Show a brief "done" state, then hand back to the app to return to
-          // the wizard in place (no window reload).
+          setPhase(key, 'done');
+        };
+
+        try {
+          await step('stop', 'http://localhost:3001/api/config/reset/stop-services');
+          await step('clean', 'http://localhost:3001/api/config/reset/clean');
+          // Brief "done" state, then hand back to the app to return to the
+          // wizard in place (no window reload).
           setResetStage('done');
           setTimeout(() => onResetComplete(), 1400);
         } catch (error) {
-          setResetStage('idle');
+          setResetStage('error');
           setResetting(false);
           showToast(`Failed to reset application: ${error}`, 'error');
         }
@@ -440,23 +456,42 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
   if (resetStage !== 'idle') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm">
-        <div className="max-w-md w-full text-center px-6">
-          {resetStage === 'running' ? (
-            <>
-              <div className="flex justify-center mb-6"><Spinner size="xl" /></div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Resetting your setup</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">This returns Dockarr to a fresh install. Your media files are not affected.</p>
-              <div className="text-left inline-block space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <div>• Stopping and removing services</div>
-                <div>• Removing configuration</div>
-                <div>• Cleaning up service data</div>
-              </div>
-            </>
-          ) : (
-            <>
+        <div className="max-w-md w-full px-6">
+          {resetStage === 'done' ? (
+            <div className="text-center">
               <div className="flex justify-center mb-6"><HiCheckCircle className="w-16 h-16 text-green-500" /></div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Reset complete</h2>
               <p className="text-gray-600 dark:text-gray-400">Starting fresh setup…</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">Resetting your setup</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">Returning Dockarr to a fresh install. Your media files are not affected.</p>
+              <div className="space-y-4">
+                {resetPhases.map((phase) => (
+                  <div key={phase.key} className="flex items-center gap-3">
+                    <div className="shrink-0">
+                      {phase.status === 'done' && <HiCheckCircle className="w-6 h-6 text-green-500" />}
+                      {phase.status === 'error' && <HiXCircle className="w-6 h-6 text-red-500" />}
+                      {phase.status === 'active' && (
+                        <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-blue-500 dark:border-gray-600 dark:border-t-blue-400 animate-spin" />
+                      )}
+                      {phase.status === 'pending' && <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600" />}
+                    </div>
+                    <span className={`font-medium ${phase.status === 'pending' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+                      {phase.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {resetStage === 'error' && (
+                <div className="mt-6 text-center">
+                  <p className="text-sm text-red-500 mb-3">Something went wrong. You can close this and try again.</p>
+                  <Button color="gray" outline onClick={() => { setResetStage('idle'); setResetPhases([]); }}>
+                    Close
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
