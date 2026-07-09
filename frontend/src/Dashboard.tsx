@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal } from './components';
+import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal, ServiceActionsMenu } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -31,9 +31,6 @@ interface ServiceLogsType {
   [key: string]: string;
 }
 
-interface ServiceVersionType {
-  [key: string]: string;
-}
 
 interface ServiceUpdateType {
   [key: string]: { hasUpdate: boolean; currentVersion: string; updateAvailable: string };
@@ -61,10 +58,36 @@ interface DashboardProps {
   onResetComplete: () => void;
 }
 
+// Plain-language role for a service, so a card says what it's for rather than
+// relying on jargon like "PVR for Usenet and BitTorrent users".
+const SERVICE_ROLES: { [key: string]: string } = {
+  sonarr: 'Manages your TV shows',
+  radarr: 'Manages your movies',
+  bazarr: 'Manages subtitles',
+  plex: 'Streams your media',
+  jellyfin: 'Streams your media',
+  emby: 'Streams your media',
+  transmission: 'Downloads content',
+  deluge: 'Downloads content',
+  prowlarr: 'Finds content sources',
+  jackett: 'Finds content sources',
+  overseerr: 'Requests & discovers media',
+};
+
+const CATEGORY_ROLES: { [key: string]: string } = {
+  media: 'Streams your media',
+  management: 'Manages your library',
+  torrent: 'Downloads content',
+  indexer: 'Finds content sources',
+  request: 'Requests & discovers media',
+};
+
+const serviceRole = (key: string, category: string): string =>
+  SERVICE_ROLES[key] || CATEGORY_ROLES[category] || '';
+
 export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { showToast } = useToast();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
-  const [serviceVersions, setServiceVersions] = useState<ServiceVersionType>({});
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,20 +138,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       console.error('Error fetching service status:', error);
     }
   }, []);
-
-  const fetchServiceVersions = useCallback(async () => {
-    for (const service of selectedServices) {
-      try {
-        const res = await fetch(`http://localhost:3001/api/services/${service}/version`);
-        const data = await res.json();
-        if (data.success) {
-          setServiceVersions(prev => ({ ...prev, [service]: data.version }));
-        }
-      } catch (error) {
-        console.error(`Error fetching version for ${service}:`, error);
-      }
-    }
-  }, [selectedServices]);
 
   const fetchDockerStatus = useCallback(async () => {
     try {
@@ -237,11 +246,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   useEffect(() => {
     if (selectedServices.length > 0) {
-      fetchServiceVersions();
       fetchServiceUpdates();
       fetchServiceAlerts();
     }
-  }, [selectedServices, fetchServiceVersions, fetchServiceUpdates, fetchServiceAlerts]);
+  }, [selectedServices, fetchServiceUpdates, fetchServiceAlerts]);
 
   // Set up monitoring interval for service alerts
   useEffect(() => {
@@ -459,7 +467,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             await fetchServiceStatus();
             const newStatus = await runtimeManager.checkStatus();
             setRuntimeStatus(newStatus); // Ensure up-to-date status
-            await fetchServiceVersions();
             await fetchServiceUpdates();
           } else {
             showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
@@ -663,7 +670,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               if (!service) return null;
               
               const status = serviceStatus[serviceKey] || 'Unknown';
-              const version = serviceVersions[serviceKey] || 'Loading...';
               const updateInfo = serviceUpdates[serviceKey];
               const alertInfo = serviceAlerts[serviceKey];
               const isUpdating = updateLoading[serviceKey];
@@ -675,122 +681,88 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   ? 'border-green-500 dark:border-green-400'
                   : 'border-gray-300 dark:border-gray-600';
 
+              const isRunning = status === 'Running';
+              const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
+              const statusLabel = unhealthy ? 'Needs attention' : isRunning ? 'Running' : (status === 'Unknown' ? 'Stopped' : status);
+              const statusDotClass = unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
+
               return (
                 <Card
                   key={serviceKey}
                   className={`relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 border-l ${borderColor} bg-white dark:bg-gray-800`}
                 >
-                  {/* Card Header */}
+                  {/* Card Header: identity + at-a-glance status */}
                   <div className="px-6 pt-6 pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white mb-1">{service.name}</h3>
-                        <p className="text-left text-sm text-gray-600 dark:text-gray-400">{service.description}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white">{service.name}</h3>
+                        <p className="text-left text-sm text-gray-600 dark:text-gray-400">{serviceRole(serviceKey, service.category)}</p>
                       </div>
-                      <div className="flex items-center gap-2 ml-4">
-                        <Badge variant={status === 'Running' ? 'running' : 'stopped'}>
-                          {status}
-                        </Badge>
-                        {alertInfo && !alertInfo.healthy && status === 'Running' && (
-                          <Badge variant="warning">Unhealthy</Badge>
-                        )}
+                      <div className="flex items-center gap-2 shrink-0" title={unhealthy ? 'Service is running but not responding normally' : statusLabel}>
+                        <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{statusLabel}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Card Body */}
-                  <Card.Body className="flex-1 flex flex-col justify-between px-6 pb-6">
-                    <div className="space-y-3">
-                      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Version</span>
-                          <span className="text-sm font-mono text-gray-900 dark:text-white">{version}</span>
-                        </div>
-                        {updateInfo && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Updates</span>
-                            <Badge variant={updateInfo.hasUpdate ? 'update' : 'success'} size="sm">
-                              {updateInfo.hasUpdate ? '🔄 Update Available' : '✅ Up to Date'}
-                            </Badge>
-                          </div>
-                        )}
+                  {/* Card Body: primary controls, with maintenance in an overflow menu */}
+                  <Card.Body className="flex-1 flex flex-col justify-end px-6 pb-6">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="primary"
+                        onClick={() => handleLaunchService(serviceKey)}
+                        disabled={!isRunning}
+                        aria-label={`Open ${service.name}`}
+                        tooltip={!isRunning ? 'Start the service to open it' : `Open ${service.name}`}
+                      >
+                        <HiExternalLink className="inline-block mr-1" /> Open
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={isRunning ? 'danger' : 'success'}
+                        onClick={() => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start')}
+                        loading={actionLoading[`${serviceKey}:${isRunning ? 'stop' : 'start'}`]}
+                        aria-label={`${isRunning ? 'Stop' : 'Start'} ${service.name}`}
+                        tooltip={isRunning ? 'Stop Service' : 'Start Service'}
+                      >
+                        {isRunning ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
+                        {isRunning ? 'Stop' : 'Start'}
+                      </Button>
+                      <div className="ml-auto">
+                        <ServiceActionsMenu
+                          items={[
+                            ...(isRunning ? [{
+                              label: 'Restart',
+                              icon: <HiRefresh className="w-4 h-4" />,
+                              onClick: () => handleServiceAction(serviceKey, 'restart'),
+                            }] : []),
+                            {
+                              label: 'View logs',
+                              icon: <HiDocumentText className="w-4 h-4" />,
+                              onClick: () => openLogsDrawer(serviceKey),
+                            },
+                            {
+                              label: 'Configure',
+                              icon: <HiCog className="w-4 h-4" />,
+                              onClick: () => setConfigModal({ service, mode: 'edit' }),
+                            },
+                          ]}
+                        />
                       </div>
                     </div>
-                    {/* Actions */}
-                    <div className="mt-6">
-                      <div className="flex flex-wrap gap-2">
-                        {/* Primary Actions */}
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => handleLaunchService(serviceKey)}
-                            disabled={status !== 'Running'}
-                            aria-label={`Launch ${service.name}`}
-                            tooltip={status !== 'Running' ? 'Service must be running to launch' : 'Launch Service'}
-                          >
-                            <HiExternalLink className="inline-block mr-1" /> Launch
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={status === 'Running' ? 'danger' : 'success'}
-                            onClick={() => handleServiceAction(serviceKey, status === 'Running' ? 'stop' : 'start')}
-                            loading={actionLoading[`${serviceKey}:${status === 'Running' ? 'stop' : 'start'}`]}
-                            aria-label={`${status === 'Running' ? 'Stop' : 'Start'} ${service.name}`}
-                            tooltip={status === 'Running' ? 'Stop Service' : 'Start Service'}
-                          >
-                            {status === 'Running' ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
-                            {status === 'Running' ? 'Stop' : 'Start'}
-                          </Button>
-                        </div>
-                        
-                        {/* Secondary Actions */}
-                        <div className="flex items-center gap-2">
-                          {status === 'Running' && (
-                            <Button
-                              size="sm"
-                              variant="warning"
-                              onClick={() => handleServiceAction(serviceKey, 'restart')}
-                              loading={actionLoading[`${serviceKey}:restart`]}
-                              aria-label={`Restart ${service.name}`}
-                              tooltip="Restart Service"
-                            >
-                              <HiRefresh className="inline-block mr-1" /> Restart
-                            </Button>
-                          )}
-                          <Button
-                            size="sm"
-                            variant="neutral"
-                            onClick={() => openLogsDrawer(serviceKey)}
-                            aria-label={`Show logs for ${service.name}`}
-                            tooltip="Show Logs"
-                          >
-                            <HiDocumentText className="inline-block mr-1" /> Logs
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="neutral"
-                            onClick={() => setConfigModal({ service, mode: 'edit' })}
-                            aria-label={`Configure ${service.name}`}
-                            tooltip="Configure Service"
-                          >
-                            <HiCog className="inline-block mr-1" /> Configure
-                          </Button>
-                          {updateInfo?.hasUpdate && (
-                            <Button
-                              size="sm"
-                              variant="warning"
-                              onClick={() => handleServiceUpdate(serviceKey)}
-                              loading={isUpdating}
-                              aria-label={`Update ${service.name}`}
-                              tooltip="Update Service"
-                            >
-                              <HiArrowCircleUp className="inline-block mr-1" /> Update
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+
+                    {/* Update prompt only when relevant */}
+                    {updateInfo?.hasUpdate && (
+                      <button
+                        onClick={() => handleServiceUpdate(serviceKey)}
+                        disabled={isUpdating}
+                        className="mt-3 flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                      >
+                        <HiArrowCircleUp className="w-4 h-4" />
+                        {isUpdating ? 'Updating…' : 'Update available — update now'}
+                      </button>
+                    )}
                   </Card.Body>
                 </Card>
               );
