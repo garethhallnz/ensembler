@@ -662,7 +662,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dockarr Setup</h1>
       </div>
@@ -753,7 +753,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                          {getCategoryDescription(category)}
                        </p>
                      </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                        {categoryServices.map((service) => (
                          <Card key={service.key} className="overflow-hidden">
                            <Card.Body>

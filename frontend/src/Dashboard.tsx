@@ -473,7 +473,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="px-8 py-8">
         <div className="animate-pulse">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -488,7 +488,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           </div>
           <div className="mb-8">
             <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-32 mb-4"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
               {[1, 2, 3].map(i => (
                 <div key={i} className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
                   <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-24 mb-3"></div>
@@ -508,7 +508,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-8">
+    <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Dockarr Dashboard</h1>
@@ -649,7 +649,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             </Card.Body>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
             {selectedServices.map(serviceKey => {
               const service = serviceConfig.find(s => s.key === serviceKey);
               if (!service) return null;
