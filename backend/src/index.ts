@@ -43,12 +43,67 @@ const configDir = getConfigDir();
 const configFile = path.join(configDir, 'config.json');
 const execAsync = promisify(exec);
 
-// Store for tracking last update check times
+// Cache of update status per service. hasUpdate is null when it can't be
+// determined (image not pulled, registry unreachable). Populated by a cheap
+// background digest comparison — never by pulling images.
 const updateCheckStore = {
   lastServiceCheck: new Date(),
   lastDockerCheck: new Date(),
-  availableUpdates: {} as { [key: string]: { current: string, latest: string } }
+  availableUpdates: {} as { [key: string]: { hasUpdate: boolean | null } }
 };
+
+// Digest of the locally-pulled image for a tag (the manifest the tag resolved
+// to when pulled). Null if the image isn't present or has no repo digest.
+async function getLocalImageDigest(image: string): Promise<string | null> {
+  try {
+    const { stdout } = await execAsync(`docker image inspect ${image} --format "{{index .RepoDigests 0}}"`);
+    const match = stdout.trim().match(/@(sha256:[a-f0-9]+)/);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+// Digest the tag currently points at in the registry — read from metadata only
+// (no layer download), unlike `docker pull`.
+async function getRemoteImageDigest(image: string): Promise<string | null> {
+  try {
+    const { stdout } = await execAsync(`docker buildx imagetools inspect ${image}`);
+    const match = stdout.match(/Digest:\s*(sha256:[a-f0-9]+)/i);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+// True/false when both digests are known, null when the comparison can't be made.
+async function checkServiceUpdate(image: string): Promise<boolean | null> {
+  const [local, remote] = await Promise.all([getLocalImageDigest(image), getRemoteImageDigest(image)]);
+  if (!local || !remote) {
+    return null;
+  }
+  return local !== remote;
+}
+
+// Refresh the cached update status for all enabled services (cheap digest
+// checks). Shared by the manual endpoint and the background scheduler.
+async function refreshUpdateCache(): Promise<void> {
+  if (!fs.existsSync(configFile)) {
+    return;
+  }
+  const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+  const enabled = Object.keys(config.selectedServices || {}).filter((k: string) => config.selectedServices[k]);
+  // Check services concurrently — each registry query is independent, so this
+  // is bounded by the slowest single check rather than their sum.
+  await Promise.all(enabled.map(async (key) => {
+    const serviceConfig = getServiceConfig(key);
+    if (!serviceConfig) {
+      return;
+    }
+    updateCheckStore.availableUpdates[key] = { hasUpdate: await checkServiceUpdate(serviceConfig.image) };
+  }));
+  updateCheckStore.lastServiceCheck = new Date();
+}
 
 app.get('/', (req: Request, res: Response) => res.send('Backend running'));
 
@@ -879,64 +934,49 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
 
     const imageName = serviceConfig.image;
 
+    // Cheap digest comparison — no image pull.
+    const hasUpdate = await checkServiceUpdate(imageName);
+    updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
+
+    // Best-effort current version (local image build date) for display.
+    let currentVersion = 'unknown';
     try {
-      // Get current local image ID and creation date
-      const { stdout: currentImageInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Id}},{{.Created}}"`);
-      const [currentImageId, currentCreated] = currentImageInfo.trim().split(',');
-      
-      // Pull latest image metadata only (not the full image)
-      await execAsync(`docker pull ${imageName} --quiet`);
-      
-      // Get the updated image info after pull
-      const { stdout: updatedImageInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Id}},{{.Created}}"`);
-      const [updatedImageId, updatedCreated] = updatedImageInfo.trim().split(',');
-      
-      // Compare image IDs to determine if there's an update
-      const hasUpdate = currentImageId !== updatedImageId;
-      
-      const currentVersion = currentCreated.split('T')[0];
-      const latestVersion = updatedCreated.split('T')[0];
-      
-      updateCheckStore.availableUpdates[serviceName] = {
-        current: currentVersion,
-        latest: hasUpdate ? latestVersion : currentVersion
-      };
-      
-      res.json({ 
-        success: true, 
-        hasUpdate,
-        currentVersion: currentVersion,
-        latestVersion: latestVersion,
-        updateAvailable: hasUpdate ? `Update available (${latestVersion})` : 'Up to date'
-      });
-    } catch (err) {
-      console.error(`Error checking updates for ${serviceName}:`, err);
-      // Try to get current version info even if update check fails
-      try {
-        const { stdout: currentInfo } = await execAsync(`docker image inspect ${imageName} --format "{{.Created}}"`);
-        const currentVersion = currentInfo.trim().split('T')[0];
-        
-        res.json({ 
-          success: true, 
-          hasUpdate: false,
-          currentVersion: currentVersion,
-          latestVersion: 'unknown',
-          updateAvailable: 'Unable to check for updates',
-          error: (err as Error).message
-        });
-      } catch (inspectErr) {
-        res.json({ 
-          success: false, 
-          hasUpdate: false,
-          currentVersion: 'unknown',
-          latestVersion: 'unknown',
-          updateAvailable: 'Service not installed or Docker not available',
-          error: (err as Error).message
-        });
-      }
+      const { stdout } = await execAsync(`docker image inspect ${imageName} --format "{{.Created}}"`);
+      currentVersion = stdout.trim().split('T')[0] || 'unknown';
+    } catch {
+      // image may not be pulled yet
     }
+
+    res.json({ success: true, hasUpdate, currentVersion });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to check updates for ${serviceName}.`, error: (err as Error).message });
+  }
+});
+
+// Instant read of cached update status for all services (no docker calls).
+app.get('/api/services/updates', (req: Request, res: Response) => {
+  res.json({
+    success: true,
+    updates: updateCheckStore.availableUpdates,
+    lastChecked: updateCheckStore.lastServiceCheck
+  });
+});
+
+// Refresh the update cache on demand (cheap digest checks). Backs the
+// dashboard's "Check for updates" action.
+app.post('/api/services/updates/check', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ success: false, message: 'config.json not found.' });
+    }
+    await refreshUpdateCache();
+    res.json({
+      success: true,
+      updates: updateCheckStore.availableUpdates,
+      lastChecked: updateCheckStore.lastServiceCheck
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to check for updates.', error: (err as Error).message });
   }
 });
 
@@ -1055,48 +1095,25 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
 });
 
 // Weekly update check scheduler (runs every time the server starts and then every week)
-const scheduleWeeklyUpdateChecks = () => {
-  const checkInterval = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
-  
-  setInterval(async () => {
+const scheduleUpdateChecks = () => {
+  const checkInterval = 24 * 60 * 60 * 1000; // daily
+
+  const run = async () => {
     try {
-      console.log('Running weekly update checks...');
-      
-      // Check Docker updates
-      const dockerResponse = await fetch('http://localhost:3001/api/docker/check-updates');
-      const dockerData = await dockerResponse.json() as any;
-      
-      if (dockerData.success && (dockerData.docker?.updateAvailable || dockerData.compose?.updateAvailable)) {
-        console.log('Docker updates available:', dockerData);
-        // In a real implementation, you might want to notify the UI or send a notification
-      }
-      
-      // Check service updates
-      if (fs.existsSync(configFile)) {
-        const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-        const selectedServices = Object.keys(config.selectedServices).filter((key: string) => config.selectedServices[key]);
-        
-        for (const serviceName of selectedServices) {
-          const response = await fetch(`http://localhost:3001/api/services/${serviceName}/check-updates`);
-          const data = await response.json() as any;
-          
-          if (data.success && data.hasUpdate) {
-            console.log(`Update available for ${serviceName}:`, data);
-            // In a real implementation, you might want to notify the UI or send a notification
-          }
-        }
-      }
-      
-      updateCheckStore.lastServiceCheck = new Date();
+      await refreshUpdateCache();
     } catch (err) {
-      console.error('Error during weekly update check:', err);
+      console.error('Error during scheduled update check:', err);
     }
-  }, checkInterval);
+  };
+
+  // Prime the cache shortly after startup, then daily.
+  setTimeout(run, 10000);
+  setInterval(run, checkInterval);
 };
 
 if (process.env.NODE_ENV !== 'test') {
-  // Start the weekly update check scheduler
-  scheduleWeeklyUpdateChecks();
+  // Start the background update-check scheduler
+  scheduleUpdateChecks();
 
   app.listen(port, () => console.log(`Backend listening on port ${port}`));
 }

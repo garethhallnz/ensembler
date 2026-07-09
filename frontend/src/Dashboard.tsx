@@ -33,7 +33,7 @@ interface ServiceLogsType {
 
 
 interface ServiceUpdateType {
-  [key: string]: { hasUpdate: boolean; currentVersion: string; updateAvailable: string };
+  [key: string]: { hasUpdate: boolean | null };
 }
 
 interface ServiceAlertsType {
@@ -104,6 +104,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlertsType>({});
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
+  const [checkingUpdates, setCheckingUpdates] = useState(false);
   const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   // Per-service config ('edit') and add-service ('add') both use one modal.
@@ -152,26 +153,38 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     }
   }, []);
 
+  // Read the cached update status (instant — no image pulls).
   const fetchServiceUpdates = useCallback(async () => {
-    for (const serviceName of selectedServices) {
-      try {
-        const res = await fetch(`http://localhost:3001/api/services/${serviceName}/check-updates`);
-        const data = await res.json();
-        if (data.success) {
-          setServiceUpdates(prev => ({
-            ...prev,
-            [serviceName]: {
-              hasUpdate: data.hasUpdate,
-              currentVersion: data.currentVersion,
-              updateAvailable: data.updateAvailable
-            }
-          }));
-        }
-      } catch (error) {
-        console.error(`Error fetching updates for ${serviceName}:`, error);
+    try {
+      const res = await fetch('http://localhost:3001/api/services/updates');
+      const data = await res.json();
+      if (data.success) {
+        setServiceUpdates(data.updates || {});
       }
+    } catch (error) {
+      console.error('Error fetching update status:', error);
     }
-  }, [selectedServices]);
+  }, []);
+
+  // Refresh the update cache on demand (cheap digest checks, no pulls).
+  const checkForUpdates = async () => {
+    setCheckingUpdates(true);
+    try {
+      const res = await fetch('http://localhost:3001/api/services/updates/check', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setServiceUpdates(data.updates || {});
+        const count = Object.values(data.updates || {}).filter((u) => (u as { hasUpdate: boolean | null })?.hasUpdate).length;
+        showToast(count > 0 ? `${count} update${count > 1 ? 's' : ''} available.` : 'Everything is up to date.', count > 0 ? 'info' : 'success');
+      } else {
+        showToast('Could not check for updates.', 'error');
+      }
+    } catch {
+      showToast('Could not check for updates.', 'error');
+    } finally {
+      setCheckingUpdates(false);
+    }
+  };
 
   const fetchServiceAlerts = useCallback(async () => {
     try {
@@ -467,7 +480,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             await fetchServiceStatus();
             const newStatus = await runtimeManager.checkStatus();
             setRuntimeStatus(newStatus); // Ensure up-to-date status
-            await fetchServiceUpdates();
+            // Just updated, so it's current now.
+            setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: false } }));
           } else {
             showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
           }
@@ -528,9 +542,17 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           
           {/* Settings Group */}
           <div className="flex items-center gap-2">
-            <Button 
-              variant="secondary" 
-              onClick={() => setShowAdvancedSettings(true)} 
+            <Button
+              variant="secondary"
+              onClick={checkForUpdates}
+              loading={checkingUpdates}
+              tooltip="Check all services for available updates"
+            >
+              <HiArrowCircleUp className="inline-block mr-1" /> {checkingUpdates ? 'Checking…' : 'Check for updates'}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowAdvancedSettings(true)}
               tooltip="Advanced Settings"
             >
               <HiCog className="inline-block mr-1" /> Settings
