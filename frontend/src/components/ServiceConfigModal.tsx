@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Button, TextInput, PathConfiguration } from './index';
+import { Button, TextInput, PathConfiguration } from './index';
 import { getDefaultPath } from '../utils/pathDefaults';
 
 interface PathField {
@@ -170,6 +170,18 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
         <div className="p-6 space-y-6">
           {!config ? (
             <p className="text-gray-500 dark:text-gray-400">Loading…</p>
+          ) : confirmingRemove ? (
+            // Removing turns the whole modal into a focused confirmation rather
+            // than an inline widget competing with the config fields.
+            <div className="text-center py-4">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                <span className="text-2xl">⚠️</span>
+              </div>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Remove {service.name}?</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
+                This stops {service.name} and deletes its settings. Your media files are kept. This can't be undone.
+              </p>
+            </div>
           ) : (
             <>
               {service.pathRequirements.length > 0 && (
@@ -200,39 +212,33 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
                 </div>
                 {portError && <p className="text-sm text-red-500 mt-1">{portError}</p>}
               </div>
-
-              {mode === 'edit' && (
-                <Card className="border-l-4 border-red-500">
-                  <Card.Body>
-                    {!confirmingRemove ? (
-                      <div className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-medium text-gray-900 dark:text-white text-left">Remove this service</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 text-left">Stops and removes {service.name}. Media files are kept.</p>
-                        </div>
-                        <Button color="red" outline onClick={() => setConfirmingRemove(true)} disabled={busy}>Remove</Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="text-sm text-red-600 dark:text-red-400 text-left">Remove {service.name} and its settings? This cannot be undone.</p>
-                        <div className="flex gap-2 shrink-0">
-                          <Button color="gray" outline onClick={() => setConfirmingRemove(false)} disabled={busy}>Keep</Button>
-                          <Button color="red" onClick={remove} loading={busy}>Remove</Button>
-                        </div>
-                      </div>
-                    )}
-                  </Card.Body>
-                </Card>
-              )}
             </>
           )}
         </div>
 
-        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
-          <Button color="gray" outline onClick={onClose} disabled={busy}>Cancel</Button>
-          <Button color="blue" onClick={apply} loading={busy} disabled={!config}>
-            {mode === 'add' ? 'Add Service' : 'Save Changes'}
-          </Button>
+        <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between gap-3">
+          <div>
+            {mode === 'edit' && !confirmingRemove && (
+              <Button color="red" outline onClick={() => setConfirmingRemove(true)} disabled={busy}>
+                Remove service
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-3">
+            {confirmingRemove ? (
+              <>
+                <Button color="gray" outline onClick={() => setConfirmingRemove(false)} disabled={busy}>Keep</Button>
+                <Button color="red" onClick={remove} loading={busy}>Remove {service.name}</Button>
+              </>
+            ) : (
+              <>
+                <Button color="gray" outline onClick={onClose} disabled={busy}>Cancel</Button>
+                <Button color="blue" onClick={apply} loading={busy} disabled={!config}>
+                  {mode === 'add' ? 'Add Service' : 'Save Changes'}
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
