@@ -2,7 +2,10 @@ import React from 'react';
 import { Badge as FlowbiteBadge } from 'flowbite-react';
 import type { FC, SVGProps } from 'react';
 
-type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral' | 'running' | 'stopped' | 'update';
+// One semantic status scale for the whole app: good / caution / bad / info /
+// muted. (Earlier there were overlapping names like running/stopped/update that
+// meant the same thing as success/error/warning.)
+type BadgeVariant = 'success' | 'error' | 'warning' | 'info' | 'neutral';
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -19,9 +22,6 @@ const variantColorMap: Record<BadgeVariant, string> = {
   warning: 'yellow',
   info: 'blue',
   neutral: 'gray',
-  running: 'green',
-  stopped: 'red',
-  update: 'yellow',
 };
 
 export default function Badge({

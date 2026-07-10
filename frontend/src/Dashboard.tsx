@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner } from './components';
+import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -777,10 +777,21 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   ? 'border-amber-400 dark:border-amber-500'
                   : 'border-gray-200 dark:border-gray-700';
 
-              const statusLabel = needsSetup
-                ? 'Setup needed'
+              // A lifecycle action moved into the overflow menu no longer has a
+              // visible button spinner, so surface progress in the status pill.
+              const pendingAction = (['start', 'stop', 'restart'] as const).find(
+                a => actionLoading[`${serviceKey}:${a}`]
+              );
+              const pendingLabel = pendingAction === 'start' ? 'Starting…'
+                : pendingAction === 'stop' ? 'Stopping…'
+                : pendingAction === 'restart' ? 'Restarting…' : null;
+
+              const statusLabel = pendingLabel
+                ? pendingLabel
+                : needsSetup ? 'Setup needed'
                 : unhealthy ? 'Needs attention' : isRunning ? 'Running' : (status === 'Unknown' ? 'Stopped' : status);
-              const statusDotClass = needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
+              const statusDotClass = pendingLabel ? 'bg-blue-500 animate-pulse'
+                : needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
 
               return (
                 <Card
@@ -814,20 +825,16 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                       >
                         <HiExternalLink className="inline-block mr-1" /> Open
                       </Button>
-                      <Button
-                        size="sm"
-                        variant={isRunning ? 'danger' : 'success'}
-                        onClick={() => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start')}
-                        loading={actionLoading[`${serviceKey}:${isRunning ? 'stop' : 'start'}`]}
-                        aria-label={`${isRunning ? 'Stop' : 'Start'} ${service.name}`}
-                        tooltip={isRunning ? 'Stop Service' : 'Start Service'}
-                      >
-                        {isRunning ? <HiStop className="inline-block mr-1" /> : <HiPlay className="inline-block mr-1" />}
-                        {isRunning ? 'Stop' : 'Start'}
-                      </Button>
                       <div className="ml-auto">
                         <ServiceActionsMenu
                           items={[
+                            // Lifecycle controls live in the menu so "Open" is the
+                            // single clear action on every card.
+                            {
+                              label: isRunning ? 'Stop' : 'Start',
+                              icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
+                              onClick: () => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start'),
+                            },
                             ...(isRunning ? [{
                               label: 'Restart',
                               icon: <HiRefresh className="w-4 h-4" />,
@@ -880,166 +887,83 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         )}
       </div>
 
-      {/* Combined Docker Status and App Runtime Status */}
-      {(dockerStatus || runtimeStatus) && (
-        <Card className="mt-6">
-          <Card.Header 
-            className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            onClick={() => {
-              console.log('System Status clicked, current state:', isSystemStatusExpanded);
-              setIsSystemStatusExpanded(!isSystemStatusExpanded);
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">System Status</h2>
-                {dockerStatus.running && runtimeStatus?.appRunning ? (
-                  <span className="text-green-500" title="All systems operational">✔️</span>
-                ) : (
-                  <span className="text-yellow-500" title="Attention required">⚠️</span>
-                )}
+      {/* Diagnostics — technical status, collapsed by default. Not needed for
+          normal use, so it's a quiet disclosure rather than a prominent panel. */}
+      {(dockerStatus || runtimeStatus) && (() => {
+        const allOk = dockerStatus.running && (!runtimeStatus || runtimeStatus.appRunning);
+        return (
+          <Card className="mt-6">
+            <Card.Header
+              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-2.5 h-2.5 rounded-full ${allOk ? 'bg-green-500' : 'bg-amber-500'}`} />
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Diagnostics</h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    {allOk ? 'All systems operational' : 'Attention needed'}
+                  </span>
+                  {isSystemStatusExpanded
+                    ? <HiChevronUp className="w-5 h-5 text-gray-500" />
+                    : <HiChevronDown className="w-5 h-5 text-gray-500" />}
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                {!isSystemStatusExpanded && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <span className="flex items-center gap-1">
-                      <span className="font-medium text-gray-600 dark:text-gray-400">Docker:</span>
-                      {dockerStatus.running ? (
-                        <Badge variant="running" size="sm">Running</Badge>
-                      ) : (
-                        <Badge variant="stopped" size="sm">Stopped</Badge>
-                      )}
-                    </span>
-                    {runtimeStatus && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-medium text-gray-600 dark:text-gray-400">Runtime:</span>
-                        {runtimeStatus.appRunning ? (
-                          <Badge variant="running" size="sm">Active</Badge>
-                        ) : (
-                          <Badge variant="neutral" size="sm">Inactive</Badge>
-                        )}
-                      </span>
-                    )}
+            </Card.Header>
+            {isSystemStatusExpanded && (
+              <Card.Body>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <dt className="text-gray-600 dark:text-gray-400">Docker</dt>
+                    <dd>{dockerStatus.running ? <Badge variant="success">Running</Badge> : <Badge variant="error">Not running</Badge>}</dd>
                   </div>
-                )}
-                {isSystemStatusExpanded ? (
-                  <HiChevronUp className="w-5 h-5 text-gray-500" />
-                ) : (
-                  <HiChevronDown className="w-5 h-5 text-gray-500" />
-                )}
-              </div>
-            </div>
-          </Card.Header>
-          {isSystemStatusExpanded && (
-            <Card.Body>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Docker Status Section */}
-              <div className="rounded-lg bg-green-50 dark:bg-green-900/30 p-4 shadow-sm border border-green-200 dark:border-green-700">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg font-medium text-green-700 dark:text-green-300">Docker</span>
-                  {dockerStatus.running ? (
-                    <span className="text-green-500 text-xl">✅</span>
-                  ) : (
-                    <span className="text-red-500 text-xl">❌</span>
+                  {runtimeStatus && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">App</dt>
+                      <dd>{runtimeStatus.appRunning ? <Badge variant="success">Active</Badge> : <Badge variant="neutral">Inactive</Badge>}</dd>
+                    </div>
                   )}
-                </div>
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Status:</span>
-                  {dockerStatus.running ? (
-                    <Badge variant="running">Running</Badge>
-                  ) : (
-                    <Badge variant="stopped">Not Running</Badge>
+                  {runtimeStatus && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">Backend connection</dt>
+                      <dd>{runtimeStatus.backendConnected ? <Badge variant="success">Connected</Badge> : <Badge variant="error">Disconnected</Badge>}</dd>
+                    </div>
                   )}
-                </div>
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="font-semibold text-gray-700 dark:text-gray-300">Updates:</span>
-                  <span className="text-gray-900 dark:text-white">{dockerStatus.updates}</span>
-                </div>
-                {dockerUpdates && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Docker:</span>
-                      {dockerUpdates.docker?.updateAvailable ? (
-                        <Badge variant="update">🔄 Update Available</Badge>
-                      ) : (
-                        <Badge variant="success">Up to Date</Badge>
-                      )}
+                  {runtimeStatus && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">Services running</dt>
+                      <dd className="font-medium text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</dd>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-gray-700 dark:text-gray-300">Compose:</span>
-                      {dockerUpdates.compose?.updateAvailable ? (
-                        <Badge variant="update">🔄 Update Available</Badge>
-                      ) : (
-                        <Badge variant="success">Up to Date</Badge>
-                      )}
+                  )}
+                  {dockerUpdates?.docker && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">Docker engine</dt>
+                      <dd>{dockerUpdates.docker.updateAvailable ? <Badge variant="warning">Update available</Badge> : <Badge variant="success">Up to date</Badge>}</dd>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Last checked: {new Date(dockerUpdates.lastChecked).toLocaleString()}
+                  )}
+                  {dockerUpdates?.compose && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">Docker Compose</dt>
+                      <dd>{dockerUpdates.compose.updateAvailable ? <Badge variant="warning">Update available</Badge> : <Badge variant="success">Up to date</Badge>}</dd>
                     </div>
-                  </div>
-                )}
-              </div>
-              {/* App Runtime Status Section */}
-              {runtimeStatus && (
-                <div className="rounded-lg bg-blue-50 dark:bg-blue-900/30 p-4 shadow-sm border border-blue-200 dark:border-blue-700">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg font-medium text-blue-700 dark:text-blue-300">App Runtime</span>
-                    {runtimeStatus.appRunning ? (
-                      <span className="text-green-500 text-xl">🟢</span>
-                    ) : (
-                      <span className="text-gray-400 text-xl">⚪</span>
-                    )}
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">App:</span>
-                    {runtimeStatus.appRunning ? (
-                      <Badge variant="running">Active</Badge>
-                    ) : (
-                      <Badge variant="neutral">Inactive</Badge>
-                    )}
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Backend:</span>
-                    {runtimeStatus.backendConnected ? (
-                      <Badge variant="success">Connected</Badge>
-                    ) : (
-                      <Badge variant="error">Disconnected</Badge>
-                    )}
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Docker Available:</span>
-                    {runtimeStatus.dockerAvailable ? (
-                      <Badge variant="success">Yes</Badge>
-                    ) : (
-                      <Badge variant="error">No</Badge>
-                    )}
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Services Running:</span>
-                    <span className="text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</span>
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Services Independent:</span>
-                    {runtimeManager.areServicesIndependent() ? (
-                      <Badge variant="success">Yes</Badge>
-                    ) : (
-                      <Badge variant="warning">No</Badge>
-                    )}
-                  </div>
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300">Last Check:</span>
-                    <span className="text-gray-900 dark:text-white">{runtimeStatus.lastCheck.toLocaleTimeString()}</span>
-                  </div>
-                  <Alert color="blue" className="mt-3">
-                    <span className="font-semibold">Runtime Behavior:</span> This app is active only when launched. Docker services run independently and continue when the app is closed.
-                  </Alert>
-                </div>
-              )}
-            </div>
-            </Card.Body>
-          )}
-        </Card>
-      )}
+                  )}
+                  {runtimeStatus && (
+                    <div className="flex items-center justify-between gap-2">
+                      <dt className="text-gray-600 dark:text-gray-400">Last checked</dt>
+                      <dd className="text-gray-900 dark:text-white">{runtimeStatus.lastCheck.toLocaleTimeString()}</dd>
+                    </div>
+                  )}
+                </dl>
+                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                  Docker services keep running independently, and continue even when Ensembler is closed.
+                </p>
+              </Card.Body>
+            )}
+          </Card>
+        );
+      })()}
 
       {/* Advanced Settings Drawer */}
       <Drawer 
@@ -1049,10 +973,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           // Refresh dashboard data when drawer is closed
           await refreshDashboard();
         }} 
-        position="right" 
-        className="!w-[900px] max-w-full"
+        position="right"
+        className="!w-[900px] max-w-full bg-white dark:bg-gray-900"
       >
-        <div className="h-full">
+        <div className="h-full bg-white dark:bg-gray-900">
           <AdvancedSettings
             onResetComplete={onResetComplete}
             onClose={async () => {
