@@ -534,12 +534,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   return (
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <Logo className="w-12 h-12 shrink-0 text-gray-400 dark:text-gray-500" />
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Ensembler Dashboard</h1>
-            <p className="text-left text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
+        <div>
+          <div className="flex items-center gap-3">
+            <Logo className="w-11 h-11 shrink-0 text-gray-400 dark:text-gray-500" />
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Ensembler Dashboard</h1>
           </div>
+          <p className="text-left text-lg text-gray-600 dark:text-gray-400 mt-2 pl-[3.5rem]">Manage your media center services</p>
         </div>
         <div className="flex items-center gap-4">
           
