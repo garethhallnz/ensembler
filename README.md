@@ -1,4 +1,10 @@
-# Ensembler
+<p align="center">
+  <img src="assets/icon.png" alt="Ensembler" width="128" height="128" />
+</p>
+
+<h1 align="center">Ensembler</h1>
+
+<p align="center"><em>The easiest way to run your *arr stack.</em></p>
 
 **Ensembler** is a cross-platform desktop app that makes it easy to set up and run a home media center — Sonarr, Radarr, Plex, Jellyfin, Prowlarr, and more — without needing to know Docker, YAML, or the command line.
 

@@ -20,7 +20,7 @@ function createWindow() {
       enableRemoteModule: false,
       preload: path.join(__dirname, 'preload.js')
     },
-    icon: path.join(__dirname, 'frontend/src/assets/icon.png'), // Add your app icon
+    icon: path.join(__dirname, 'assets/icon.png'), // Window/taskbar icon (Windows/Linux)
     show: false, // Don't show until ready
     titleBarStyle: 'default'
   });

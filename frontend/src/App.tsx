@@ -3,7 +3,7 @@ import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
-import { Card, Alert, Spinner } from './components'
+import { Card, Alert, Spinner, Logo } from './components'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
 import DarkModeToggle from './components/DarkModeToggle'
@@ -93,12 +93,16 @@ function App() {
   
       {status === 'checking' && (
         <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md w-full p-6">
-            <div className="flex flex-col items-center space-y-4">
-              <Spinner size="xl" />
-              <p className="text-lg text-gray-700 dark:text-gray-300">Checking Docker and Docker Compose status...</p>
+          <div className="flex flex-col items-center space-y-6">
+            <div className="flex items-center gap-3">
+              <Logo className="w-11 h-11 text-gray-400 dark:text-gray-500" />
+              <span className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Ensembler</span>
             </div>
-          </Card>
+            <div className="flex flex-col items-center space-y-3">
+              <Spinner size="xl" />
+              <p className="text-gray-600 dark:text-gray-400">Checking Docker and Docker Compose status…</p>
+            </div>
+          </div>
         </div>
       )}
       

@@ -19,3 +19,4 @@ export { default as SetupBanner } from './SetupBanner';
 export { default as ServiceConfigModal } from './ServiceConfigModal';
 export { default as AddServiceModal } from './AddServiceModal';
 export { default as ServiceActionsMenu } from './ServiceActionsMenu';
+export { default as Logo } from './Logo';

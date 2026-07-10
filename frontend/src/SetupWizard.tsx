@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput } from './components';
+import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput, Logo } from './components';
 import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch } from 'flowbite-react';
 import { HiCheckCircle, HiXCircle, HiExclamationCircle } from 'react-icons/hi';
@@ -664,7 +664,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   return (
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ensembler Setup</h1>
+        <div className="flex items-center gap-3">
+          <Logo className="w-10 h-10 shrink-0 text-gray-400 dark:text-gray-500" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ensembler Setup</h1>
+        </div>
       </div>
       
       <div className="mb-8">

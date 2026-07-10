@@ -46,6 +46,7 @@
     ],
     "mac": {
       "category": "public.app-category.utilities",
+      "icon": "assets/icon.icns",
       "target": {
         "target": "dmg",
         "arch": [
@@ -55,6 +56,7 @@
       }
     },
     "win": {
+      "icon": "assets/icon.ico",
       "target": {
         "target": "nsis",
         "arch": [
@@ -63,6 +65,7 @@
       }
     },
     "linux": {
+      "icon": "assets/icon.png",
       "target": {
         "target": "AppImage",
         "arch": [

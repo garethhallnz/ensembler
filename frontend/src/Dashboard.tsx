@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal, ServiceActionsMenu } from './components';
+import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -534,9 +534,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   return (
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Ensembler Dashboard</h1>
-          <p className="text-left text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
+        <div className="flex items-center gap-4">
+          <Logo className="w-12 h-12 shrink-0 text-gray-400 dark:text-gray-500" />
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Ensembler Dashboard</h1>
+            <p className="text-left text-lg text-gray-600 dark:text-gray-400">Manage your media center services</p>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           
