@@ -385,7 +385,12 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
       }
     });
 
-    const composeContent = `services:\n${composeServices}`;
+    // Pin the Compose project name so it never depends on the config directory
+    // path. Without this, Compose derives the project from the directory name,
+    // so moving/renaming the config dir orphans the existing containers under
+    // the old project — start then hits container-name conflicts and stop/
+    // restart silently no-op against the new (empty) project.
+    const composeContent = `name: ensembler\n\nservices:\n${composeServices}`;
     fs.writeFileSync(composeFile, composeContent);
 
     res.json({ success: true, message: 'Docker Compose files generated successfully.' });
