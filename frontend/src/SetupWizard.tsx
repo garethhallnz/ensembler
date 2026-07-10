@@ -151,21 +151,36 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     }
   };
 
+  // Categories labelled "choose one" in the UI are single-select: turning one
+  // on turns the others in the same category off. "management" allows multiple.
+  const SINGLE_SELECT_CATEGORIES = ['media', 'torrent', 'indexer', 'request'];
+
   const handleServiceChange = (key: string) => {
-    const newSelected = { ...selected, [key]: !selected[key] };
-    setSelected(newSelected);
-    
-    // Initialize default paths for newly selected services
-    if (newSelected[key]) {
-      const service = serviceConfig.find(s => s.key === key);
-      if (service?.pathRequirements && service.pathRequirements.length > 0) {
-        setPaths(prev => ({
-          ...prev,
-          [key]: service.pathRequirements.map((field, idx) => 
-            prev[key]?.[idx] || getDefaultPath(key, field.label)
-          )
-        }));
+    const service = serviceConfig.find(s => s.key === key);
+    const turningOn = !selected[key];
+    const newSelected = { ...selected, [key]: turningOn };
+
+    // Enforce single selection for "choose one" categories so we never generate
+    // a stack with, e.g., two media servers or two download clients — which the
+    // interconnection logic assumes there is only one of.
+    if (turningOn && service && SINGLE_SELECT_CATEGORIES.includes(service.category)) {
+      for (const other of serviceConfig) {
+        if (other.category === service.category && other.key !== key && !other.required) {
+          newSelected[other.key] = false;
+        }
       }
+    }
+
+    setSelected(newSelected);
+
+    // Initialize default paths for a newly selected service.
+    if (turningOn && service && service.pathRequirements && service.pathRequirements.length > 0) {
+      setPaths(prev => ({
+        ...prev,
+        [key]: service.pathRequirements!.map((field, idx) =>
+          prev[key]?.[idx] || getDefaultPath(key, field.label)
+        )
+      }));
     }
   };
 
@@ -793,9 +808,11 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                  );
                })}
              </div>
-             <div className="text-sm text-gray-500 dark:text-gray-400">
-               Select at least one service to continue.
-             </div>
+             {!Object.values(selected).some(Boolean) && (
+               <div className="text-sm text-amber-600 dark:text-amber-400">
+                 Select at least one service to continue.
+               </div>
+             )}
            </div>
         )}
         {step === 1 && (
@@ -1005,7 +1022,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           </div>
           <div>
             {step === 0 ? (
-              <Button color="blue" onClick={handleNext}>
+              <Button color="blue" onClick={handleNext} disabled={!Object.values(selected).some(Boolean)}>
                 Next
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

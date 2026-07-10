@@ -55,7 +55,7 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
 
 ## Where your settings live
 
-- Configuration is stored in `~/.media-center/` (macOS/Linux) or `%USERPROFILE%\.media-center\` (Windows).
+- Configuration is stored in `~/.ensembler/` (macOS/Linux) or `%USERPROFILE%\.ensembler\` (Windows).
 - Ensembler manages `config.json`, `.env`, and `docker-compose.yml` for you, plus each service's own data folder.
 - **Your media files are never touched by Ensembler** — including when you reset. Resetting only removes the services and their settings.
 

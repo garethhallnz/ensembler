@@ -22,7 +22,7 @@ jest.mock('node-docker-api', () => ({
 const app = express();
 app.use(express.json());
 
-const configDir = path.join(os.homedir(), '.media-center');
+const configDir = path.join(os.homedir(), '.ensembler');
 const composeFile = path.join(configDir, 'docker-compose.yml');
 
 app.get('/api/services/status', async (req, res) => {

@@ -345,7 +345,7 @@ export const setupDefaultFileSystem = () => {
   mockFileSystem.clear();
   
   // Create common directories
-  mockFileSystem.addDirectory('/mock/home/.media-center');
+  mockFileSystem.addDirectory('/mock/home/.ensembler');
   mockFileSystem.addDirectory('/mock/workspace');
   mockFileSystem.addDirectory('/mock/tmp');
   
@@ -370,8 +370,8 @@ export const setupDefaultFileSystem = () => {
     }
   };
   
-  mockFileSystem.addFile('/mock/home/.media-center/config.json', JSON.stringify(defaultConfig, null, 2));
-  mockFileSystem.addFile('/mock/home/.media-center/.env', 'TZ=UTC\nPUID=1000\nPGID=1000\n');
+  mockFileSystem.addFile('/mock/home/.ensembler/config.json', JSON.stringify(defaultConfig, null, 2));
+  mockFileSystem.addFile('/mock/home/.ensembler/.env', 'TZ=UTC\nPUID=1000\nPGID=1000\n');
   
   // Create media directories
   mockFileSystem.addDirectory('/mock/media/tv');

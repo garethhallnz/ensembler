@@ -15,7 +15,7 @@ jest.mock('fs', () => ({
 const app = express();
 app.use(express.json());
 
-const configDir = path.join(os.homedir(), '.media-center');
+const configDir = path.join(os.homedir(), '.ensembler');
 const configFile = path.join(configDir, 'config.json');
 const envFile = path.join(configDir, '.env');
 const composeFile = path.join(configDir, 'docker-compose.yml');

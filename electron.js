@@ -95,7 +95,7 @@ function startBackend() {
       stdio: 'inherit',
       cwd: path.join(__dirname, 'backend'),
       shell: true,
-      env: { ...process.env, PATH: backendPath() },
+      env: { ...process.env, PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData') },
     };
   } else {
     // Run the bundled backend with Electron's own Node runtime (no system Node
@@ -106,7 +106,7 @@ function startBackend() {
     args = [bundlePath];
     options = {
       stdio: 'inherit',
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath() },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData') },
       shell: false
     };
   }

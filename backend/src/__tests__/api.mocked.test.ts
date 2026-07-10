@@ -92,7 +92,7 @@ const createTestApp = () => {
     const path = require('path');
     const os = require('os');
     
-    const configDir = path.join(os.homedir(), '.media-center');
+    const configDir = path.join(os.homedir(), '.ensembler');
     const configFile = path.join(configDir, 'config.json');
     
     if (fs.existsSync(configFile)) {
@@ -109,7 +109,7 @@ const createTestApp = () => {
       const path = require('path');
       const os = require('os');
       
-      const configDir = path.join(os.homedir(), '.media-center');
+      const configDir = path.join(os.homedir(), '.ensembler');
       const configFile = path.join(configDir, 'config.json');
       
       if (!fs.existsSync(configDir)) {
@@ -131,7 +131,7 @@ const createTestApp = () => {
       const { promisify } = require('util');
       const execAsync = promisify(exec);
       
-      const configDir = path.join(os.homedir(), '.media-center');
+      const configDir = path.join(os.homedir(), '.ensembler');
       const configFile = path.join(configDir, 'config.json');
       
       if (!fs.existsSync(configFile)) {
@@ -172,7 +172,7 @@ const createTestApp = () => {
       const path = require('path');
       const os = require('os');
       
-      const configDir = path.join(os.homedir(), '.media-center');
+      const configDir = path.join(os.homedir(), '.ensembler');
       await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} start ${serviceName}`);
       res.json({ success: true, message: `${serviceName} started successfully.` });
     } catch (err) {
@@ -348,7 +348,7 @@ describe('API Tests with Mocks', () => {
 
     it('should return setup incomplete when config does not exist', async () => {
       // Remove config file
-      mockFileSystem.removeFile('/mock/home/.media-center/config.json');
+      mockFileSystem.removeFile('/mock/home/.ensembler/config.json');
 
       const response = await request(app)
         .get('/api/config/status')
@@ -376,7 +376,7 @@ describe('API Tests with Mocks', () => {
       });
 
       // Verify file was written
-      const savedFile = mockFileSystem.getFile('/mock/home/.media-center/config.json');
+      const savedFile = mockFileSystem.getFile('/mock/home/.ensembler/config.json');
       expect(savedFile).toBeDefined();
       expect(JSON.parse(savedFile!.content)).toEqual(config);
     });
@@ -397,7 +397,7 @@ describe('API Tests with Mocks', () => {
     });
 
     it('should return error when config not found', async () => {
-      mockFileSystem.removeFile('/mock/home/.media-center/config.json');
+      mockFileSystem.removeFile('/mock/home/.ensembler/config.json');
 
       const response = await request(app)
         .get('/api/services/status')

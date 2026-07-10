@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Root**: Electron main process (`electron.js`) and build scripts
 - **Backend** (`backend/`): Express.js API server with Docker integration
 - **Frontend** (`frontend/`): React + TypeScript + Vite with Tailwind CSS and Flowbite components
-- **Configuration**: Stored in `~/.media-center/` with `config.json`, `.env`, and `docker-compose.yml`
+- **Configuration**: Stored in `~/.ensembler/` with `config.json`, `.env`, and `docker-compose.yml`
 
 ### Key Components
 - **SetupWizard**: Service selection, path configuration, and Docker Compose generation
@@ -74,7 +74,7 @@ npm run dev        # Vite dev server
 - Default paths automatically configured per platform (Windows/Linux/macOS)
 
 ### Environment and State
-- User config stored in platform-specific `~/.media-center/` directory
+- User config stored in platform-specific `~/.ensembler/` directory
 - Runtime state managed through `RuntimeManager` class
 - Theme preferences and application state persisted locally
 

@@ -32,13 +32,21 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-// Platform-specific configuration directory
+// Configuration directory. The Electron main process passes the OS-native
+// per-user data directory (app.getPath('userData')) via ENSEMBLER_DATA_DIR when
+// it launches the backend, so packaged installs store data where each platform
+// expects it:
+//   macOS   ~/Library/Application Support/Ensembler
+//   Windows %APPDATA%\Ensembler
+//   Linux   ~/.config/Ensembler
+// When the backend runs standalone for local dev (`npm run backend`), nothing
+// sets that variable, so it falls back to a simple ~/.ensembler. The backend
+// never imports Electron — this keeps the separate-process dev flow working.
 const getConfigDir = () => {
-  if (process.platform === 'win32') {
-    return path.join(os.homedir(), '.media-center');
-  } else {
-    return path.join(os.homedir(), '.media-center');
+  if (process.env.ENSEMBLER_DATA_DIR) {
+    return process.env.ENSEMBLER_DATA_DIR;
   }
+  return path.join(os.homedir(), '.ensembler');
 };
 
 const configDir = getConfigDir();
@@ -391,7 +399,10 @@ const composeFile = path.join(configDir, 'docker-compose.yml');
 app.get('/api/services/status', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      // No setup yet — that is not an error, just nothing configured. Return an
+      // empty status with 200 (rather than 404) so clients that poll this
+      // endpoint don't log a failed request on every tick before setup.
+      return res.json({ success: true, serviceStatus: {} });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const selectedServices = Object.keys(config.selectedServices).filter((key: string) => config.selectedServices[key]);

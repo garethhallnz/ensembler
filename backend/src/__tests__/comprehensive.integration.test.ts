@@ -83,7 +83,7 @@ jest.mock('node-docker-api', () => ({
 import app from '../index';
 
 describe('Comprehensive Integration Tests', () => {
-  const configDir = path.join(os.homedir(), '.media-center');
+  const configDir = path.join(os.homedir(), '.ensembler');
   const configFile = path.join(configDir, 'config.json');
   const composeFile = path.join(configDir, 'docker-compose.yml');
 
@@ -455,16 +455,16 @@ describe('Comprehensive Integration Tests', () => {
         expect(response.body.serviceStatus.plex).toBeDefined();
       });
 
-      it('should handle missing config', async () => {
+      it('should return an empty status when config is missing', async () => {
         (fs.existsSync as jest.Mock).mockReturnValue(false);
 
         const response = await request(app)
           .get('/api/services/status')
-          .expect(404);
+          .expect(200);
 
         expect(response.body).toEqual({
-          success: false,
-          message: 'config.json not found.'
+          success: true,
+          serviceStatus: {}
         });
       });
     });

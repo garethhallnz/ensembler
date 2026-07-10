@@ -50,7 +50,7 @@ jest.mock('util', () => ({
 import app from './index';
 
 describe('Integration Tests - Frontend-Backend Communication', () => {
-  const configDir = path.join(os.homedir(), '.media-center');
+  const configDir = path.join(os.homedir(), '.ensembler');
   const configFile = path.join(configDir, 'config.json');
 
   beforeEach(() => {
@@ -215,9 +215,9 @@ describe('Integration Tests - Frontend-Backend Communication', () => {
       (fs.existsSync as jest.Mock).mockReturnValue(false);
 
       const res = await request(app).get('/api/services/status');
-      expect(res.status).toBe(404);
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toBe('config.json not found.');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.serviceStatus).toEqual({});
     });
 
     it('should handle invalid service names', async () => {
