@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo } from './components';
+import { Card, Button, Badge, Alert, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
-import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp } from 'react-icons/hi';
+import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -104,7 +104,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlertsType>({});
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
-  const [checkingUpdates, setCheckingUpdates] = useState(false);
+  const autoCheckedRef = useRef(false);
+  const [updateChecking, setUpdateChecking] = useState<{ [key: string]: boolean }>({});
+  const [recentlyChecked, setRecentlyChecked] = useState<{ [key: string]: boolean }>({});
+  const [checkingAllUpdates, setCheckingAllUpdates] = useState(false);
   const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   // Per-service config ('edit') and add-service ('add') both use one modal.
@@ -160,29 +163,72 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       const data = await res.json();
       if (data.success) {
         setServiceUpdates(data.updates || {});
+
+        // Auto-refresh the (cheap, cached) check once per session if it has
+        // never run or is stale, so update availability surfaces on the cards
+        // without the user hunting for a button. Digest checks only, no pulls.
+        if (!autoCheckedRef.current) {
+          autoCheckedRef.current = true;
+          const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+          const last = data.lastChecked ? new Date(data.lastChecked).getTime() : 0;
+          if (Date.now() - last > TTL_MS) {
+            fetch('http://localhost:3001/api/services/updates/check', { method: 'POST' })
+              .then(r => r.json())
+              .then(d => { if (d.success) setServiceUpdates(d.updates || {}); })
+              .catch(() => { /* silent: availability just won't refresh this time */ });
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching update status:', error);
     }
   }, []);
 
-  // Refresh the update cache on demand (cheap digest checks, no pulls).
-  const checkForUpdates = async () => {
-    setCheckingUpdates(true);
+  // Manual per-service re-check from a card's ••• menu — cognitively bound to
+  // the service it affects. Feedback is shown inline on the card (spinner, then
+  // the update prompt or a brief "up to date"), not via a distant toast; toasts
+  // are reserved for failures. Cheap digest check, no image pull.
+  const checkServiceForUpdate = async (serviceKey: string) => {
+    const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
+    setUpdateChecking(prev => ({ ...prev, [serviceKey]: true }));
+    try {
+      const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/check-updates`);
+      const data = await res.json();
+      if (data.success) {
+        setServiceUpdates(prev => ({ ...prev, [serviceKey]: { hasUpdate: data.hasUpdate } }));
+        if (!data.hasUpdate) {
+          // Briefly confirm "up to date" on the card, then fade back to normal.
+          setRecentlyChecked(prev => ({ ...prev, [serviceKey]: true }));
+          setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
+        }
+      } else {
+        showToast(`Could not check ${name} for updates.`, 'error');
+      }
+    } catch {
+      showToast(`Could not check ${name} for updates.`, 'error');
+    } finally {
+      setUpdateChecking(prev => ({ ...prev, [serviceKey]: false }));
+    }
+  };
+
+  // Refresh the update status for every service at once. Backs the "Check for
+  // updates" button in the Services header. Cheap digest checks, no pulls.
+  const checkAllUpdates = async () => {
+    setCheckingAllUpdates(true);
     try {
       const res = await fetch('http://localhost:3001/api/services/updates/check', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         setServiceUpdates(data.updates || {});
         const count = Object.values(data.updates || {}).filter((u) => (u as { hasUpdate: boolean | null })?.hasUpdate).length;
-        showToast(count > 0 ? `${count} update${count > 1 ? 's' : ''} available.` : 'Everything is up to date.', count > 0 ? 'info' : 'success');
+        showToast(count > 0 ? `${count} update${count > 1 ? 's' : ''} available.` : 'All services are up to date.', count > 0 ? 'info' : 'success');
       } else {
         showToast('Could not check for updates.', 'error');
       }
     } catch {
       showToast('Could not check for updates.', 'error');
     } finally {
-      setCheckingUpdates(false);
+      setCheckingAllUpdates(false);
     }
   };
 
@@ -480,8 +526,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             await fetchServiceStatus();
             const newStatus = await runtimeManager.checkStatus();
             setRuntimeStatus(newStatus); // Ensure up-to-date status
-            // Just updated, so it's current now.
-            setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: false } }));
+            // Use the status the backend re-checked after pulling, so the
+            // prompt reflects reality (and matches the refreshed server cache).
+            setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: data.hasUpdate ?? false } }));
           } else {
             showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
           }
@@ -545,14 +592,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           
           {/* Settings Group */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              onClick={checkForUpdates}
-              loading={checkingUpdates}
-              tooltip="Check all services for available updates"
-            >
-              <HiArrowCircleUp className="inline-block mr-1" /> {checkingUpdates ? 'Checking…' : 'Check for updates'}
-            </Button>
             <Button
               variant="secondary"
               onClick={() => setShowAdvancedSettings(true)}
@@ -674,11 +713,22 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured</p>
           </div>
-          {serviceConfig.some(s => !selectedServices.includes(s.key)) && (
-            <Button variant="primary" onClick={() => setShowAddService(true)} tooltip="Add another service">
-              <HiPlus className="inline-block mr-1" /> Add Service
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              onClick={checkAllUpdates}
+              loading={checkingAllUpdates}
+              disabled={selectedServices.length === 0}
+              tooltip="Check every service for available updates"
+            >
+              <HiArrowCircleUp className="inline-block mr-1" /> {checkingAllUpdates ? 'Checking…' : 'Check for updates'}
             </Button>
-          )}
+            {serviceConfig.some(s => !selectedServices.includes(s.key)) && (
+              <Button variant="primary" onClick={() => setShowAddService(true)} tooltip="Add another service">
+                <HiPlus className="inline-block mr-1" /> Add Service
+              </Button>
+            )}
+          </div>
         </div>
         {selectedServices.length === 0 ? (
           <Card className="border-2 border-dashed border-gray-300 dark:border-gray-600">
@@ -789,6 +839,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                               onClick: () => openLogsDrawer(serviceKey),
                             },
                             {
+                              label: 'Check for updates',
+                              icon: <HiArrowCircleUp className="w-4 h-4" />,
+                              onClick: () => checkServiceForUpdate(serviceKey),
+                            },
+                            {
                               label: 'Configure',
                               icon: <HiCog className="w-4 h-4" />,
                               onClick: () => setConfigModal({ service, mode: 'edit' }),
@@ -798,8 +853,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                       </div>
                     </div>
 
-                    {/* Update prompt only when relevant */}
-                    {updateInfo?.hasUpdate && (
+                    {/* Update state, shown inline where the action was taken */}
+                    {updateChecking[serviceKey] ? (
+                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <Spinner size="sm" /> Checking for updates…
+                      </div>
+                    ) : updateInfo?.hasUpdate ? (
                       <button
                         onClick={() => handleServiceUpdate(serviceKey)}
                         disabled={isUpdating}
@@ -808,7 +867,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                         <HiArrowCircleUp className="w-4 h-4" />
                         {isUpdating ? 'Updating…' : 'Update available — update now'}
                       </button>
-                    )}
+                    ) : recentlyChecked[serviceKey] ? (
+                      <div className="mt-3 flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                        <HiCheckCircle className="w-4 h-4" /> Up to date
+                      </div>
+                    ) : null}
                   </Card.Body>
                 </Card>
               );

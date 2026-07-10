@@ -1005,8 +1005,19 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     // Pull latest image and restart service
     await execAsync(`docker compose -f ${composeFile} pull ${serviceName}`);
     await execAsync(`docker compose -f ${composeFile} up -d ${serviceName}`);
-    
-    res.json({ success: true, message: `${serviceName} updated successfully.` });
+
+    // Refresh the cached update status now that the image is current. Without
+    // this the dashboard keeps reading a stale "update available" from the
+    // cache (GET /api/services/updates) and the prompt reappears after a
+    // successful update.
+    let hasUpdate: boolean | null = false;
+    const svc = getServiceConfig(serviceName);
+    if (svc) {
+      hasUpdate = await checkServiceUpdate(svc.image);
+      updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
+    }
+
+    res.json({ success: true, message: `${serviceName} updated successfully.`, hasUpdate });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to update ${serviceName}.`, error: (err as Error).message });
   }
