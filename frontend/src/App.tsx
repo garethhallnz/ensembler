@@ -6,7 +6,6 @@ import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner, Logo } from './components'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
-import DarkModeToggle from './components/DarkModeToggle'
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -87,10 +86,7 @@ function App() {
     <CustomThemeProvider>
       <ToastProvider>
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <div className="fixed top-4 right-4 z-50">
-            <DarkModeToggle />
-          </div>
-  
+
       {status === 'checking' && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="flex flex-col items-center space-y-6">

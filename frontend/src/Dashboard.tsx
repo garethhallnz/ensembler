@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, Alert, SetupBanner, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo } from './components';
+import { Card, Button, Badge, Alert, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -612,41 +612,53 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         </div>
       </div>
 
-      {/* One remaining setup step: the user chooses their own indexers */}
-      {prowlarrNeedsIndexers && (
-        <SetupBanner
-          actionLabel="Open Prowlarr"
-          onAction={() => handleLaunchService('prowlarr')}
-          message={<>
-            <span className="font-semibold">One step left:</span> add an indexer in Prowlarr so Sonarr and Radarr can search for content.
-            Your indexer choices sync to all services automatically.
-          </>}
-        />
-      )}
+      {/* Remaining manual setup steps, grouped into one calm checklist rather
+          than a stack of separate banners. Each service card also shows its own
+          "Setup needed" nudge, so the guidance lives in both places. */}
+      {(() => {
+        const tasks = [
+          prowlarrNeedsIndexers && {
+            key: 'prowlarr',
+            label: <>Add an indexer in <strong className="font-semibold">Prowlarr</strong> so Sonarr and Radarr can search for content</>,
+          },
+          plexNeedsSignIn && {
+            key: 'plex',
+            label: <>Sign in to <strong className="font-semibold">Plex</strong> to create your TV and Movies libraries</>,
+          },
+          overseerrNeedsSetup && {
+            key: 'overseerr',
+            label: <>Finish <strong className="font-semibold">Overseerr</strong> setup — sign in with Plex to discover your services</>,
+          },
+        ].filter(Boolean) as { key: string; label: React.ReactNode }[];
 
-      {/* Plex requires a one-time account sign-in only the user can do */}
-      {plexNeedsSignIn && (
-        <SetupBanner
-          actionLabel="Open Plex"
-          onAction={() => handleLaunchService('plex')}
-          message={<>
-            <span className="font-semibold">One step left for Plex:</span> sign in with your Plex account.
-            Your TV and Movies libraries will then be set up automatically.
-          </>}
-        />
-      )}
+        if (tasks.length === 0) return null;
 
-      {/* Overseerr finishes setup in its own wizard */}
-      {overseerrNeedsSetup && (
-        <SetupBanner
-          actionLabel="Open Overseerr"
-          onAction={() => handleLaunchService('overseerr')}
-          message={<>
-            <span className="font-semibold">One step left for Overseerr:</span> finish its setup — sign in with Plex and it will
-            find your other services automatically.
-          </>}
-        />
-      )}
+        return (
+          <div className="mb-6 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/20 px-5 py-4">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Finish setting up</h3>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                · {tasks.length} step{tasks.length !== 1 ? 's' : ''} left
+              </span>
+            </div>
+            <ul className="divide-y divide-amber-200/70 dark:divide-amber-900/40">
+              {tasks.map(task => (
+                <li key={task.key} className="flex items-center gap-3 py-2.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <span className="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">{task.label}</span>
+                  <button
+                    onClick={() => handleLaunchService(task.key)}
+                    className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Open <HiExternalLink className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
 
       {/* Progress bar for global actions (above service list, no container/title) */}
       {globalActionProgress !== null && (
@@ -699,17 +711,26 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               const alertInfo = serviceAlerts[serviceKey];
               const isUpdating = updateLoading[serviceKey];
               
-              // Determine border color
+              const isRunning = status === 'Running';
+              const needsSetup =
+                (serviceKey === 'prowlarr' && prowlarrNeedsIndexers) ||
+                (serviceKey === 'plex' && plexNeedsSignIn) ||
+                (serviceKey === 'overseerr' && overseerrNeedsSetup);
+              const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
+
+              // Border signals attention only: red for an alert, amber when a
+              // manual setup step remains, otherwise neutral. Status itself is
+              // conveyed by the dot, so running cards no longer get a green frame.
               const borderColor = alertInfo?.alert
                 ? 'border-red-500 dark:border-red-400'
-                : status === 'Running'
-                  ? 'border-green-500 dark:border-green-400'
-                  : 'border-gray-300 dark:border-gray-600';
+                : needsSetup
+                  ? 'border-amber-400 dark:border-amber-500'
+                  : 'border-gray-200 dark:border-gray-700';
 
-              const isRunning = status === 'Running';
-              const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
-              const statusLabel = unhealthy ? 'Needs attention' : isRunning ? 'Running' : (status === 'Unknown' ? 'Stopped' : status);
-              const statusDotClass = unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
+              const statusLabel = needsSetup
+                ? 'Setup needed'
+                : unhealthy ? 'Needs attention' : isRunning ? 'Running' : (status === 'Unknown' ? 'Stopped' : status);
+              const statusDotClass = needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
 
               return (
                 <Card

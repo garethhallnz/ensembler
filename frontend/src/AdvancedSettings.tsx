@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button, Spinner, Alert, Card, EnvironmentSettings } from './components';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
+import { useTheme, type ThemePreference } from './contexts/ThemeContext';
 import ConfirmationModal from './components/ConfirmationModal';
 
 interface AdvancedSettingsProps {
@@ -27,6 +28,7 @@ type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 // a clearly separated danger zone (full reset).
 export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedSettingsProps) {
   const { showToast } = useToast();
+  const { preference, setPreference } = useTheme();
   const [config, setConfig] = useState<ConfigType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -230,6 +232,32 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
         </div>
 
         <div className="flex-1 overflow-auto p-4 space-y-6">
+          <Card>
+            <Card.Header>
+              <h4 className="text-lg font-medium">Appearance</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Choose how Ensembler looks. System follows your operating system.
+              </p>
+            </Card.Header>
+            <Card.Body>
+              <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1">
+                {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setPreference(opt)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
+                      preference === opt
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+
           <Card>
             <Card.Header>
               <h4 className="text-lg font-medium">Environment</h4>

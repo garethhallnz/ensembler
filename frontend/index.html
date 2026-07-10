@@ -12,9 +12,10 @@
       (function() {
         const savedTheme = localStorage.getItem('ensembler-theme');
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
-        
-        if (theme === 'dark') {
+        // savedTheme is 'light' | 'dark' | 'system' | null. 'system' and null follow the OS.
+        const dark = savedTheme === 'dark' || ((savedTheme === 'system' || !savedTheme) && systemPrefersDark);
+
+        if (dark) {
           document.documentElement.classList.add('dark');
         }
       })();
