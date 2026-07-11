@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton } from './components';
+import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -96,6 +96,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [overseerrNeedsSetup, setOverseerrNeedsSetup] = useState(false);
   const plexWiringInFlight = useRef(false);
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
+  const [actionError, setActionError] = useState<{ title: string; detail?: string; serviceKey: string; retry: () => void } | null>(null);
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
     running: true,
     updates: 'No updates available'
@@ -429,13 +430,25 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         const newStatus = await runtimeManager.checkStatus();
         setRuntimeStatus(newStatus); // Ensure up-to-date status
       } else {
-        showToast(`Failed to ${action} ${serviceName}: ${data.message}`, 'error');
+        showActionFailure(serviceName, action, data.message);
       }
     } catch (error) {
-      showToast(`Error ${action}ing ${serviceName}: ${error}`, 'error');
+      showActionFailure(serviceName, action, String(error));
     } finally {
       setActionLoading(prev => ({ ...prev, [key]: false }));
     }
+  };
+
+  // Surface a service-action failure as a friendly, actionable dialog instead
+  // of a raw error toast that leaves the user stuck.
+  const showActionFailure = (serviceName: string, action: 'start' | 'stop' | 'restart', detail?: string) => {
+    const name = serviceConfig.find(s => s.key === serviceName)?.name || serviceName;
+    setActionError({
+      title: `Couldn't ${action} ${name}`,
+      detail,
+      serviceKey: serviceName,
+      retry: () => handleServiceAction(serviceName, action),
+    });
   };
 
   const handleGlobalAction = (action: 'start-all' | 'stop-all') => {
@@ -1006,6 +1019,17 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           onClose={() => setOpenModal(false)}
           onConfirm={confirmationModal.onConfirm}
           message={confirmationModal.message}
+        />
+      )}
+
+      {actionError && (
+        <ActionErrorModal
+          show={!!actionError}
+          title={actionError.title}
+          detail={actionError.detail}
+          onClose={() => setActionError(null)}
+          onViewLogs={() => { const k = actionError.serviceKey; setActionError(null); openLogsDrawer(k); }}
+          onRetry={() => { const r = actionError.retry; setActionError(null); r(); }}
         />
       )}
 

@@ -20,3 +20,4 @@ export { default as ServiceActionsMenu } from './ServiceActionsMenu';
 export { default as Logo } from './Logo';
 export { default as Docs } from './Docs';
 export { default as DocsButton } from './DocsButton';
+export { default as ActionErrorModal } from './ActionErrorModal';
