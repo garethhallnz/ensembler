@@ -584,7 +584,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         <div>
           <div className="flex items-center gap-3">
             <Logo className="w-11 h-11 shrink-0 text-gray-400 dark:text-gray-500" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Ensembler Dashboard</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
           </div>
           <p className="text-left text-lg text-gray-600 dark:text-gray-400 mt-2 pl-[3.5rem]">Manage your media center services</p>
         </div>
@@ -769,15 +769,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 (serviceKey === 'overseerr' && overseerrNeedsSetup);
               const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
 
-              // Border signals attention only: red for an alert, amber when a
-              // manual setup step remains, otherwise neutral. Status itself is
-              // conveyed by the dot, so running cards no longer get a green frame.
-              const borderColor = alertInfo?.alert
-                ? 'border-red-500 dark:border-red-400'
-                : needsSetup
-                  ? 'border-amber-400 dark:border-amber-500'
-                  : 'border-gray-200 dark:border-gray-700';
-
               // A lifecycle action moved into the overflow menu no longer has a
               // visible button spinner, so surface progress in the status pill.
               const pendingAction = (['start', 'stop', 'restart'] as const).find(
@@ -797,7 +788,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               return (
                 <Card
                   key={serviceKey}
-                  className={`relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 border-l ${borderColor} bg-white dark:bg-gray-800`}
+                  className="relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 bg-white dark:bg-gray-800"
                 >
                   {/* Card Header: identity + at-a-glance status */}
                   <div className="px-6 pt-6 pb-4">
@@ -958,7 +949,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   )}
                 </dl>
                 <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                  Docker services keep running independently, and continue even when Ensembler is closed.
+                  Docker services keep running independently, and continue even when the app is closed.
                 </p>
               </Card.Body>
             )}

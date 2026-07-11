@@ -152,7 +152,7 @@ export default function ServiceConfiguration({
 
   if (layout === 'card') {
     return (
-      <Card key={service.key} className={`border-l-4 border-blue-500 ${className}`}>
+      <Card key={service.key} className={className}>
         <Card.Header>
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">{service.name}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{service.description}</p>

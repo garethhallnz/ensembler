@@ -681,7 +681,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
           <Logo className="w-10 h-10 shrink-0 text-gray-400 dark:text-gray-500" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Ensembler Setup</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Setup</h1>
         </div>
         <DocsButton />
       </div>
@@ -845,7 +845,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             </div>
             
             {/* Environment Variables Section */}
-            <Card className="border-l-4 border-purple-500">
+            <Card>
               <Card.Header>
                 <div className="flex items-center gap-2">
                   <h3 className="text-xl font-medium text-gray-900 dark:text-white">Environment Settings</h3>
@@ -866,7 +866,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             </Card>
 
             {selected['jellyfin'] && (
-              <Card className="border-l-4 border-purple-500">
+              <Card>
                 <Card.Header>
                   <div className="flex items-center gap-2">
                     <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Jellyfin</span>
@@ -969,7 +969,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             </Card>
 
             {applyError && (
-              <Card className="border-l-4 border-red-500">
+              <Card>
                 <Card.Body>
                   <div className="flex items-start gap-3 text-left">
                     <HiExclamationCircle className="w-6 h-6 text-red-500 shrink-0" />
@@ -985,7 +985,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             )}
 
             {applyDone && (
-              <Card className="border-l-4 border-green-500">
+              <Card>
                 <Card.Body>
                   {connectResults.length > 0 && (
                     <div className="space-y-1.5 mb-4">
