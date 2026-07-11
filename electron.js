@@ -18,6 +18,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      webviewTag: true, // service UIs render in-app via <webview>, avoiding the browser's "Not Secure" chrome
       preload: path.join(__dirname, 'preload.js')
     },
     icon: path.join(__dirname, 'assets/icon.png'), // Window/taskbar icon (Windows/Linux)
@@ -189,14 +190,31 @@ app.on('before-quit', (event) => {
 // Handle app protocol for macOS
 app.setAsDefaultProtocolClient('media-center');
 
-// Security: Prevent navigation to external websites
+// Security: keep the app window locked to the app, but let embedded service
+// <webview>s roam their own localhost origins.
 app.on('web-contents-created', (event, contents) => {
-  contents.on('will-navigate', (event, navigationUrl) => {
+  if (contents.getType() === 'webview') {
+    // Service UIs live on http://localhost:<port>. Allow navigation within
+    // localhost; send genuinely external links (e.g. Plex OAuth) to the
+    // system browser rather than steering the embedded view off to them.
+    contents.setWindowOpenHandler(({ url }) => {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    });
+    contents.on('will-navigate', (e, navigationUrl) => {
+      const { hostname } = new URL(navigationUrl);
+      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+        e.preventDefault();
+        shell.openExternal(navigationUrl);
+      }
+    });
+    return;
+  }
+
+  contents.on('will-navigate', (e, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
-    
-    // Allow navigation within the app
     if (parsedUrl.origin !== 'http://localhost:5180' && parsedUrl.origin !== 'file://') {
-      event.preventDefault();
+      e.preventDefault();
     }
   });
 });

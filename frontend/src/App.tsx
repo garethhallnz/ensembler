@@ -3,9 +3,10 @@ import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
-import { Card, Alert, Spinner, Logo, DocsButton } from './components'
+import { Card, Alert, Spinner, Logo, DocsButton, ServiceTabsShell } from './components'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
+import { ServiceTabsProvider } from './contexts/ServiceTabsContext'
 
 const getOs = () => {
   const platform = window.navigator.platform.toLowerCase()
@@ -204,11 +205,15 @@ function App() {
       )}
 
       {status === 'ok' && setupComplete && !showSetupWizard && (
-        <Dashboard onResetComplete={() => {
-          // Return to the wizard in place after a reset — no window reload.
-          setSetupComplete(false);
-          setShowSetupWizard(false);
-        }} />
+        <ServiceTabsProvider>
+          <ServiceTabsShell>
+            <Dashboard onResetComplete={() => {
+              // Return to the wizard in place after a reset — no window reload.
+              setSetupComplete(false);
+              setShowSetupWizard(false);
+            }} />
+          </ServiceTabsShell>
+        </ServiceTabsProvider>
       )}
         </div>
       </ToastProvider>

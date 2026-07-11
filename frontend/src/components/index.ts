@@ -21,3 +21,4 @@ export { default as Logo } from './Logo';
 export { default as Docs } from './Docs';
 export { default as DocsButton } from './DocsButton';
 export { default as ActionErrorModal } from './ActionErrorModal';
+export { default as ServiceTabsShell } from './ServiceTabsShell';

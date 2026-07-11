@@ -3,6 +3,8 @@ import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal } from './components';
 import { useToast } from './contexts/ToastContext';
+import { useServiceTabs } from './contexts/ServiceTabsContext';
+import { isDesktopApp } from './utils/selectDirectory';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle } from 'react-icons/hi';
@@ -87,6 +89,7 @@ const serviceRole = (key: string, category: string): string =>
 
 export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { showToast } = useToast();
+  const { openService } = useServiceTabs();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
@@ -487,18 +490,36 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     setOpenModal(true);
   };
 
-  const handleLaunchService = async (serviceName: string) => {
+  const fetchLaunchUrl = async (serviceKey: string): Promise<string | null> => {
     try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/launch-url`);
+      const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/launch-url`);
       const data = await res.json();
-      if (data.success) {
-        window.open(data.url, '_blank');
-      } else {
-        showToast(`Failed to get launch URL for ${serviceName}: ${data.message}`, 'error');
-      }
+      if (data.success) return data.url;
+      showToast(`Failed to get launch URL for ${serviceKey}: ${data.message}`, 'error');
+      return null;
     } catch (error) {
-      showToast(`Error launching ${serviceName}: ${error}`, 'error');
+      showToast(`Error launching ${serviceKey}: ${error}`, 'error');
+      return null;
     }
+  };
+
+  // In the desktop app, open the service in an in-app tab (no browser "Not
+  // Secure" chrome). In a plain browser there's no <webview>, so fall back to a
+  // new tab.
+  const handleLaunchService = async (serviceKey: string, displayName?: string) => {
+    const url = await fetchLaunchUrl(serviceKey);
+    if (!url) return;
+    if (isDesktopApp()) {
+      const name = displayName ?? serviceKey.charAt(0).toUpperCase() + serviceKey.slice(1);
+      openService({ key: serviceKey, name, url });
+      return;
+    }
+    window.open(url, '_blank');
+  };
+
+  const openServiceInBrowser = async (serviceKey: string) => {
+    const url = await fetchLaunchUrl(serviceKey);
+    if (url) window.open(url, '_blank');
   };
 
   const fetchLogs = useCallback(async (serviceName: string) => {
@@ -842,7 +863,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                       <Button
                         size="sm"
                         variant="primary"
-                        onClick={() => handleLaunchService(serviceKey)}
+                        onClick={() => handleLaunchService(serviceKey, service.name)}
                         disabled={!isRunning}
                         aria-label={`Open ${service.name}`}
                         tooltip={!isRunning ? 'Start the service to open it' : `Open ${service.name}`}
@@ -854,6 +875,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                           items={[
                             // Lifecycle controls live in the menu so "Open" is the
                             // single clear action on every card.
+                            ...(isDesktopApp() && isRunning ? [{
+                              label: 'Open in browser',
+                              icon: <HiExternalLink className="w-4 h-4" />,
+                              onClick: () => openServiceInBrowser(serviceKey),
+                            }] : []),
                             {
                               label: isRunning ? 'Stop' : 'Start',
                               icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
