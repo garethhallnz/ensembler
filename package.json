@@ -31,6 +31,11 @@
   "build": {
     "appId": "com.ensembler.app",
     "productName": "Ensembler",
+    "publish": {
+      "provider": "github",
+      "owner": "garethhallnz",
+      "repo": "media-center"
+    },
     "directories": {
       "output": "dist-electron"
     },
