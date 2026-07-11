@@ -3,7 +3,7 @@ import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
-import { Card, Alert, Spinner, Logo } from './components'
+import { Card, Alert, Spinner, Logo, DocsButton } from './components'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
 
@@ -109,7 +109,7 @@ function App() {
               <div className="text-center">
                 <div className="text-6xl mb-4">🐳</div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Docker Required</h3>
-                <p className="text-gray-600 dark:text-gray-400 mt-2">Ensembler needs Docker to manage your services</p>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">Ensembler needs Docker — or another container runtime — to run your services</p>
               </div>
             </Card.Header>
             <Card.Body>
@@ -140,6 +140,9 @@ function App() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
                   </a>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-3">
+                    Already use OrbStack, Podman, or another container runtime? That works too — just make sure it's installed and running.
+                  </p>
                 </div>
 
                 <div className="flex gap-3">
@@ -162,14 +165,18 @@ function App() {
                 </div>
                 
                 <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                  Having trouble? Make sure Docker Desktop is fully started (not just installed) and try refreshing this page.
+                  Having trouble? Make sure your container runtime is fully started (not just installed) and try refreshing this page.
+                </div>
+
+                <div className="flex justify-center pt-2">
+                  <DocsButton label="Read the docs" />
                 </div>
               </div>
             </Card.Body>
           </Card>
         </div>
       )}
-      
+
       {status === 'compose-missing' && (
         <div className="flex items-center justify-center min-h-screen">
           <Card className="max-w-md w-full">

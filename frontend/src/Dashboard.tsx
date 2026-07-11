@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner } from './components';
+import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton } from './components';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
@@ -592,6 +592,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           
           {/* Settings Group */}
           <div className="flex items-center gap-2">
+            <DocsButton />
             <Button
               variant="secondary"
               onClick={() => setShowAdvancedSettings(true)}
@@ -966,7 +967,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       })()}
 
       {/* Advanced Settings Drawer */}
-      <Drawer 
+      <Drawer
         open={showAdvancedSettings} 
         onClose={async () => {
           setShowAdvancedSettings(false);

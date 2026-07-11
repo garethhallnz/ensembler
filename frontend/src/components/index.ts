@@ -18,3 +18,5 @@ export { default as ServiceConfigModal } from './ServiceConfigModal';
 export { default as AddServiceModal } from './AddServiceModal';
 export { default as ServiceActionsMenu } from './ServiceActionsMenu';
 export { default as Logo } from './Logo';
+export { default as Docs } from './Docs';
+export { default as DocsButton } from './DocsButton';

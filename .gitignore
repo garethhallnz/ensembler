@@ -83,3 +83,5 @@ docker-compose.override.yml
 *.tfstate
 *.tfstate.backup
 .DS_Store
+# Local-only working notes (not shared / not user-facing)
+*.local.md

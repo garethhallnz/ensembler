@@ -14,5 +14,7 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5180,
     strictPort: true,
+    // Allow importing the repo-root docs/ markdown into the app (?raw).
+    fs: { allow: ['..'] },
   },
 });
