@@ -1,11 +1,6 @@
 import { TextInput, Button, Alert } from './index';
 import { getDefaultPath } from '../utils/pathDefaults';
-
-declare global {
-  interface Window {
-    showDirectoryPicker?: () => Promise<FileSystemDirectoryHandle>;
-  }
-}
+import { selectDirectory, isDesktopApp } from '../utils/selectDirectory';
 
 interface PathField {
   label: string;
@@ -42,17 +37,11 @@ export default function PathConfiguration({
   const handleBrowse = async (idx: number) => {
     if (onBrowse) {
       onBrowse(idx);
-    } else if ('showDirectoryPicker' in window && window.showDirectoryPicker) {
-      try {
-        const handle = await window.showDirectoryPicker();
-        const path = await handle.resolve(handle);
-        if (path) {
-          onPathChange(idx, path.join('/'));
-        }
-      } catch (err) {
-        console.error('Directory picker error:', err);
-      }
+      return;
     }
+    // Native folder picker via the Electron bridge; returns a real absolute path.
+    const dir = await selectDirectory();
+    if (dir) onPathChange(idx, dir);
   };
 
   if (pathRequirements.length === 0) {
@@ -100,12 +89,12 @@ export default function PathConfiguration({
                 </Button>
               )}
               
-              {showBrowseButton && (
-                <Button 
-                  onClick={() => handleBrowse(idx)} 
+              {showBrowseButton && (onBrowse || isDesktopApp()) && (
+                <Button
+                  onClick={() => handleBrowse(idx)}
                   variant="secondary"
                   size="sm"
-                  title="Browse for directory"
+                  title="Browse for a folder"
                 >
                   Browse
                 </Button>

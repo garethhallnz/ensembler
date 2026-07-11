@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, shell } from 'electron';
+import { app, BrowserWindow, dialog, shell, ipcMain } from 'electron';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -135,6 +135,13 @@ function stopBackend() {
     backendProcess = null;
   }
 }
+
+// Native folder picker for the setup wizard (and per-service config). The
+// renderer calls window.electronAPI.showOpenDialog(...) via preload; this
+// returns the real absolute path the browser's File System Access API cannot.
+ipcMain.handle('show-open-dialog', async (_event, options) => {
+  return dialog.showOpenDialog(mainWindow, options ?? { properties: ['openDirectory'] });
+});
 
 // App event handlers
 app.whenReady().then(() => {

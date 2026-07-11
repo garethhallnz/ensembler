@@ -518,22 +518,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     setPorts((prev) => ({ ...prev, [svc]: value }));
   };
 
-  const handleBrowse = async (svc: string, idx: number) => {
-    if ('showDirectoryPicker' in window && window.showDirectoryPicker) {
-      try {
-        const handle = await window.showDirectoryPicker();
-        const path = await handle.resolve(handle);
-        if (path) {
-            handlePathChange(svc, idx, path.join('/'));
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    } else {
-      showToast('File system access API is not supported in your browser.', 'warning');
-    }
-  };
-
   const validateEnvironment = () => {
     const currentEnvErrors: {[key: string]: string} = {};
     let valid = true;
@@ -837,7 +821,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                     portError={portErrors[svc]}
                     onPathChange={(idx, value) => handlePathChange(svc, idx, value)}
                     onPortChange={(port) => handlePortChange(svc, port)}
-                    onBrowse={(idx) => handleBrowse(svc, idx)}
                     layout="card"
                   />
                 );
