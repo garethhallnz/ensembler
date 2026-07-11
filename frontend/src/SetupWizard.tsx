@@ -4,6 +4,7 @@ import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch } from 'flowbite-react';
 import { HiCheckCircle, HiXCircle, HiExclamationCircle } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
+import { toggleService } from './utils/serviceSelection';
 
 declare global {
   interface Window {
@@ -151,30 +152,13 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     }
   };
 
-  // Categories labelled "choose one" in the UI are single-select: turning one
-  // on turns the others in the same category off. "management" allows multiple.
-  const SINGLE_SELECT_CATEGORIES = ['media', 'torrent', 'indexer', 'request'];
-
   const handleServiceChange = (key: string) => {
-    const service = serviceConfig.find(s => s.key === key);
-    const turningOn = !selected[key];
-    const newSelected = { ...selected, [key]: turningOn };
-
-    // Enforce single selection for "choose one" categories so we never generate
-    // a stack with, e.g., two media servers or two download clients — which the
-    // interconnection logic assumes there is only one of.
-    if (turningOn && service && SINGLE_SELECT_CATEGORIES.includes(service.category)) {
-      for (const other of serviceConfig) {
-        if (other.category === service.category && other.key !== key && !other.required) {
-          newSelected[other.key] = false;
-        }
-      }
-    }
-
+    const newSelected = toggleService(selected, serviceConfig, key);
     setSelected(newSelected);
 
     // Initialize default paths for a newly selected service.
-    if (turningOn && service && service.pathRequirements && service.pathRequirements.length > 0) {
+    const service = serviceConfig.find(s => s.key === key);
+    if (newSelected[key] && service?.pathRequirements && service.pathRequirements.length > 0) {
       setPaths(prev => ({
         ...prev,
         [key]: service.pathRequirements!.map((field, idx) =>
