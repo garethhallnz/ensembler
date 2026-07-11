@@ -44,7 +44,7 @@ export default function Docs() {
   const page = PAGES.find((p) => p.id === active) ?? PAGES[0];
 
   return (
-    <div className="h-full flex bg-white dark:bg-gray-900">
+    <div className="h-full flex bg-white dark:bg-gray-800">
       <aside className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-3">Documentation</h2>
         <nav className="space-y-1">

@@ -24,9 +24,9 @@ export default function DocsButton({ label = 'Docs', className = '' }: DocsButto
         open={open}
         onClose={() => setOpen(false)}
         position="right"
-        className="!w-[1000px] max-w-full bg-white dark:bg-gray-900"
+        className="!w-[1000px] max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700"
       >
-        <div className="h-full bg-white dark:bg-gray-900">
+        <div className="h-full bg-white dark:bg-gray-800">
           <Docs />
         </div>
       </Drawer>

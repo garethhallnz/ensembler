@@ -501,7 +501,13 @@ app.post('/api/services/:serviceName/restart', async (req: Request, res: Respons
 app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    const { stdout } = await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" logs --tail=50 ${serviceName}`);
+    // --no-color strips ANSI escapes (which render as garbage in the viewer),
+    // --no-log-prefix drops the redundant "service | " prefix for a single
+    // service, and a larger tail + buffer avoids truncating the output.
+    const { stdout } = await execAsync(
+      `docker compose -f "${path.join(configDir, 'docker-compose.yml')}" logs --no-color --no-log-prefix --tail=1000 ${serviceName}`,
+      { maxBuffer: 20 * 1024 * 1024 }
+    );
     res.json({ success: true, logs: stdout });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to get logs for ${serviceName}.`, error: (err as Error).message });

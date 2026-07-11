@@ -125,6 +125,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // Add state for Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerService, setDrawerService] = useState<string | null>(null);
+  const logScrollRef = useRef<HTMLDivElement>(null);
+  const logStickBottomRef = useRef(true);
   const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
   const [isSystemStatusExpanded, setIsSystemStatusExpanded] = useState(false);
 
@@ -486,27 +488,44 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     }
   };
 
-  const openLogsDrawer = async (serviceName: string) => {
-    if (drawerService !== serviceName) {
-      try {
-        const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
-        const data = await res.json();
-        if (data.success) {
-          setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
-          setDrawerService(serviceName);
-          setDrawerOpen(true);
-        } else {
-          showToast(`Failed to get logs for ${serviceName}: ${data.message}`, 'error');
-        }
-      } catch (error) {
-        showToast(`Error getting logs for ${serviceName}: ${error}`, 'error');
+  const fetchLogs = useCallback(async (serviceName: string) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
+      const data = await res.json();
+      if (data.success) {
+        setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
       }
-    } else {
-      setDrawerOpen(true);
+    } catch {
+      // Ignore transient errors while polling; the next tick retries.
     }
+  }, []);
+
+  const openLogsDrawer = (serviceName: string) => {
+    logStickBottomRef.current = true; // start pinned to the newest lines
+    setDrawerService(serviceName);
+    setDrawerOpen(true);
   };
-  const closeLogsDrawer = () => {
-    setDrawerOpen(false);
+  const closeLogsDrawer = () => setDrawerOpen(false);
+
+  // While the log drawer is open, stream the service's logs: fetch immediately,
+  // then poll every 2s. Cleared when the drawer closes.
+  useEffect(() => {
+    if (!drawerOpen || !drawerService) return;
+    fetchLogs(drawerService);
+    const id = setInterval(() => fetchLogs(drawerService), 2000);
+    return () => clearInterval(id);
+  }, [drawerOpen, drawerService, fetchLogs]);
+
+  // Auto-scroll to the newest lines on update, unless the user scrolled up.
+  useEffect(() => {
+    if (logStickBottomRef.current && logScrollRef.current) {
+      logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
+    }
+  }, [serviceLogs, drawerService, drawerOpen]);
+
+  const handleLogScroll = () => {
+    const el = logScrollRef.current;
+    if (el) logStickBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
   };
 
 
@@ -966,9 +985,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           await refreshDashboard();
         }} 
         position="right"
-        className="!w-[900px] max-w-full bg-white dark:bg-gray-900"
+        className="!w-[900px] max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700"
       >
-        <div className="h-full bg-white dark:bg-gray-900">
+        <div className="h-full bg-white dark:bg-gray-800">
           <AdvancedSettings
             onResetComplete={onResetComplete}
             onClose={async () => {
@@ -1014,14 +1033,21 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       )}
 
       {/* Logs Drawer */}
-      <Drawer open={drawerOpen} onClose={closeLogsDrawer} position="right" className="!w-[900px] max-w-full">
-        <div className="p-4 border-b w-full">
-          <span className="text-lg font-semibold">{drawerService ? `${drawerService} Logs` : 'Logs'}</span>
-        </div>
-        <div className="p-4 w-full overflow-y-auto max-h-[70vh]">
-          <pre className="bg-gray-900 text-left text-white p-3 rounded text-xs">
-            {drawerService ? (serviceLogs[drawerService] || 'No logs available') : 'No logs available'}
-          </pre>
+      <Drawer open={drawerOpen} onClose={closeLogsDrawer} position="right" className="!w-[900px] max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700">
+        <div className="h-full flex flex-col bg-white dark:bg-gray-800">
+          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
+            <span className="text-lg font-semibold text-gray-900 dark:text-white">
+              {drawerService ? `${drawerService} — logs` : 'Logs'}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Live
+            </span>
+          </div>
+          <div ref={logScrollRef} onScroll={handleLogScroll} className="flex-1 overflow-auto bg-gray-900 px-4 py-3">
+            <pre className="text-left text-gray-100 text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
+              {drawerService ? (serviceLogs[drawerService] ?? 'Loading logs…') : ''}
+            </pre>
+          </div>
         </div>
       </Drawer>
     </div>
