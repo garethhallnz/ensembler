@@ -77,18 +77,21 @@ cd media-center
 npm run install-deps
 ```
 
-Run in development (Electron desktop window, backend auto-starts):
+### Two ways to run it in development
+
+**Browser mode — your everyday workflow.** One command runs the backend and frontend together; open the app in a normal browser. Use this for almost all feature work (UI and backend logic):
 
 ```bash
-npm run dev
+npm run dev        # backend + frontend; open http://localhost:5180
 ```
 
-Or run the pieces separately in the browser:
+**Electron mode — for debugging the desktop app itself.** One command starts everything (Vite, then the Electron window, which spawns the backend for you). Reach for this only when the issue is about the packaged/desktop environment — window behaviour, file paths, backend spawning:
 
 ```bash
-npm run backend    # backend API on http://localhost:3001
-npm run frontend   # frontend on http://localhost:5180
+npm run dev-electron   # runs one mode at a time — stop `npm run dev` first (both use port 3001)
 ```
+
+> **Why both exist — and the gotcha that matters:** the two modes store data in **different directories**. Browser mode's backend uses `~/.ensembler`, while Electron mode (and the packaged app) use the OS's per-user data dir — on macOS `~/Library/Application Support/Ensembler`, which contains a **space**. Bugs tied to that path (and anything Electron-specific) can only be reproduced in Electron mode. If something works in the browser but not in the packaged app, run `npm run dev` to reproduce it.
 
 Build a distributable desktop app:
 

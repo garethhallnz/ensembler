@@ -89,8 +89,11 @@ function startBackend() {
   let options;
 
   if (isDev) {
-    command = 'ts-node';
-    args = [path.join(__dirname, 'backend', 'src', 'index.ts')];
+    // ts-node is a local dependency, not on PATH — run it via npx (from the
+    // backend dir) so the spawned process resolves the local binary instead of
+    // failing with exit code 127.
+    command = 'npx';
+    args = ['ts-node', path.join(__dirname, 'backend', 'src', 'index.ts')];
     options = {
       stdio: 'inherit',
       cwd: path.join(__dirname, 'backend'),

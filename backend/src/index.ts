@@ -53,6 +53,29 @@ const configDir = getConfigDir();
 const configFile = path.join(configDir, 'config.json');
 const execAsync = promisify(exec);
 
+// Bring one service (or all, when service is omitted) up, self-healing against
+// a stale container that already holds the fixed container_name — left over
+// from an interrupted run, a crash, or an older install. Without this, `up`
+// hard-fails with "container name is already in use" and a non-technical user
+// has no way to recover. On that specific conflict we remove the offending
+// container(s) — their data lives in mounted volumes, so recreation is lossless
+// — and retry once.
+async function composeUp(service?: string, forceRecreate = false): Promise<void> {
+  const composeFile = path.join(configDir, 'docker-compose.yml');
+  const flags = `${forceRecreate ? ' --force-recreate' : ''} --remove-orphans`;
+  const cmd = `docker compose -f "${composeFile}" up -d${service ? ` ${service}` : ''}${flags}`;
+  try {
+    await execAsync(cmd);
+  } catch (err) {
+    const e = err as { message?: string; stderr?: string };
+    const text = `${e.message ?? ''}\n${e.stderr ?? ''}`;
+    const conflicts = [...text.matchAll(/container name "\/?([^"]+)" is already in use/gi)].map(m => m[1]);
+    if (conflicts.length === 0) throw err; // a different failure — surface it
+    await Promise.all(conflicts.map(name => execAsync(`docker rm -f ${name}`).catch(() => undefined)));
+    await execAsync(cmd); // retry once with the names freed
+  }
+}
+
 // Cache of update status per service. hasUpdate is null when it can't be
 // determined (image not pulled, registry unreachable). Populated by a cheap
 // background digest comparison — never by pulling images.
@@ -235,11 +258,11 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
         for (const serviceName of removedServices) {
           try {
             // Stop the service
-            await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} stop ${serviceName}`);
+            await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop ${serviceName}`);
             console.log(`Stopped ${serviceName}`);
             
             // Remove the container
-            await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} rm -f ${serviceName}`);
+            await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" rm -f ${serviceName}`);
             console.log(`Removed ${serviceName} container`);
           } catch (err) {
             console.warn(`Failed to cleanup ${serviceName}:`, err);
@@ -365,7 +388,17 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
               }
             }
 
-            composeServices += `      - ${hostPath}:${containerPath}\n`;
+            // Never emit an empty or still-templated host path: an empty path
+            // or a leading "{" produces invalid YAML (a flow-mapping) and breaks
+            // the whole compose file. Fall back to a folder under the config dir
+            // so the file is always valid and the container can start.
+            if (!hostPath || hostPath.includes('{')) {
+              hostPath = path.join(configDir, serviceKey, (containerPath.replace(/[^a-zA-Z0-9]/g, '') || 'data'));
+            }
+
+            // Quote the mapping so host paths containing spaces (e.g. macOS
+            // "Application Support") stay a single valid YAML scalar.
+            composeServices += `      - "${hostPath}:${containerPath}"\n`;
           });
           
           composeServices += `    ports:\n`;
@@ -438,7 +471,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
 app.post('/api/services/:serviceName/start', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d ${serviceName} --remove-orphans --force-recreate`);
+    await composeUp(serviceName, true);
     res.json({ success: true, message: `${serviceName} started successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to start ${serviceName}.`, error: (err as Error).message });
@@ -448,7 +481,7 @@ app.post('/api/services/:serviceName/start', async (req: Request, res: Response)
 app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} stop ${serviceName}`);
+    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop ${serviceName}`);
     res.json({ success: true, message: `${serviceName} stopped successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to stop ${serviceName}.`, error: (err as Error).message });
@@ -458,7 +491,7 @@ app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) 
 app.post('/api/services/:serviceName/restart', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} restart ${serviceName}`);
+    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" restart ${serviceName}`);
     res.json({ success: true, message: `${serviceName} restarted successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to restart ${serviceName}.`, error: (err as Error).message });
@@ -468,7 +501,7 @@ app.post('/api/services/:serviceName/restart', async (req: Request, res: Respons
 app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    const { stdout } = await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} logs --tail=50 ${serviceName}`);
+    const { stdout } = await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" logs --tail=50 ${serviceName}`);
     res.json({ success: true, logs: stdout });
   } catch (err) {
     res.status(500).json({ success: false, message: `Failed to get logs for ${serviceName}.`, error: (err as Error).message });
@@ -620,8 +653,8 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
 
 app.post('/api/services/start-all', async (req: Request, res: Response) => {
   try {
-    // Use --remove-orphans to clean up any containers from services that are no longer in the compose file
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} up -d --remove-orphans`);
+    // composeUp cleans up orphans and self-heals container-name conflicts.
+    await composeUp();
     res.json({ success: true, message: 'All enabled services started successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to start services.', error: (err as Error).message });
@@ -646,7 +679,7 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
     // restarted to take effect.
     if (result.results.some(r => r.needsRestart)) {
       try {
-        await execAsync(`docker compose -f ${composeFile} restart bazarr`);
+        await execAsync(`docker compose -f "${composeFile}" restart bazarr`);
       } catch (err) {
         result.results.push({
           service: 'bazarr',
@@ -769,7 +802,7 @@ app.post('/api/services/plex/setup', async (req: Request, res: Response) => {
 
 app.post('/api/services/stop-all', async (req: Request, res: Response) => {
   try {
-    await execAsync(`docker compose -f ${path.join(configDir, 'docker-compose.yml')} stop`);
+    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop`);
     res.json({ success: true, message: 'All services stopped successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to stop all services.', error: (err as Error).message });
@@ -873,7 +906,7 @@ app.post('/api/services/validate-selection', (req: Request, res: Response) => {
 async function resetStopServices(): Promise<void> {
   if (fs.existsSync(composeFile)) {
     try {
-      await execAsync(`docker compose -f ${composeFile} down`);
+      await execAsync(`docker compose -f "${composeFile}" down`);
     } catch (err) {
       console.warn('Failed to stop services during reset:', err);
     }
@@ -1008,8 +1041,8 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     const composeFile = path.join(configDir, 'docker-compose.yml');
     
     // Pull latest image and restart service
-    await execAsync(`docker compose -f ${composeFile} pull ${serviceName}`);
-    await execAsync(`docker compose -f ${composeFile} up -d ${serviceName}`);
+    await execAsync(`docker compose -f "${composeFile}" pull ${serviceName}`);
+    await execAsync(`docker compose -f "${composeFile}" up -d ${serviceName}`);
 
     // Refresh the cached update status now that the image is current. Without
     // this the dashboard keeps reading a stale "update available" from the

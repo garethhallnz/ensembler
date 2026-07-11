@@ -8,13 +8,13 @@
   "main": "electron.js",
   "homepage": "./",
   "scripts": {
-    "dev": "NODE_ENV=development electron .",
+    "dev": "concurrently -k -n backend,frontend -c green,cyan \"npm run backend\" \"npm run frontend\"",
+    "dev-electron": "concurrently -k -n vite,electron -c cyan,magenta \"npm run frontend\" \"wait-on tcp:127.0.0.1:5180 && NODE_ENV=development electron .\"",
     "electron": "electron .",
-    "electron-dev": "NODE_ENV=development electron .",
     "build": "./build.sh",
     "electron-build": "npm run build && electron-builder",
     "electron-dist": "npm run build && electron-builder --publish=never",
-    "install-deps": "cd backend && npm install && cd ../frontend && npm install",
+    "install-deps": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test": "cd backend && npm test && cd ../frontend && npm test",
     "frontend": "cd frontend && npm run dev",
     "backend": "cd backend && npm run dev"
@@ -23,8 +23,10 @@
     "node-docker-api": "^1.1.22"
   },
   "devDependencies": {
+    "concurrently": "^9.1.2",
     "electron": "^36.2.0",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "wait-on": "^8.0.2"
   },
   "build": {
     "appId": "com.ensembler.app",
