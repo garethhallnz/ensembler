@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal } from './components';
+import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal, SystemChecksBanner } from './components';
 import { useToast } from './contexts/ToastContext';
 import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
@@ -756,6 +756,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      <SystemChecksBanner />
 
       {/* Remaining manual setup steps, grouped into one calm checklist rather
           than a stack of separate banners. Each service card also shows its own
