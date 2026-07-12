@@ -1,4 +1,4 @@
-import { Button, Card, Badge } from './index';
+import { Button, Badge } from './index';
 import type { ServiceCatalogEntry } from './ServiceConfigModal';
 
 interface AddServiceModalProps {
@@ -25,20 +25,21 @@ export default function AddServiceModal({ available, onPick, onClose }: AddServi
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {available.map(service => (
-                <Card key={service.key} className="hover:shadow-lg transition-shadow">
-                  <Card.Body>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="text-left">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white">{service.name}</h4>
-                          {service.recommended && <Badge color="blue">Recommended</Badge>}
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{service.description}</p>
+                <div
+                  key={service.key}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="text-left min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-semibold text-gray-900 dark:text-white">{service.name}</h4>
+                        {service.recommended && <Badge color="blue">Recommended</Badge>}
                       </div>
-                      <Button size="sm" color="blue" onClick={() => onPick(service)} className="shrink-0">Add</Button>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{service.description}</p>
                     </div>
-                  </Card.Body>
-                </Card>
+                    <Button size="sm" color="blue" onClick={() => onPick(service)} className="shrink-0">Add</Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}

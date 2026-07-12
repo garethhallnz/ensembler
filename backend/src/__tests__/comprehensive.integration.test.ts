@@ -630,16 +630,6 @@ describe('Comprehensive Integration Tests', () => {
         expect(response.body.compose).toBeDefined();
       });
     });
-
-    describe('GET /api/docker/check-updates', () => {
-      it('should check for Docker updates', async () => {
-        const response = await request(app)
-          .get('/api/docker/check-updates')
-          .expect(200);
-
-        expect(response.body.success).toBe(true);
-      });
-    });
   });
 
   describe('Error Handling', () => {

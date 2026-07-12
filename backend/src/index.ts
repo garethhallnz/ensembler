@@ -81,7 +81,6 @@ async function composeUp(service?: string, forceRecreate = false): Promise<void>
 // background digest comparison — never by pulling images.
 const updateCheckStore = {
   lastServiceCheck: new Date(),
-  lastDockerCheck: new Date(),
   availableUpdates: {} as { [key: string]: { hasUpdate: boolean | null } }
 };
 
@@ -119,6 +118,69 @@ async function checkServiceUpdate(image: string): Promise<boolean | null> {
 }
 
 // Refresh the cached update status for all enabled services (cheap digest
+// The image a service should run, honouring an optional pinned tag
+// (config.versions[key]). Falls back to the service's default (:latest) image.
+// Pinning to a specific tag also means update checks compare against that tag,
+// so a pinned service stops reporting "update available".
+function getEffectiveImage(serviceKey: string, config: { versions?: { [key: string]: string } }): string {
+  const serviceConfig = getServiceConfig(serviceKey);
+  if (!serviceConfig) return '';
+  const pinnedTag = config?.versions?.[serviceKey];
+  if (!pinnedTag) return serviceConfig.image;
+  return `${serviceConfig.image.replace(/:[^:/]+$/, '')}:${pinnedTag}`;
+}
+
+// Recent release versions published for a service's image, for the version
+// picker. LinuxServer tags the same release several ways (4.0.19,
+// 4.0.19.2979-ls319, version-…, plus per-arch copies), so we keep only numeric
+// release tags and collapse them to one clean entry per release. Best-effort:
+// returns [] if the registry can't be reached.
+const MAX_VERSIONS = 12;
+
+// Choose the friendliest real tag for a release: a plain numeric tag (e.g.
+// "4.0.19") when one exists, else the newest tag in the group. Always a real,
+// pullable tag — never a synthesised string.
+function pickReleaseTag(tags: string[]): string {
+  const pureNumeric = tags.filter(t => /^\d+(?:\.\d+){1,3}$/.test(t));
+  if (pureNumeric.length) return pureNumeric.sort((a, b) => a.length - b.length)[0];
+  return tags[0];
+}
+
+async function fetchAvailableVersions(image: string): Promise<string[]> {
+  const withoutTag = image.replace(/:[^:/]+$/, '');
+  const parts = withoutTag.split('/');
+  // Drop a registry host (has a dot or port) so lscr.io/linuxserver/sonarr →
+  // linuxserver/sonarr, the Docker Hub repo these images mirror to.
+  const repo = parts[0].includes('.') || parts[0].includes(':') ? parts.slice(1).join('/') : withoutTag;
+
+  // Group tags by release. The newest 100 tags are dominated by per-arch and
+  // dev variants of the current release, so page a little to surface enough
+  // history for a rollback.
+  const releaseTags = new Map<string, string[]>();
+  const releaseOrder: string[] = [];
+  let url: string | null = `https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100&ordering=last_updated`;
+
+  for (let page = 0; page < 5 && url && releaseOrder.length < MAX_VERSIONS; page++) {
+    const resp = await fetch(url);
+    if (!resp.ok) break;
+    const data = await resp.json() as { results?: { name: string }[]; next?: string | null };
+    for (const { name } of data.results ?? []) {
+      if (!/^\d/.test(name)) continue; // skips latest, develop, version-*, arch-* (non-numeric-leading)
+      if (/develop|nightly|beta|alpha|edge|unstable|-rc/i.test(name)) continue;
+      const numeric = name.match(/^\d+(?:\.\d+)*/)?.[0] ?? name;
+      const releaseKey = numeric.split('.').slice(0, 3).join('.'); // 4.0.19.2979 / 4.1.3-r0 → 4.0.19 / 4.1.3
+      if (!releaseTags.has(releaseKey)) {
+        releaseTags.set(releaseKey, []);
+        releaseOrder.push(releaseKey);
+      }
+      releaseTags.get(releaseKey)!.push(name);
+    }
+    url = data.next ?? null;
+  }
+
+  return releaseOrder.slice(0, MAX_VERSIONS).map(key => pickReleaseTag(releaseTags.get(key)!));
+}
+
 // checks). Shared by the manual endpoint and the background scheduler.
 async function refreshUpdateCache(): Promise<void> {
   if (!fs.existsSync(configFile)) {
@@ -133,7 +195,7 @@ async function refreshUpdateCache(): Promise<void> {
     if (!serviceConfig) {
       return;
     }
-    updateCheckStore.availableUpdates[key] = { hasUpdate: await checkServiceUpdate(serviceConfig.image) };
+    updateCheckStore.availableUpdates[key] = { hasUpdate: await checkServiceUpdate(getEffectiveImage(key, config)) };
   }));
   updateCheckStore.lastServiceCheck = new Date();
 }
@@ -325,7 +387,7 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
         
         if (serviceConfig) {
           composeServices += `  ${serviceKey}:\n`;
-          composeServices += `    image: ${serviceConfig.image}\n`;
+          composeServices += `    image: ${getEffectiveImage(serviceKey, config)}\n`;
           composeServices += `    container_name: ${serviceKey}\n`;
           composeServices += `    environment:\n`;
           composeServices += `      - PUID=${config.environment.puid || 1000}\n`;
@@ -975,6 +1037,22 @@ app.post('/api/config/reset', async (req: Request, res: Response) => {
   }
 });
 
+// Recent pinnable versions for the config UI's version picker.
+app.get('/api/services/:serviceName/versions', async (req: Request, res: Response) => {
+  const { serviceName } = req.params;
+  const serviceConfig = getServiceConfig(serviceName);
+  if (!serviceConfig) {
+    return res.status(404).json({ success: false, message: 'Service not found.' });
+  }
+  try {
+    const versions = await fetchAvailableVersions(serviceConfig.image);
+    res.json({ success: true, versions });
+  } catch {
+    // Best-effort — the UI still offers "Latest" if the registry is unreachable.
+    res.json({ success: true, versions: [] });
+  }
+});
+
 // Update check endpoints
 app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
@@ -989,7 +1067,7 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
       return res.status(404).json({ success: false, message: 'Service not found.' });
     }
 
-    const imageName = serviceConfig.image;
+    const imageName = getEffectiveImage(serviceName, config);
 
     // Cheap digest comparison — no image pull.
     const hasUpdate = await checkServiceUpdate(imageName);
@@ -1057,7 +1135,8 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     let hasUpdate: boolean | null = false;
     const svc = getServiceConfig(serviceName);
     if (svc) {
-      hasUpdate = await checkServiceUpdate(svc.image);
+      const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+      hasUpdate = await checkServiceUpdate(getEffectiveImage(serviceName, config));
       updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
     }
 
@@ -1067,58 +1146,45 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
   }
 });
 
-app.get('/api/docker/check-updates', async (req: Request, res: Response) => {
-  try {
-    // Check if it's been more than a week since last check
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    
-    const shouldCheck = updateCheckStore.lastDockerCheck < oneWeekAgo;
-    
-    if (shouldCheck) {
-      try {
-        // Check Docker version
-        const { stdout: dockerVersion } = await execAsync('docker --version');
-        const { stdout: composeVersion } = await execAsync('docker compose version');
-        
-        // In a real implementation, you would check against Docker's API for latest versions
-        // For now, we'll mock the check
-        const dockerUpdateAvailable = Math.random() > 0.8;
-        const composeUpdateAvailable = Math.random() > 0.8;
-        
-        updateCheckStore.lastDockerCheck = new Date();
-        
-        res.json({ 
-          success: true, 
-          docker: {
-            current: dockerVersion.trim(),
-            updateAvailable: dockerUpdateAvailable,
-            message: dockerUpdateAvailable ? 'Docker update available' : 'Docker is up to date'
-          },
-          compose: {
-            current: composeVersion.trim(),
-            updateAvailable: composeUpdateAvailable,
-            message: composeUpdateAvailable ? 'Docker Compose update available' : 'Docker Compose is up to date'
-          },
-          lastChecked: updateCheckStore.lastDockerCheck
-        });
-      } catch (err) {
-        res.json({ 
-          success: true, 
-          docker: { current: 'unknown', updateAvailable: false, message: 'Could not check Docker version' },
-          compose: { current: 'unknown', updateAvailable: false, message: 'Could not check Docker Compose version' },
-          lastChecked: updateCheckStore.lastDockerCheck
-        });
-      }
-    } else {
-      res.json({ 
-        success: true, 
-        message: 'Update check not needed (checked recently)',
-        lastChecked: updateCheckStore.lastDockerCheck
-      });
+// Pull + recreate every enabled service with a pending update. Each runs on its
+// own so one failure doesn't abort the rest. Relies on the cached update status,
+// so callers should refresh it first if they need current results.
+async function applyAvailableUpdates(): Promise<{ updated: string[]; failed: { service: string; error?: string }[] }> {
+  const composeFile = path.join(configDir, 'docker-compose.yml');
+  const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+  const enabled = Object.keys(config.selectedServices || {}).filter((k: string) => config.selectedServices[k]);
+  const targets = enabled.filter(key => updateCheckStore.availableUpdates[key]?.hasUpdate === true);
+
+  const results: { service: string; success: boolean; error?: string }[] = [];
+  for (const key of targets) {
+    try {
+      await execAsync(`docker compose -f "${composeFile}" pull ${key}`);
+      await execAsync(`docker compose -f "${composeFile}" up -d ${key}`);
+      const svc = getServiceConfig(key);
+      updateCheckStore.availableUpdates[key] = { hasUpdate: svc ? await checkServiceUpdate(getEffectiveImage(key, config)) : false };
+      results.push({ service: key, success: true });
+    } catch (err) {
+      results.push({ service: key, success: false, error: (err as Error).message });
     }
+  }
+  return {
+    updated: results.filter(r => r.success).map(r => r.service),
+    failed: results.filter(r => !r.success).map(r => ({ service: r.service, error: r.error })),
+  };
+}
+
+// Update every service that currently has a pending update; reports per-service
+// outcomes. Also runs unattended from the daily scheduler when the user has
+// enabled auto-update.
+app.post('/api/services/updates/apply-all', async (req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(configFile)) {
+      return res.status(404).json({ success: false, message: 'config.json not found.' });
+    }
+    const { updated, failed } = await applyAvailableUpdates();
+    res.json({ success: failed.length === 0, updated, failed });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to check Docker updates.', error: (err as Error).message });
+    res.status(500).json({ success: false, message: 'Failed to update services.', error: (err as Error).message });
   }
 });
 
@@ -1162,13 +1228,21 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
   }
 });
 
-// Weekly update check scheduler (runs every time the server starts and then every week)
+// Daily update-check scheduler (runs shortly after startup, then every 24h).
+// When the user has opted into auto-update, it also applies any updates found.
 const scheduleUpdateChecks = () => {
   const checkInterval = 24 * 60 * 60 * 1000; // daily
 
   const run = async () => {
     try {
       await refreshUpdateCache();
+      const autoUpdateEnabled = fs.existsSync(configFile)
+        && JSON.parse(fs.readFileSync(configFile, 'utf-8')).autoUpdate === true;
+      if (autoUpdateEnabled) {
+        const { updated, failed } = await applyAvailableUpdates();
+        if (updated.length) console.log(`Auto-update applied: ${updated.join(', ')}`);
+        if (failed.length) console.error(`Auto-update failed: ${failed.map(f => f.service).join(', ')}`);
+      }
     } catch (err) {
       console.error('Error during scheduled update check:', err);
     }

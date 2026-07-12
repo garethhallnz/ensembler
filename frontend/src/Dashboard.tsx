@@ -7,7 +7,7 @@ import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
-import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle } from 'react-icons/hi';
+import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle, HiLockClosed } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -42,19 +42,6 @@ interface ServiceAlertsType {
   [key: string]: { alert: boolean; status: string; healthy: boolean };
 }
 
-interface DockerUpdatesType {
-  success: boolean;
-  docker?: {
-    updateAvailable: boolean;
-    message?: string;
-  };
-  compose?: {
-    updateAvailable: boolean;
-    message?: string;
-  };
-  lastChecked: string;
-}
-
 interface DashboardProps {
   // Called after a complete reset so the app can return to the wizard in place.
   onResetComplete: () => void;
@@ -87,6 +74,10 @@ const CATEGORY_ROLES: { [key: string]: string } = {
 const serviceRole = (key: string, category: string): string =>
   SERVICE_ROLES[key] || CATEGORY_ROLES[category] || '';
 
+// Reduce a messy image version to a recognizable major.minor.patch, e.g.
+// "4.0.19.2979-ls319" or "1.43.2.10687-563d026ea" → "4.0.19" / "1.43.2".
+const cleanVersion = (version: string): string => version.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? version;
+
 export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { showToast } = useToast();
   const { openService } = useServiceTabs();
@@ -106,13 +97,15 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   });
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
+  const [serviceVersions, setServiceVersions] = useState<{ [key: string]: string }>({});
+  const [pinnedVersions, setPinnedVersions] = useState<{ [key: string]: string }>({});
   const [serviceAlerts, setServiceAlerts] = useState<ServiceAlertsType>({});
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
   const autoCheckedRef = useRef(false);
   const [updateChecking, setUpdateChecking] = useState<{ [key: string]: boolean }>({});
   const [recentlyChecked, setRecentlyChecked] = useState<{ [key: string]: boolean }>({});
   const [checkingAllUpdates, setCheckingAllUpdates] = useState(false);
-  const [dockerUpdates, setDockerUpdates] = useState<DockerUpdatesType | null>(null);
+  const [updatingAll, setUpdatingAll] = useState(false);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   // Per-service config ('edit') and add-service ('add') both use one modal.
   const [configModal, setConfigModal] = useState<{ service: ServiceConfig; mode: 'edit' | 'add' } | null>(null);
@@ -160,6 +153,35 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     } catch (error) {
       console.error('Error fetching Docker status:', error);
     }
+  }, []);
+
+  // Which services are pinned to a specific version (vs tracking latest), so the
+  // card badge can show a lock rather than the "tracks latest" marker.
+  const fetchPinnedVersions = useCallback(async () => {
+    try {
+      const res = await fetch('http://localhost:3001/api/config/current');
+      if (!res.ok) return;
+      const config = await res.json();
+      setPinnedVersions(config.versions ?? {});
+    } catch {
+      /* leave as-is — badge just falls back to the "latest" marker */
+    }
+  }, []);
+
+  // Best-effort running version per service, for the muted badge on each card.
+  const fetchServiceVersions = useCallback(async (keys: string[]) => {
+    const entries = await Promise.all(keys.map(async key => {
+      try {
+        const res = await fetch(`http://localhost:3001/api/services/${key}/version`);
+        const data = await res.json();
+        const version = data.success && data.version ? String(data.version) : '';
+        return [key, version] as const;
+      } catch {
+        return [key, ''] as const;
+      }
+    }));
+    const found = entries.filter(([, v]) => v && v !== 'Not installed');
+    setServiceVersions(prev => ({ ...prev, ...Object.fromEntries(found) }));
   }, []);
 
   // Read the cached update status (instant — no image pulls).
@@ -250,18 +272,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     }
   }, []);
 
-  const fetchDockerUpdates = useCallback(async () => {
-    try {
-      const res = await fetch('http://localhost:3001/api/docker/check-updates');
-      const data = await res.json();
-      if (data.success) {
-        setDockerUpdates(data);
-      }
-    } catch (error) {
-      console.error('Error fetching Docker updates:', error);
-    }
-  }, []);
-
   const fetchServiceConfig = useCallback(async () => {
     try {
       const res = await fetch('http://localhost:3001/api/services/config');
@@ -280,9 +290,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     await fetchServiceConfig();
     await fetchServiceStatus();
     await fetchDockerStatus();
+    await fetchPinnedVersions();
+    await fetchServiceVersions(selectedServices);
     const newStatus = await runtimeManager.checkStatus();
     setRuntimeStatus(newStatus);
-  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus]);
+  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, fetchPinnedVersions, fetchServiceVersions, selectedServices]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -290,8 +302,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       await fetchServiceConfig();
       await fetchServiceStatus();
       await fetchDockerStatus();
-      await fetchDockerUpdates();
-      
+
       // Get runtime status
       setRuntimeStatus(runtimeManager.getStatus());
       
@@ -307,14 +318,16 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     return () => {
       clearInterval(runtimeInterval);
     };
-  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, fetchDockerUpdates]);
+  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus]);
 
   useEffect(() => {
     if (selectedServices.length > 0) {
       fetchServiceUpdates();
       fetchServiceAlerts();
+      fetchServiceVersions(selectedServices);
+      fetchPinnedVersions();
     }
-  }, [selectedServices, fetchServiceUpdates, fetchServiceAlerts]);
+  }, [selectedServices, fetchServiceUpdates, fetchServiceAlerts, fetchServiceVersions, fetchPinnedVersions]);
 
   // Set up monitoring interval for service alerts
   useEffect(() => {
@@ -563,6 +576,42 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   };
 
 
+  const handleUpdateAll = () => {
+    const targets = Object.entries(serviceUpdates)
+      .filter(([, info]) => info?.hasUpdate === true)
+      .map(([key]) => key);
+    if (targets.length === 0) return;
+
+    setConfirmationModal({
+      message: `Update ${targets.length} service${targets.length !== 1 ? 's' : ''}? This downloads the latest images and restarts each one.`,
+      onConfirm: async () => {
+        setOpenModal(false);
+        setUpdatingAll(true);
+        try {
+          const res = await fetch('http://localhost:3001/api/services/updates/apply-all', { method: 'POST' });
+          const data = await res.json();
+          const updatedCount = data.updated?.length ?? 0;
+          if (data.success) {
+            showToast(`Updated ${updatedCount} service${updatedCount !== 1 ? 's' : ''}`, 'success');
+          } else {
+            const failedNames = (data.failed ?? []).map((f: { service: string }) => f.service).join(', ');
+            showToast(`Updated ${updatedCount}; failed: ${failedNames || 'unknown'}`, 'error');
+          }
+          // Re-read the (backend-refreshed) availability + status so prompts clear.
+          await fetchServiceUpdates();
+          await fetchServiceStatus();
+          await fetchServiceVersions(data.updated ?? []);
+          setRuntimeStatus(await runtimeManager.checkStatus());
+        } catch (error) {
+          showToast(`Error updating services: ${error}`, 'error');
+        } finally {
+          setUpdatingAll(false);
+        }
+      },
+    });
+    setOpenModal(true);
+  };
+
   const handleServiceUpdate = (serviceName: string) => {
     setConfirmationModal({
       message: `Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`,
@@ -582,6 +631,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             // Use the status the backend re-checked after pulling, so the
             // prompt reflects reality (and matches the refreshed server cache).
             setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: data.hasUpdate ?? false } }));
+            await fetchServiceVersions([serviceName]);
           } else {
             showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
           }
@@ -594,6 +644,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     });
     setOpenModal(true);
   };
+
+  const pendingUpdateCount = Object.values(serviceUpdates).filter(info => info?.hasUpdate === true).length;
 
   if (loading) {
     return (
@@ -765,9 +817,24 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured
+              {pendingUpdateCount > 0 && (
+                <span className="text-amber-600 dark:text-amber-400 font-medium"> · {pendingUpdateCount} update{pendingUpdateCount !== 1 ? 's' : ''} available</span>
+              )}
+            </p>
           </div>
           <div className="flex items-center gap-2">
+            {pendingUpdateCount > 0 && (
+              <Button
+                variant="secondary"
+                onClick={handleUpdateAll}
+                loading={updatingAll}
+                tooltip={`Update the ${pendingUpdateCount} service${pendingUpdateCount !== 1 ? 's' : ''} with a new version available`}
+              >
+                <HiArrowCircleUp className="inline-block mr-1" /> {updatingAll ? 'Updating…' : `Update all (${pendingUpdateCount})`}
+              </Button>
+            )}
             <Button
               variant="secondary"
               onClick={checkAllUpdates}
@@ -839,98 +906,119 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 : needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
 
               return (
-                <Card
+                <div
                   key={serviceKey}
-                  className="relative flex flex-col h-full shadow-lg hover:shadow-xl transition-shadow duration-200 bg-white dark:bg-gray-800"
+                  className="relative flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-200 p-6"
                 >
-                  {/* Card Header: identity + at-a-glance status */}
-                  <div className="px-6 pt-6 pb-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white">{service.name}</h3>
-                        <p className="text-left text-sm text-gray-600 dark:text-gray-400">{serviceRole(serviceKey, service.category)}</p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0" title={unhealthy ? 'Service is running but not responding normally' : statusLabel}>
-                        <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{statusLabel}</span>
-                      </div>
+                  {/* Header: identity + at-a-glance status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white">{service.name}</h3>
+                      <p className="text-left text-sm text-gray-600 dark:text-gray-400">{serviceRole(serviceKey, service.category)}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0" title={unhealthy ? 'Service is running but not responding normally' : statusLabel}>
+                      <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{statusLabel}</span>
                     </div>
                   </div>
 
-                  {/* Card Body: primary controls, with maintenance in an overflow menu */}
-                  <Card.Body className="flex-1 flex flex-col justify-end px-6 pb-6">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="primary"
-                        onClick={() => handleLaunchService(serviceKey, service.name)}
-                        disabled={!isRunning}
-                        aria-label={`Open ${service.name}`}
-                        tooltip={!isRunning ? 'Start the service to open it' : `Open ${service.name}`}
-                      >
-                        <HiExternalLink className="inline-block mr-1" /> Open
-                      </Button>
-                      <div className="ml-auto">
-                        <ServiceActionsMenu
-                          items={[
-                            // Lifecycle controls live in the menu so "Open" is the
-                            // single clear action on every card.
-                            ...(isDesktopApp() && isRunning ? [{
-                              label: 'Open in browser',
-                              icon: <HiExternalLink className="w-4 h-4" />,
-                              onClick: () => openServiceInBrowser(serviceKey),
-                            }] : []),
-                            {
-                              label: isRunning ? 'Stop' : 'Start',
-                              icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
-                              onClick: () => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start'),
-                            },
-                            ...(isRunning ? [{
-                              label: 'Restart',
-                              icon: <HiRefresh className="w-4 h-4" />,
-                              onClick: () => handleServiceAction(serviceKey, 'restart'),
-                            }] : []),
-                            {
-                              label: 'View logs',
-                              icon: <HiDocumentText className="w-4 h-4" />,
-                              onClick: () => openLogsDrawer(serviceKey),
-                            },
-                            {
-                              label: 'Check for updates',
-                              icon: <HiArrowCircleUp className="w-4 h-4" />,
-                              onClick: () => checkServiceForUpdate(serviceKey),
-                            },
-                            {
-                              label: 'Configure',
-                              icon: <HiCog className="w-4 h-4" />,
-                              onClick: () => setConfigModal({ service, mode: 'edit' }),
-                            },
-                          ]}
-                        />
-                      </div>
+                  {/* Primary action + maintenance menu */}
+                  <div className="mt-6 flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => handleLaunchService(serviceKey, service.name)}
+                      disabled={!isRunning}
+                      aria-label={`Open ${service.name}`}
+                      tooltip={!isRunning ? 'Start the service to open it' : `Open ${service.name}`}
+                    >
+                      <HiExternalLink className="inline-block mr-1" /> Open
+                    </Button>
+                    <div className="ml-auto">
+                      <ServiceActionsMenu
+                        items={[
+                          // Lifecycle controls live in the menu so "Open" is the
+                          // single clear action on every card.
+                          ...(isDesktopApp() && isRunning ? [{
+                            label: 'Open in browser',
+                            icon: <HiExternalLink className="w-4 h-4" />,
+                            onClick: () => openServiceInBrowser(serviceKey),
+                          }] : []),
+                          {
+                            label: isRunning ? 'Stop' : 'Start',
+                            icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
+                            onClick: () => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start'),
+                          },
+                          ...(isRunning ? [{
+                            label: 'Restart',
+                            icon: <HiRefresh className="w-4 h-4" />,
+                            onClick: () => handleServiceAction(serviceKey, 'restart'),
+                          }] : []),
+                          {
+                            label: 'View logs',
+                            icon: <HiDocumentText className="w-4 h-4" />,
+                            onClick: () => openLogsDrawer(serviceKey),
+                          },
+                          {
+                            label: 'Check for updates',
+                            icon: <HiArrowCircleUp className="w-4 h-4" />,
+                            onClick: () => checkServiceForUpdate(serviceKey),
+                          },
+                          {
+                            label: 'Configure',
+                            icon: <HiCog className="w-4 h-4" />,
+                            onClick: () => setConfigModal({ service, mode: 'edit' }),
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Update state (left) + running version (muted, right) */}
+                  <div className="mt-4 flex items-center justify-between gap-2 min-h-[1.25rem]">
+                    <div className="min-w-0">
+                      {updateChecking[serviceKey] ? (
+                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                          <Spinner size="sm" /> Checking for updates…
+                        </div>
+                      ) : updateInfo?.hasUpdate ? (
+                        <button
+                          onClick={() => handleServiceUpdate(serviceKey)}
+                          disabled={isUpdating}
+                          className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                        >
+                          <HiArrowCircleUp className="w-4 h-4" />
+                          {isUpdating ? 'Updating…' : 'Update available — update now'}
+                        </button>
+                      ) : recentlyChecked[serviceKey] ? (
+                        <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                          <HiCheckCircle className="w-4 h-4" /> Up to date
+                        </div>
+                      ) : null}
                     </div>
 
-                    {/* Update state, shown inline where the action was taken */}
-                    {updateChecking[serviceKey] ? (
-                      <div className="mt-3 flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                        <Spinner size="sm" /> Checking for updates…
-                      </div>
-                    ) : updateInfo?.hasUpdate ? (
-                      <button
-                        onClick={() => handleServiceUpdate(serviceKey)}
-                        disabled={isUpdating}
-                        className="mt-3 flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
-                      >
-                        <HiArrowCircleUp className="w-4 h-4" />
-                        {isUpdating ? 'Updating…' : 'Update available — update now'}
-                      </button>
-                    ) : recentlyChecked[serviceKey] ? (
-                      <div className="mt-3 flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                        <HiCheckCircle className="w-4 h-4" /> Up to date
-                      </div>
-                    ) : null}
-                  </Card.Body>
-                </Card>
+                    {isRunning && serviceVersions[serviceKey] && (() => {
+                      const shown = cleanVersion(serviceVersions[serviceKey]);
+                      const isPinned = !!pinnedVersions[serviceKey];
+                      const title = isPinned
+                        ? `Locked to v${shown}`
+                        : updateInfo?.hasUpdate
+                          ? `On v${shown} · update available`
+                          : `On the latest version (v${shown})`;
+                      return (
+                        <span
+                          title={title}
+                          className={`shrink-0 inline-flex items-center gap-1 text-xs tabular-nums ${updateInfo?.hasUpdate ? 'text-amber-600/80 dark:text-amber-400/80' : 'text-gray-400 dark:text-gray-500'}`}
+                        >
+                          {isPinned
+                            ? <HiLockClosed className="w-3 h-3" aria-hidden />
+                            : <HiRefresh className="w-3 h-3" aria-hidden />}
+                          v{shown}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -985,18 +1073,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                     <div className="flex items-center justify-between gap-2">
                       <dt className="text-gray-600 dark:text-gray-400">Services running</dt>
                       <dd className="font-medium text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</dd>
-                    </div>
-                  )}
-                  {dockerUpdates?.docker && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">Docker engine</dt>
-                      <dd>{dockerUpdates.docker.updateAvailable ? <Badge variant="warning">Update available</Badge> : <Badge variant="success">Up to date</Badge>}</dd>
-                    </div>
-                  )}
-                  {dockerUpdates?.compose && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">Docker Compose</dt>
-                      <dd>{dockerUpdates.compose.updateAvailable ? <Badge variant="warning">Update available</Badge> : <Badge variant="success">Up to date</Badge>}</dd>
                     </div>
                   )}
                   {runtimeStatus && (

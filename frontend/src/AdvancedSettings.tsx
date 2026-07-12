@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Button, Spinner, Alert, Card, EnvironmentSettings } from './components';
+import { Button, Spinner, Alert, Card, EnvironmentSettings, Toggle } from './components';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import { useTheme, type ThemePreference } from './contexts/ThemeContext';
@@ -19,6 +19,7 @@ interface ConfigType {
     pgid: number;
   };
   paths: { [key: string]: string[] };
+  autoUpdate?: boolean;
 }
 
 type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
@@ -272,6 +273,31 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
                 onEnvironmentChange={handleEnvironmentChange}
                 layout="vertical"
               />
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Header>
+              <h4 className="text-lg font-medium">Updates</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Ensembler checks daily for new service versions and shows what's available on the dashboard.
+              </p>
+            </Card.Header>
+            <Card.Body>
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-left">
+                  <p className="font-medium text-gray-900 dark:text-white">Install updates automatically</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.
+                  </p>
+                </div>
+                <Toggle
+                  checked={config.autoUpdate ?? false}
+                  onChange={value => setConfig(prev => ({ ...prev!, autoUpdate: value }))}
+                  aria-label="Install updates automatically"
+                  className="shrink-0"
+                />
+              </div>
             </Card.Body>
           </Card>
 

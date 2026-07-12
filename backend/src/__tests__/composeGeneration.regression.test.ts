@@ -108,3 +108,22 @@ describe('service update refreshes the cached status', () => {
     expect(res.body).toHaveProperty('hasUpdate');
   });
 });
+
+describe('version pinning', () => {
+  it('emits the default :latest image when nothing is pinned', async () => {
+    await request(app).post('/api/config/generate-compose').expect(200);
+    expect(generatedCompose()).toMatch(/image: lscr\.io\/linuxserver\/sonarr:latest/);
+  });
+
+  it('pins a service to its configured tag and leaves others on latest', async () => {
+    (fs.readFileSync as jest.Mock).mockReturnValue(
+      JSON.stringify({ ...config, versions: { sonarr: '4.0.9' } })
+    );
+    await request(app).post('/api/config/generate-compose').expect(200);
+    const compose = generatedCompose();
+
+    expect(compose).toMatch(/image: lscr\.io\/linuxserver\/sonarr:4\.0\.9/);
+    expect(compose).not.toMatch(/sonarr:latest/);
+    expect(compose).toMatch(/image: lscr\.io\/linuxserver\/radarr:latest/); // unpinned
+  });
+});

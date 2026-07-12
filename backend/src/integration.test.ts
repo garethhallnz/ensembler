@@ -202,12 +202,6 @@ describe('Integration Tests - Frontend-Backend Communication', () => {
       expect(res.body.docker).toBeDefined();
       expect(res.body.compose).toBeDefined();
     });
-
-    it('should handle Docker update checks', async () => {
-      const res = await request(app).get('/api/docker/check-updates');
-      expect(res.status).toBe(200);
-      expect(res.body.success).toBe(true);
-    });
   });
 
   describe('Error Handling', () => {

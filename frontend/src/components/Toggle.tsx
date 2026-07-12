@@ -7,15 +7,18 @@ interface ToggleProps {
   size?: 'sm' | 'md' | 'lg';
   label?: string;
   className?: string;
+  // Accessible name for the switch when no visible `label` is rendered.
+  'aria-label'?: string;
 }
 
-const Toggle: React.FC<ToggleProps> = ({ 
-  checked, 
-  onChange, 
-  disabled = false, 
+const Toggle: React.FC<ToggleProps> = ({
+  checked,
+  onChange,
+  disabled = false,
   size = 'md',
   label,
-  className = ''
+  className = '',
+  'aria-label': ariaLabel,
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-4',
@@ -50,6 +53,9 @@ const Toggle: React.FC<ToggleProps> = ({
       )}
       <button
         type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={ariaLabel}
         onClick={handleClick}
         disabled={disabled}
         className={`

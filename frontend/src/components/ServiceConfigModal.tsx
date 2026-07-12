@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, TextInput, PathConfiguration } from './index';
+import { Button, TextInput, Select, PathConfiguration } from './index';
 import { getDefaultPath } from '../utils/pathDefaults';
 
 interface PathField {
@@ -30,6 +30,8 @@ interface CurrentConfig {
   paths: { [key: string]: string[] };
   ports: { [key: string]: number };
   environment: { tz: string; puid: number; pgid: number };
+  // Optional per-service pinned image tag; absent/empty means "latest".
+  versions?: { [key: string]: string };
 }
 
 const API = 'http://localhost:3001';
@@ -38,6 +40,9 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
   const [config, setConfig] = useState<CurrentConfig | null>(null);
   const [paths, setPaths] = useState<string[]>([]);
   const [port, setPort] = useState<number>(service.defaultPort);
+  const [version, setVersion] = useState('');
+  const [availableVersions, setAvailableVersions] = useState<string[]>([]);
+  const [versionsLoading, setVersionsLoading] = useState(true);
   const [pathErrors, setPathErrors] = useState<string[]>([]);
   const [portError, setPortError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -50,6 +55,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
         const current: CurrentConfig = res.ok ? await res.json() : { selectedServices: {}, paths: {}, ports: {}, environment: { tz: 'UTC', puid: 1000, pgid: 1000 } };
         setConfig(current);
         setPort(current.ports?.[service.key] || service.defaultPort);
+        setVersion(current.versions?.[service.key] ?? '');
         const existing = current.paths?.[service.key];
         setPaths(
           service.pathRequirements.map((field, idx) =>
@@ -63,6 +69,23 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       }
     })();
   }, [service, onClose, onToast]);
+
+  useEffect(() => {
+    let active = true;
+    setVersionsLoading(true);
+    (async () => {
+      try {
+        const res = await fetch(`${API}/api/services/${service.key}/versions`);
+        const data = res.ok ? await res.json() : { versions: [] };
+        if (active) setAvailableVersions(data.versions ?? []);
+      } catch {
+        if (active) setAvailableVersions([]);
+      } finally {
+        if (active) setVersionsLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [service.key]);
 
   const validate = (): boolean => {
     const errs = service.pathRequirements.map((field, idx) =>
@@ -98,11 +121,17 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
         onToast(`Port ${conflict.port} was in use, so ${service.name} is on ${finalPort}.`, 'info');
       }
 
+      const pinnedTag = version.trim();
+      const versions = { ...config.versions };
+      if (pinnedTag) versions[service.key] = pinnedTag;
+      else delete versions[service.key];
+
       const updated: CurrentConfig = {
         ...config,
         selectedServices: { ...config.selectedServices, [service.key]: true },
         paths: { ...config.paths, [service.key]: paths },
-        ports: { ...config.ports, [service.key]: finalPort }
+        ports: { ...config.ports, [service.key]: finalPort },
+        versions
       };
 
       await saveAndApply(updated);
@@ -211,6 +240,26 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
                   <span className="text-sm text-gray-500 dark:text-gray-400">Default: {service.defaultPort}</span>
                 </div>
                 {portError && <p className="text-sm text-red-500 mt-1">{portError}</p>}
+              </div>
+
+              <div>
+                <label htmlFor={`${service.key}-version`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Version</label>
+                <div className="max-w-[260px]">
+                  <Select
+                    id={`${service.key}-version`}
+                    value={version}
+                    onChange={e => setVersion(e.target.value)}
+                    disabled={versionsLoading}
+                  >
+                    <option value="">{versionsLoading ? 'Loading versions…' : 'Latest (recommended)'}</option>
+                    {/* Keep the current pin visible even if it's older than the fetched list. */}
+                    {version && !availableVersions.includes(version) && <option value={version}>{version}</option>}
+                    {availableVersions.map(v => <option key={v} value={v}>{v}</option>)}
+                  </Select>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  Keep <strong>Latest</strong> to always run the newest version. Pin a specific version to hold it there — pinned services won't offer updates.
+                </p>
               </div>
             </>
           )}
