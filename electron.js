@@ -1,5 +1,6 @@
-import { app, BrowserWindow, dialog, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, dialog, shell, ipcMain, Tray, Menu, nativeImage } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
@@ -7,6 +8,69 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
+let tray = null;
+app.isQuitting = false;
+
+// The containers run independently of the app, so closing the window can keep
+// Ensembler resident in the tray for quick access. Opt-out via a Settings toggle
+// (config.minimizeToTray); default on.
+function shouldMinimizeToTray() {
+  try {
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (!fs.existsSync(configPath)) return true;
+    return JSON.parse(fs.readFileSync(configPath, 'utf-8')).minimizeToTray !== false;
+  } catch {
+    return true;
+  }
+}
+
+function showMainWindow() {
+  if (mainWindow) {
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+  createWindow();
+}
+
+function createTray() {
+  if (tray) return;
+
+  // macOS menu bar wants a monochrome template glyph (transparent background, so
+  // it adapts to light/dark). The full colour app icon is opaque and would show
+  // as a solid block there — but it's the right choice for Windows/Linux trays.
+  let image;
+  if (process.platform === 'darwin') {
+    image = nativeImage.createFromPath(path.join(__dirname, 'assets/trayTemplate.png'));
+    image.setTemplateImage(true);
+  } else {
+    image = nativeImage.createFromPath(path.join(__dirname, 'assets/icon.png')).resize({ width: 18, height: 18 });
+  }
+
+  tray = new Tray(image);
+  tray.setToolTip('Ensembler');
+
+  const runServiceAction = (endpoint) => {
+    fetch(`http://localhost:3001/api/services/${endpoint}`, { method: 'POST' })
+      .catch(err => console.error(`[Electron] Tray action ${endpoint} failed:`, err));
+  };
+
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: 'Open Ensembler', click: showMainWindow },
+    { type: 'separator' },
+    { label: 'Start all services', click: () => runServiceAction('start-all') },
+    { label: 'Stop all services', click: () => runServiceAction('stop-all') },
+    { type: 'separator' },
+    { label: 'Quit Ensembler', click: () => { app.isQuitting = true; app.quit(); } },
+  ]));
+
+  // On Windows/Linux a left-click conventionally opens the app (right-click gives
+  // the menu). On macOS the menu-bar convention is that a click opens the menu
+  // itself, so setContextMenu above already handles it — no click handler there.
+  if (process.platform !== 'darwin') {
+    tray.on('click', showMainWindow);
+  }
+}
 let backendProcess;
 
 function createWindow() {
@@ -54,6 +118,16 @@ function createWindow() {
       .then(() => console.log('[Electron] Production frontend loaded.'))
       .catch(err => console.error('[Electron] Error loading production frontend:', err));
   }
+
+  // Close hides to the tray (keeping the app resident) unless the user is really
+  // quitting or has turned the toggle off. before-quit sets isQuitting, so Cmd+Q
+  // and the tray's Quit still exit properly.
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting && shouldMinimizeToTray()) {
+      event.preventDefault();
+      mainWindow.hide();
+    }
+  });
 
   mainWindow.on('closed', () => {
     console.log('[Electron] Main window closed.');
@@ -149,6 +223,8 @@ app.whenReady().then(() => {
   console.log('[Electron] App is ready. Starting backend...');
   startBackend();
   
+  createTray();
+
   // Wait a bit for backend to start
   setTimeout(() => {
     console.log('[Electron] Creating window after backend startup delay.');
@@ -156,10 +232,9 @@ app.whenReady().then(() => {
   }, 2000);
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      console.log('[Electron] App activated. Creating window.');
-      createWindow();
-    }
+    // Reveal the window whether it was hidden to the tray or fully closed.
+    console.log('[Electron] App activated.');
+    showMainWindow();
   });
 });
 
@@ -174,7 +249,8 @@ app.on('window-all-closed', () => {
   }
 });
 
-app.on('before-quit', (event) => {
+app.on('before-quit', () => {
+  app.isQuitting = true; // let the window's close handler exit instead of hiding
   console.log('App quitting. Backend will be stopped.');
   
   // Give time for graceful shutdown

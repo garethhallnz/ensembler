@@ -20,6 +20,7 @@ interface ConfigType {
   };
   paths: { [key: string]: string[] };
   autoUpdate?: boolean;
+  minimizeToTray?: boolean;
 }
 
 type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
@@ -255,6 +256,28 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
                     {opt}
                   </button>
                 ))}
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card>
+            <Card.Header>
+              <h4 className="text-lg font-medium">General</h4>
+            </Card.Header>
+            <Card.Body>
+              <div className="flex items-center justify-between gap-4">
+                <div className="text-left">
+                  <p className="font-medium text-gray-900 dark:text-white">Keep running in the tray when I close the window</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Ensembler stays in your menu bar / system tray for quick access. Your services keep running either way — quit fully from the tray menu.
+                  </p>
+                </div>
+                <Toggle
+                  checked={config.minimizeToTray ?? true}
+                  onChange={value => setConfig(prev => ({ ...prev!, minimizeToTray: value }))}
+                  aria-label="Keep running in the tray when the window is closed"
+                  className="shrink-0"
+                />
               </div>
             </Card.Body>
           </Card>
