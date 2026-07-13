@@ -7,6 +7,23 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Only hand URLs to the OS that use a safe, expected scheme. Anything else
+// (file:, javascript:, custom app schemes, unparseable input) is refused rather
+// than opened, so a link from embedded webview content can't launch arbitrary
+// handlers.
+function openExternalSafely(url) {
+  try {
+    const { protocol } = new URL(url);
+    if (protocol === 'https:' || protocol === 'http:' || protocol === 'mailto:') {
+      shell.openExternal(url);
+      return;
+    }
+  } catch {
+    // unparseable URL — fall through to the warning
+  }
+  console.warn('[Electron] Refused to open external URL with disallowed scheme:', url);
+}
+
 let mainWindow;
 let tray = null;
 app.isQuitting = false;
@@ -98,7 +115,7 @@ function createWindow() {
 
   // Handle external links
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    openExternalSafely(url);
     return { action: 'deny' };
   });
 
@@ -263,25 +280,30 @@ app.on('before-quit', () => {
   console.log('App shutdown complete. Docker services remain running independently.');
 });
 
-// Handle app protocol for macOS
-app.setAsDefaultProtocolClient('media-center');
-
 // Security: keep the app window locked to the app, but let embedded service
 // <webview>s roam their own localhost origins.
 app.on('web-contents-created', (event, contents) => {
+  // A <webview> must never gain Node/preload capabilities: strip them before
+  // attach, regardless of what the embedding markup requested.
+  contents.on('will-attach-webview', (e, webPreferences) => {
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+  });
+
   if (contents.getType() === 'webview') {
     // Service UIs live on http://localhost:<port>. Allow navigation within
     // localhost; send genuinely external links (e.g. Plex OAuth) to the
     // system browser rather than steering the embedded view off to them.
     contents.setWindowOpenHandler(({ url }) => {
-      shell.openExternal(url);
+      openExternalSafely(url);
       return { action: 'deny' };
     });
     contents.on('will-navigate', (e, navigationUrl) => {
       const { hostname } = new URL(navigationUrl);
       if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
         e.preventDefault();
-        shell.openExternal(navigationUrl);
+        openExternalSafely(navigationUrl);
       }
     });
     return;
@@ -297,8 +319,14 @@ app.on('web-contents-created', (event, contents) => {
 
 // Handle certificate errors
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
-  if (url.startsWith('https://localhost')) {
-    // Allow self-signed certificates for localhost
+  let hostname = '';
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    hostname = '';
+  }
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // Allow self-signed certificates for the local backend only.
     event.preventDefault();
     callback(true);
   } else {

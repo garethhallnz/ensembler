@@ -3,8 +3,9 @@ import { Docker } from 'node-docker-api';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { exec, execFile } from 'child_process';
 import { promisify } from 'util';
+import { dump as dumpYaml } from 'js-yaml';
 import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts } from './services/serviceConfig';
 import { setupConnections, setupPlexConnections } from './services/setup/orchestrator';
 import { tryReadArrApiKey } from './services/setup/apiKeyReader';
@@ -32,6 +33,17 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
+// Reject any request for an unknown :serviceName before it reaches a handler.
+// Every service-scoped route operates on a service from the catalog, so this one
+// guard both validates input and stops an untrusted path segment from ever
+// reaching a docker command.
+app.param('serviceName', (req, res, next, name) => {
+  if (!getServiceConfig(name)) {
+    return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
+  }
+  next();
+});
+
 // Configuration directory. The Electron main process passes the OS-native
 // per-user data directory (app.getPath('userData')) via ENSEMBLER_DATA_DIR when
 // it launches the backend, so packaged installs store data where each platform
@@ -52,6 +64,7 @@ const getConfigDir = () => {
 const configDir = getConfigDir();
 const configFile = path.join(configDir, 'config.json');
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 // Bring one service (or all, when service is omitted) up, self-healing against
 // a stale container that already holds the fixed container_name — left over
@@ -62,17 +75,19 @@ const execAsync = promisify(exec);
 // — and retry once.
 async function composeUp(service?: string, forceRecreate = false): Promise<void> {
   const composeFile = path.join(configDir, 'docker-compose.yml');
-  const flags = `${forceRecreate ? ' --force-recreate' : ''} --remove-orphans`;
-  const cmd = `docker compose -f "${composeFile}" up -d${service ? ` ${service}` : ''}${flags}`;
+  const args = ['compose', '-f', composeFile, 'up', '-d'];
+  if (service) args.push(service);
+  if (forceRecreate) args.push('--force-recreate');
+  args.push('--remove-orphans');
   try {
-    await execAsync(cmd);
+    await execFileAsync('docker', args);
   } catch (err) {
     const e = err as { message?: string; stderr?: string };
     const text = `${e.message ?? ''}\n${e.stderr ?? ''}`;
     const conflicts = [...text.matchAll(/container name "\/?([^"]+)" is already in use/gi)].map(m => m[1]);
     if (conflicts.length === 0) throw err; // a different failure — surface it
-    await Promise.all(conflicts.map(name => execAsync(`docker rm -f ${name}`).catch(() => undefined)));
-    await execAsync(cmd); // retry once with the names freed
+    await Promise.all(conflicts.map(name => execFileAsync('docker', ['rm', '-f', name]).catch(() => undefined)));
+    await execFileAsync('docker', args); // retry once with the names freed
   }
 }
 
@@ -380,11 +395,11 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
         for (const serviceName of removedServices) {
           try {
             // Stop the service
-            await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop ${serviceName}`);
+            await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'stop', serviceName]);
             console.log(`Stopped ${serviceName}`);
-            
+
             // Remove the container
-            await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" rm -f ${serviceName}`);
+            await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'rm', '-f', serviceName]);
             console.log(`Removed ${serviceName} container`);
           } catch (err) {
             console.warn(`Failed to cleanup ${serviceName}:`, err);
@@ -440,112 +455,106 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
   try {
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
 
-    let composeServices = '';
+    const services: Record<string, unknown> = {};
+    const environmentConfig = config.environment ?? {};
+    // Respect a legitimate 0 (root) for PUID/PGID — `??`, not `||`.
+    const puid = environmentConfig.puid ?? 1000;
+    const pgid = environmentConfig.pgid ?? 1000;
+    const tz = environmentConfig.tz ?? 'UTC';
+
     Object.keys(config.selectedServices).forEach((serviceKey: string) => {
-      if (config.selectedServices[serviceKey]) {
-        const serviceConfig = getServiceConfig(serviceKey);
-        
-        if (serviceConfig) {
-          composeServices += `  ${serviceKey}:\n`;
-          composeServices += `    image: ${getEffectiveImage(serviceKey, config)}\n`;
-          composeServices += `    container_name: ${serviceKey}\n`;
-          composeServices += `    environment:\n`;
-          composeServices += `      - PUID=${config.environment.puid || 1000}\n`;
-          composeServices += `      - PGID=${config.environment.pgid || 1000}\n`;
-          composeServices += `      - TZ=${config.environment.tz || 'UTC'}\n`;
-          
-          // Add service-specific environment variables
-          if (serviceConfig.environmentVars) {
-            Object.entries(serviceConfig.environmentVars).forEach(([key, value]) => {
-              composeServices += `      - ${key}=${value}\n`;
-            });
-          }
-          composeServices += `    volumes:\n`;
-          
-          // Generate volumes based on service configuration
-          serviceConfig.volumes.forEach((volume) => {
-            let hostPath = volume.hostPath;
-            const containerPath = volume.containerPath;
+      if (!config.selectedServices[serviceKey]) return;
+      const serviceConfig = getServiceConfig(serviceKey);
+      if (!serviceConfig) return;
 
-            // Replace placeholders
-            if (hostPath.includes('{configDir}')) {
-              hostPath = hostPath.replace('{configDir}', configDir);
-            }
-            if (hostPath.includes('{paths.tv}') && config.paths.sonarr?.[0]) {
-              hostPath = hostPath.replace('{paths.tv}', config.paths.sonarr[0]);
-            } else if (hostPath.includes('{paths.movies}') && config.paths.radarr?.[0]) {
-              hostPath = hostPath.replace('{paths.movies}', config.paths.radarr[0]);
-            } else if (hostPath.includes('{paths.downloads}') && config.paths.transmission?.[0]) {
-              hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
-            }
-
-            // Handle service-specific paths
-            if (serviceKey === 'plex') {
-              if (containerPath === '/tv' && config.paths.plex?.[0]) {
-                hostPath = config.paths.plex[0];
-              } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
-                hostPath = config.paths.plex[1];
-              }
-            } else if (serviceKey === 'emby') {
-              if (containerPath === '/tv' && config.paths.emby?.[0]) {
-                hostPath = config.paths.emby[0];
-              } else if (containerPath === '/movies' && config.paths.emby?.[1]) {
-                hostPath = config.paths.emby[1];
-              }
-            } else if (serviceKey === 'jellyfin') {
-              if (containerPath === '/tv' && config.paths.jellyfin?.[0]) {
-                hostPath = config.paths.jellyfin[0];
-              } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
-                hostPath = config.paths.jellyfin[1];
-              }
-            } else if (serviceKey === 'deluge') {
-              if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
-                hostPath = config.paths.deluge[0];
-              }
-            } else if (serviceKey === 'bazarr') {
-              if (containerPath === '/tv' && config.paths.bazarr?.[0]) {
-                hostPath = config.paths.bazarr[0];
-              } else if (containerPath === '/movies' && config.paths.bazarr?.[1]) {
-                hostPath = config.paths.bazarr[1];
-              }
-            }
-
-            // Never emit an empty or still-templated host path: an empty path
-            // or a leading "{" produces invalid YAML (a flow-mapping) and breaks
-            // the whole compose file. Fall back to a folder under the config dir
-            // so the file is always valid and the container can start.
-            if (!hostPath || hostPath.includes('{')) {
-              hostPath = path.join(configDir, serviceKey, (containerPath.replace(/[^a-zA-Z0-9]/g, '') || 'data'));
-            }
-
-            // Quote the mapping so host paths containing spaces (e.g. macOS
-            // "Application Support") stay a single valid YAML scalar.
-            composeServices += `      - "${hostPath}:${containerPath}"\n`;
-          });
-          
-          composeServices += `    ports:\n`;
-          const port = config.ports[serviceKey] || serviceConfig.defaultPort;
-          composeServices += `      - ${port}:${serviceConfig.internalPort}\n`;
-          
-          // Add additional ports if specified
-          if (serviceConfig.additionalPorts) {
-            serviceConfig.additionalPorts.forEach((additionalPort) => {
-              composeServices += `      - ${additionalPort}:${additionalPort}\n`;
-              composeServices += `      - ${additionalPort}:${additionalPort}/udp\n`;
-            });
-          }
-          
-          composeServices += `    restart: unless-stopped\n\n`;
-        }
+      const environment = [`PUID=${puid}`, `PGID=${pgid}`, `TZ=${tz}`];
+      if (serviceConfig.environmentVars) {
+        Object.entries(serviceConfig.environmentVars).forEach(([key, value]) => {
+          environment.push(`${key}=${value}`);
+        });
       }
+
+      const volumes = serviceConfig.volumes.map((volume) => {
+        let hostPath = volume.hostPath;
+        const containerPath = volume.containerPath;
+
+        // Replace placeholders
+        if (hostPath.includes('{configDir}')) {
+          hostPath = hostPath.replace('{configDir}', configDir);
+        }
+        if (hostPath.includes('{paths.tv}') && config.paths.sonarr?.[0]) {
+          hostPath = hostPath.replace('{paths.tv}', config.paths.sonarr[0]);
+        } else if (hostPath.includes('{paths.movies}') && config.paths.radarr?.[0]) {
+          hostPath = hostPath.replace('{paths.movies}', config.paths.radarr[0]);
+        } else if (hostPath.includes('{paths.downloads}') && config.paths.transmission?.[0]) {
+          hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
+        }
+
+        // Handle service-specific paths
+        if (serviceKey === 'plex') {
+          if (containerPath === '/tv' && config.paths.plex?.[0]) {
+            hostPath = config.paths.plex[0];
+          } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
+            hostPath = config.paths.plex[1];
+          }
+        } else if (serviceKey === 'emby') {
+          if (containerPath === '/tv' && config.paths.emby?.[0]) {
+            hostPath = config.paths.emby[0];
+          } else if (containerPath === '/movies' && config.paths.emby?.[1]) {
+            hostPath = config.paths.emby[1];
+          }
+        } else if (serviceKey === 'jellyfin') {
+          if (containerPath === '/tv' && config.paths.jellyfin?.[0]) {
+            hostPath = config.paths.jellyfin[0];
+          } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
+            hostPath = config.paths.jellyfin[1];
+          }
+        } else if (serviceKey === 'deluge') {
+          if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
+            hostPath = config.paths.deluge[0];
+          }
+        } else if (serviceKey === 'bazarr') {
+          if (containerPath === '/tv' && config.paths.bazarr?.[0]) {
+            hostPath = config.paths.bazarr[0];
+          } else if (containerPath === '/movies' && config.paths.bazarr?.[1]) {
+            hostPath = config.paths.bazarr[1];
+          }
+        }
+
+        // Never emit an empty or still-templated host path: fall back to a folder
+        // under the config dir so the container always has a valid mount source.
+        if (!hostPath || hostPath.includes('{')) {
+          hostPath = path.join(configDir, serviceKey, (containerPath.replace(/[^a-zA-Z0-9]/g, '') || 'data'));
+        }
+
+        return `${hostPath}:${containerPath}`;
+      });
+
+      const ports = [`${config.ports?.[serviceKey] ?? serviceConfig.defaultPort}:${serviceConfig.internalPort}`];
+      if (serviceConfig.additionalPorts) {
+        serviceConfig.additionalPorts.forEach((additionalPort) => {
+          ports.push(`${additionalPort}:${additionalPort}`);
+          ports.push(`${additionalPort}:${additionalPort}/udp`);
+        });
+      }
+
+      services[serviceKey] = {
+        image: getEffectiveImage(serviceKey, config),
+        container_name: serviceKey,
+        environment,
+        volumes,
+        ports,
+        restart: 'unless-stopped',
+      };
     });
 
-    // Pin the Compose project name so it never depends on the config directory
-    // path. Without this, Compose derives the project from the directory name,
-    // so moving/renaming the config dir orphans the existing containers under
-    // the old project — start then hits container-name conflicts and stop/
-    // restart silently no-op against the new (empty) project.
-    const composeContent = `name: ensembler\n\nservices:\n${composeServices}`;
+    // Serialise via a real YAML writer so every config value (paths, TZ, env)
+    // is emitted as an escaped scalar and can never inject compose directives.
+    // `name` pins the Compose project so it doesn't depend on the config dir
+    // path (otherwise Compose derives it from the directory name, orphaning
+    // containers when the dir is moved/renamed). lineWidth: -1 disables line
+    // wrapping so long host paths stay on one line.
+    const composeContent = dumpYaml({ name: 'ensembler', services }, { lineWidth: -1 });
     fs.writeFileSync(composeFile, composeContent);
 
     res.json({ success: true, code: 'messages.compose.generated', message: 'Docker Compose files generated successfully.' });
@@ -570,7 +579,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
     const serviceStatus: { [key: string]: string } = {};
     for (const serviceName of selectedServices) {
       try {
-        const { stdout } = await execAsync(`docker ps --filter "name=${serviceName}" --format "{{.Status}}"`);
+        const { stdout } = await execFileAsync('docker', ['ps', '--filter', `name=${serviceName}`, '--format', '{{.Status}}']);
         if (stdout.trim() === '') {
           serviceStatus[serviceName] = 'Stopped';
         } else if (stdout.includes('Up')) {
@@ -603,7 +612,7 @@ app.post('/api/services/:serviceName/start', async (req: Request, res: Response)
 app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop ${serviceName}`);
+    await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'stop', serviceName]);
     res.json({ success: true, code: 'messages.service.stopped', params: { name: serviceName }, message: `${serviceName} stopped successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.stopFailed', params: { name: serviceName }, message: `Failed to stop ${serviceName}.`, error: (err as Error).message });
@@ -613,7 +622,7 @@ app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) 
 app.post('/api/services/:serviceName/restart', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" restart ${serviceName}`);
+    await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'restart', serviceName]);
     res.json({ success: true, code: 'messages.service.restarted', params: { name: serviceName }, message: `${serviceName} restarted successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.restartFailed', params: { name: serviceName }, message: `Failed to restart ${serviceName}.`, error: (err as Error).message });
@@ -626,8 +635,9 @@ app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) =
     // --no-color strips ANSI escapes (which render as garbage in the viewer),
     // --no-log-prefix drops the redundant "service | " prefix for a single
     // service, and a larger tail + buffer avoids truncating the output.
-    const { stdout } = await execAsync(
-      `docker compose -f "${path.join(configDir, 'docker-compose.yml')}" logs --no-color --no-log-prefix --tail=1000 ${serviceName}`,
+    const { stdout } = await execFileAsync(
+      'docker',
+      ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'logs', '--no-color', '--no-log-prefix', '--tail=1000', serviceName],
       { maxBuffer: 20 * 1024 * 1024 }
     );
     res.json({ success: true, logs: stdout });
@@ -949,12 +959,6 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const serviceConfig = getServiceConfig(serviceName);
 
-    console.log('Launch URL Request:');
-    console.log('  Service Name:', serviceName);
-    console.log('  Config File:', configFile);
-    console.log('  Config Data:', config);
-    console.log('  Service Config:', serviceConfig);
-
     if (!serviceConfig) {
       console.error('Service config not found for', serviceName);
       return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
@@ -1188,8 +1192,8 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     const composeFile = path.join(configDir, 'docker-compose.yml');
     
     // Pull latest image and restart service
-    await execAsync(`docker compose -f "${composeFile}" pull ${serviceName}`);
-    await execAsync(`docker compose -f "${composeFile}" up -d ${serviceName}`);
+    await execFileAsync('docker', ['compose', '-f', composeFile, 'pull', serviceName]);
+    await execFileAsync('docker', ['compose', '-f', composeFile, 'up', '-d', serviceName]);
 
     // Refresh the cached update status now that the image is current. Without
     // this the dashboard keeps reading a stale "update available" from the
