@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { TextInput, Alert, Card } from './index';
 import PathConfiguration from './PathConfiguration';
 
@@ -40,6 +41,7 @@ export default function ServiceConfiguration({
   layout = 'card',
   className = ''
 }: ServiceConfigurationProps) {
+  const { t } = useTranslation();
   const content = (
     <>
       {service.pathRequirements && service.pathRequirements.length > 0 ? (
@@ -62,13 +64,13 @@ export default function ServiceConfiguration({
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs font-medium">
-                Port
+                {t('serviceConfiguration.portBadge')}
               </span>
-              <h4 className="text-sm font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+              <h4 className="text-sm font-medium text-gray-800 dark:text-white">{t('serviceConfiguration.portConfiguration')}</h4>
             </div>
             <div className="space-y-2">
               <label htmlFor={`port-${service.key}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {service.name} Port:
+                {t('serviceConfiguration.servicePort', { name: service.name })}
               </label>
               <TextInput
                 id={`port-${service.key}`}
@@ -81,7 +83,7 @@ export default function ServiceConfiguration({
                 max="65535"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Default: {service.defaultPort}
+                {t('serviceConfiguration.portDefault', { port: service.defaultPort })}
               </p>
               {portError && (
                 <Alert color="red" className="text-xs">{portError}</Alert>
@@ -96,19 +98,19 @@ export default function ServiceConfiguration({
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded text-xs font-medium">
-                Info
+                {t('serviceConfiguration.infoBadge')}
               </span>
-              <h4 className="text-sm font-medium text-gray-800 dark:text-white">Service Information</h4>
+              <h4 className="text-sm font-medium text-gray-800 dark:text-white">{t('serviceConfiguration.serviceInformation')}</h4>
             </div>
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
               <div className="flex items-center gap-3 mb-3">
                 <div className="text-blue-600 dark:text-blue-400 text-2xl">📌</div>
                 <div>
                   <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                    No file paths required
+                    {t('serviceConfiguration.noPathsRequired')}
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-400">
-                    This service doesn't require any file path configuration.
+                    {t('serviceConfiguration.noPathsDescription')}
                   </p>
                 </div>
               </div>
@@ -119,13 +121,13 @@ export default function ServiceConfiguration({
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
               <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded text-xs font-medium">
-                Port
+                {t('serviceConfiguration.portBadge')}
               </span>
-              <h4 className="text-sm font-medium text-gray-800 dark:text-white">Port Configuration</h4>
+              <h4 className="text-sm font-medium text-gray-800 dark:text-white">{t('serviceConfiguration.portConfiguration')}</h4>
             </div>
             <div className="space-y-2">
               <label htmlFor={`port-${service.key}`} className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {service.name} Port:
+                {t('serviceConfiguration.servicePort', { name: service.name })}
               </label>
               <TextInput
                 id={`port-${service.key}`}
@@ -138,7 +140,7 @@ export default function ServiceConfiguration({
                 max="65535"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                Default: {service.defaultPort}
+                {t('serviceConfiguration.portDefault', { port: service.defaultPort })}
               </p>
               {portError && (
                 <Alert color="red" className="text-xs">{portError}</Alert>
@@ -155,7 +157,7 @@ export default function ServiceConfiguration({
       <Card key={service.key} className={className}>
         <Card.Header>
           <h3 className="text-xl font-medium text-gray-900 dark:text-white">{service.name}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{service.description}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t(`services.${service.key}.description`)}</p>
         </Card.Header>
         <Card.Body>
           {content}

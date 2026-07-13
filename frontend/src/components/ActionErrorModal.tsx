@@ -1,4 +1,5 @@
 import { HiExclamationCircle } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 import Button from './Button';
 
 interface ActionErrorModalProps {
@@ -20,6 +21,8 @@ export default function ActionErrorModal({
   onViewLogs,
   onRetry,
 }: ActionErrorModalProps) {
+  const { t } = useTranslation();
+
   if (!show) return null;
 
   return (
@@ -30,7 +33,7 @@ export default function ActionErrorModal({
         </div>
         <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white mb-2">{title}</h3>
         <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">
-          Something went wrong. Check the logs for details, or try again.
+          {t('actionError.description')}
         </p>
         {detail && (
           <pre className="text-xs bg-gray-100 dark:bg-gray-900 text-gray-600 dark:text-gray-400 rounded p-3 mb-4 max-h-28 overflow-auto whitespace-pre-wrap break-words">
@@ -38,9 +41,9 @@ export default function ActionErrorModal({
           </pre>
         )}
         <div className="flex justify-center gap-2">
-          <Button variant="secondary" onClick={onClose}>Dismiss</Button>
-          {onViewLogs && <Button variant="secondary" onClick={onViewLogs}>View logs</Button>}
-          {onRetry && <Button variant="primary" onClick={onRetry}>Retry</Button>}
+          <Button variant="secondary" onClick={onClose}>{t('actionError.dismiss')}</Button>
+          {onViewLogs && <Button variant="secondary" onClick={onViewLogs}>{t('actionError.viewLogs')}</Button>}
+          {onRetry && <Button variant="primary" onClick={onRetry}>{t('actionError.retry')}</Button>}
         </div>
       </div>
     </div>

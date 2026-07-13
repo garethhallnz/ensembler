@@ -6,6 +6,13 @@ import {
 } from './arrSetup';
 import { SetupStepResult } from './types';
 
+// SetupStepResult plus stable i18n metadata: `code` identifies the message and
+// `params` carries any interpolated values. Assignable to SetupStepResult[].
+type LocalizedSetupStepResult = SetupStepResult & {
+  code: string;
+  params?: Record<string, string>;
+};
+
 export interface ProwlarrApplication {
   // 'Sonarr' | 'Radarr' — Prowlarr's implementation name for the app
   implementation: string;
@@ -56,17 +63,20 @@ export async function setupProwlarr(setup: ProwlarrSetupOptions): Promise<SetupS
     apiKey: setup.apiKey,
     apiBase: '/api/v1'
   };
-  const results: SetupStepResult[] = [];
+  const results: LocalizedSetupStepResult[] = [];
 
   try {
     await waitForArrReady(options, setup.readyTimeoutMs);
   } catch (err) {
-    return [{
+    const readyFailure: LocalizedSetupStepResult = {
       service: 'prowlarr',
       step: 'ready',
       success: false,
-      message: (err as Error).message
-    }];
+      message: (err as Error).message,
+      code: 'messages.setup.prowlarrStepFailed',
+      params: { error: (err as Error).message }
+    };
+    return [readyFailure];
   }
 
   for (const app of setup.applications) {
@@ -79,10 +89,21 @@ export async function setupProwlarr(setup: ProwlarrSetupOptions): Promise<SetupS
         success: true,
         message: created
           ? `Connected ${app.implementation} — indexers will sync automatically`
-          : `${app.implementation} already connected`
+          : `${app.implementation} already connected`,
+        code: created
+          ? 'messages.setup.prowlarrAppConnected'
+          : 'messages.setup.prowlarrAppAlreadyConnected',
+        params: { app: app.implementation }
       });
     } catch (err) {
-      results.push({ service: 'prowlarr', step, success: false, message: (err as Error).message });
+      results.push({
+        service: 'prowlarr',
+        step,
+        success: false,
+        message: (err as Error).message,
+        code: 'messages.setup.prowlarrStepFailed',
+        params: { error: (err as Error).message }
+      });
     }
   }
 
@@ -93,10 +114,20 @@ export async function setupProwlarr(setup: ProwlarrSetupOptions): Promise<SetupS
         service: 'prowlarr',
         step: 'download-client',
         success: true,
-        message: created ? 'Connected to Transmission' : 'Transmission already configured'
+        message: created ? 'Connected to Transmission' : 'Transmission already configured',
+        code: created
+          ? 'messages.setup.prowlarrTransmissionConnected'
+          : 'messages.setup.prowlarrTransmissionAlreadyConfigured'
       });
     } catch (err) {
-      results.push({ service: 'prowlarr', step: 'download-client', success: false, message: (err as Error).message });
+      results.push({
+        service: 'prowlarr',
+        step: 'download-client',
+        success: false,
+        message: (err as Error).message,
+        code: 'messages.setup.prowlarrStepFailed',
+        params: { error: (err as Error).message }
+      });
     }
   }
 

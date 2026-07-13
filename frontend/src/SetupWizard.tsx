@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import AdvancedSettings from './AdvancedSettings';
 import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput, Logo, DocsButton } from './components';
 import { useToast } from './contexts/ToastContext';
-import { ToggleSwitch } from 'flowbite-react';
-import { HiCheckCircle, HiXCircle, HiExclamationCircle } from 'react-icons/hi';
+import { ToggleSwitch, Drawer } from 'flowbite-react';
+import { HiCheckCircle, HiXCircle, HiExclamationCircle, HiCog } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 import { toggleService } from './utils/serviceSelection';
 
@@ -29,9 +31,9 @@ interface ServiceConfigResponse {
 }
 
 const steps = [
-  'Service Selection',
-  'Configuration',
-  'Apply',
+  'setup.steps.selection',
+  'setup.steps.configuration',
+  'setup.steps.apply',
 ];
 
 type PhaseStatus = 'pending' | 'active' | 'done' | 'error';
@@ -50,7 +52,9 @@ interface SetupWizardProps {
 }
 
 export default function SetupWizard({ onComplete, isRerun = false }: SetupWizardProps) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
+  const [showSettings, setShowSettings] = useState(false);
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<{ [key: string]: boolean }>({});
   const [paths, setPaths] = useState<{ [service: string]: string[] }>({});
@@ -213,7 +217,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     
     // Check that at least one service is selected
     if (selectedServices.length === 0) {
-      showToast('Please select at least one service to continue.', 'warning');
+      showToast(t('setup.selectAtLeastOneToast'), 'warning');
       return false;
     }
     
@@ -288,7 +292,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                         );
                         
                         if (conflictingServices.length > 0) {
-                            serviceErrors[idx] = `Path conflicts with different media type in ${conflictingServices[0].service}`;
+                            serviceErrors[idx] = t('setup.errors.pathMediaConflict', { service: conflictingServices[0].service });
                             hasConflicts = true;
                         }
                     } else if (isDownloadPath) {
@@ -303,13 +307,13 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                         });
                         
                         if (conflictingServices.length > 0) {
-                            serviceErrors[idx] = `Download path conflicts with non-download service ${conflictingServices[0].service}`;
+                            serviceErrors[idx] = t('setup.errors.pathDownloadConflict', { service: conflictingServices[0].service });
                             hasConflicts = true;
                         }
                     } else {
                         const conflictingServices = usagesForThisPath.filter(usage => usage.service !== svc);
                         if (conflictingServices.length > 0) {
-                            serviceErrors[idx] = `Path is already used by ${conflictingServices[0].service}`;
+                            serviceErrors[idx] = t('setup.errors.pathUsedBy', { service: conflictingServices[0].service });
                             hasConflicts = true;
                         }
                     }
@@ -398,10 +402,10 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       
       const port = ports[svc] || service.defaultPort;
       if (port < 1024 || port > 65535) {
-        currentPortErrors[svc] = 'Port must be between 1024 and 65535.';
+        currentPortErrors[svc] = t('setup.errors.portRange');
         valid = false;
       } else if (usedPorts.has(port)) {
-        currentPortErrors[svc] = 'Port conflicts with another selected service.';
+        currentPortErrors[svc] = t('setup.errors.portConflictSelected');
         valid = false;
       } else {
         usedPorts.add(port);
@@ -460,7 +464,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       setPorts(prev => ({ ...prev, ...newPorts }));
     }
     if (changed.length > 0) {
-      showToast(`Some default ports were already in use, so we've pre-selected free ones (${changed.join(', ')}). You can change these below.`, 'info');
+      showToast(t('setup.portsPrefilled', { list: changed.join(', ') }), 'info');
     }
   };
 
@@ -476,9 +480,9 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     conflicts.forEach(({ service, port, suggestion }) => {
       if (suggestion) {
         newPorts[service] = suggestion;
-        newErrors[service] = `Port ${port} is in use — switched to a free port, ${suggestion}.`;
+        newErrors[service] = t('setup.errors.portInUseSwitched', { port, suggestion });
       } else {
-        newErrors[service] = `Port ${port} is in use and no free port could be found. Please choose another.`;
+        newErrors[service] = t('setup.errors.portInUseNoFree', { port });
       }
     });
     if (Object.keys(newPorts).length > 0) {
@@ -507,27 +511,27 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     let valid = true;
 
     if (!tz.trim()) {
-      currentEnvErrors.tz = 'Timezone is required.';
+      currentEnvErrors.tz = t('setup.errors.tzRequired');
       valid = false;
     }
 
     if (isNaN(puid) || puid < 0) {
-      currentEnvErrors.puid = 'PUID must be a non-negative number.';
+      currentEnvErrors.puid = t('setup.errors.puid');
       valid = false;
     }
 
     if (isNaN(pgid) || pgid < 0) {
-      currentEnvErrors.pgid = 'PGID must be a non-negative number.';
+      currentEnvErrors.pgid = t('setup.errors.pgid');
       valid = false;
     }
 
     if (selected['jellyfin']) {
       if (!jellyfinUsername.trim()) {
-        currentEnvErrors.jellyfinUsername = 'Jellyfin admin username is required.';
+        currentEnvErrors.jellyfinUsername = t('setup.errors.jellyfinUsername');
         valid = false;
       }
       if (jellyfinPassword.length < 4) {
-        currentEnvErrors.jellyfinPassword = 'Jellyfin admin password must be at least 4 characters.';
+        currentEnvErrors.jellyfinPassword = t('setup.errors.jellyfinPassword');
         valid = false;
       }
     }
@@ -557,18 +561,18 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   // Drive the apply as visible, checked-off phases rather than a single spinner.
   const runApply = async () => {
     const phases: ApplyPhase[] = [
-      { key: 'save', label: 'Saving your configuration', status: 'pending' },
-      { key: 'compose', label: 'Generating Docker setup', status: 'pending' },
+      { key: 'save', label: t('setup.apply.phaseSave'), status: 'pending' },
+      { key: 'compose', label: t('setup.apply.phaseCompose'), status: 'pending' },
       {
         key: 'start',
-        label: 'Starting services',
-        detail: 'Downloading images and starting containers. On the first run this can take a few minutes.',
+        label: t('setup.apply.phaseStart'),
+        detail: t('setup.apply.phaseStartDetail'),
         status: 'pending'
       },
       {
         key: 'connect',
-        label: 'Connecting services together',
-        detail: 'Waiting for each service to be ready, then linking them. This can take a minute.',
+        label: t('setup.apply.phaseConnect'),
+        detail: t('setup.apply.phaseConnectDetail'),
         status: 'pending'
       }
     ];
@@ -592,17 +596,17 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           environment: { tz, puid, pgid }
         })
       });
-      if (!saveRes.ok) throw new Error('Could not save your configuration.');
+      if (!saveRes.ok) throw new Error(t('setup.errors.save'));
       setPhase('save', 'done');
 
       setPhase('compose', 'active');
       const composeRes = await fetch('http://localhost:3001/api/config/generate-compose', { method: 'POST' });
-      if (!composeRes.ok) throw new Error('Could not generate the Docker setup.');
+      if (!composeRes.ok) throw new Error(t('setup.errors.compose'));
       setPhase('compose', 'done');
 
       setPhase('start', 'active');
       const startRes = await fetch('http://localhost:3001/api/services/start-all', { method: 'POST' });
-      if (!startRes.ok) throw new Error('Could not start the services.');
+      if (!startRes.ok) throw new Error(t('setup.errors.start'));
       setPhase('start', 'done');
 
       // Wiring failures are warnings, not errors — services still run. The
@@ -627,7 +631,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     } catch (error) {
       console.error('Error in setup process:', error);
       setApplyPhases(prev => prev.map(p => (p.status === 'active' ? { ...p, status: 'error' } : p)));
-      setApplyError(error instanceof Error ? error.message : 'Something went wrong during setup.');
+      setApplyError(error instanceof Error ? error.message : t('setup.errors.generic'));
     }
   };
 
@@ -637,7 +641,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         <Card className="max-w-md w-full p-6">
           <div className="flex flex-col items-center space-y-4">
             <Spinner size="xl" />
-            <p className="text-lg text-gray-700 dark:text-gray-300">Loading service configuration...</p>
+            <p className="text-lg text-gray-700 dark:text-gray-300">{t('setup.loading')}</p>
           </div>
         </Card>
       </div>
@@ -649,9 +653,14 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       <div className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
           <Logo className="w-10 h-10 shrink-0 text-gray-400 dark:text-gray-500" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Setup</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('setup.title', { defaultValue: 'Setup' })}</h1>
         </div>
-        <DocsButton />
+        <div className="flex items-center gap-3">
+          <Button variant="secondary" onClick={() => setShowSettings(true)} tooltip={t('dashboard.settings.button', { defaultValue: 'Settings' })}>
+            <HiCog className="inline-block mr-1" /> {t('dashboard.settings.button', { defaultValue: 'Settings' })}
+          </Button>
+          <DocsButton />
+        </div>
       </div>
       
       <div className="mb-8">
@@ -669,7 +678,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
               className={`text-sm ${step === 2 ? '' : 'cursor-pointer'} ${idx === step ? 'font-bold text-blue-600' : idx < step ? 'text-green-600' : 'text-gray-500'}`}
               onClick={() => idx < step && step !== 2 && setStep(idx)}
             >
-              {stepName}
+              {t(stepName)}
             </div>
           ))}
         </div>
@@ -677,16 +686,16 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       <div className="min-h-[500px] mb-6">
         {step === 0 && (
            <div className="space-y-6">
-             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Select Services</h2>
-             <p className="text-gray-600 dark:text-gray-300">Choose the services you want to run:</p>
+             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{t('setup.step0.heading')}</h2>
+             <p className="text-gray-600 dark:text-gray-300">{t('setup.step0.subtitle')}</p>
              
              {/* Toggle Recommended Option */}
              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                <div className="flex items-center justify-between">
                  <div className="flex-1">
-                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">Quick Actions</h3>
+                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('setup.step0.quickActions')}</h3>
                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                     {getToggleRecommendedState() ? 'Deselect recommended services' : 'Select recommended services for a complete media center'}
+                     {getToggleRecommendedState() ? t('setup.step0.recommendedOn') : t('setup.step0.recommendedOff')}
                    </p>
                  </div>
                  <div className="flex items-center">
@@ -694,7 +703,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                      id="toggle-recommended-services"
                      checked={getToggleRecommendedState()}
                      onChange={handleToggleRecommended}
-                     label="Toggle Recommended"
+                     label={t('setup.step0.toggleRecommended')}
                    />
                  </div>
                </div>
@@ -708,27 +717,11 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                  const categoryServices = serviceConfig.filter(service => service.category === category);
                  if (categoryServices.length === 0) return null;
 
-                 const getCategoryTitle = (cat: string) => {
-                   switch (cat) {
-                     case 'media': return 'Media Servers';
-                     case 'management': return 'Media Management';
-                     case 'torrent': return 'Download Clients';
-                     case 'indexer': return 'Indexers';
-                     case 'request': return 'Request Management';
-                     default: return cat;
-                   }
-                 };
+                 const getCategoryTitle = (cat: string) =>
+                   t(`setup.categories.${cat}.title`, { defaultValue: cat });
 
-                 const getCategoryDescription = (cat: string) => {
-                   switch (cat) {
-                     case 'media': return 'Media streaming servers (choose one)';
-                     case 'management': return 'Media collection managers (you can select multiple)';
-                     case 'torrent': return 'BitTorrent download clients (choose one)';
-                     case 'indexer': return 'Torrent indexer management (choose one)';
-                     case 'request': return 'Media request and discovery tools (choose one)';
-                     default: return '';
-                   }
-                 };
+                 const getCategoryDescription = (cat: string) =>
+                   t(`setup.categories.${cat}.description`, { defaultValue: '' });
 
                  return (
                    <div key={category} className="space-y-3">
@@ -748,17 +741,17 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                                <div className="flex-1 pr-4">
                                  <label htmlFor={`service-${service.key}`} className="block text-lg font-medium text-gray-900 dark:text-white cursor-pointer flex items-center gap-2">
                                    <span>{service.name}</span>
-                                   {service.required && <Badge color="blue">Required</Badge>}
+                                   {service.required && <Badge color="blue">{t('setup.step0.required')}</Badge>}
                                    {service.recommended && !service.required && (
                                      <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
                                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                          <path fillRule="evenodd" d="M10 15.585l-6.327 3.327 1.209-7.046L0 6.944l7.073-1.027L10 0l2.927 5.917L20 6.944l-4.882 4.922 1.209 7.046L10 15.585z" clipRule="evenodd"/>
                                        </svg>
-                                       Recommended
+                                       {t('setup.step0.recommended')}
                                      </span>
                                    )}
                                  </label>
-                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{service.description}</p>
+                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t(`services.${service.key}.description`, { defaultValue: service.description })}</p>
                                </div>
                                <div className="flex items-center mt-1">
                                  <ToggleSwitch
@@ -779,7 +772,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
              </div>
              {!Object.values(selected).some(Boolean) && (
                <div className="text-sm text-amber-600 dark:text-amber-400">
-                 Select at least one service to continue.
+                 {t('setup.selectAtLeastOne')}
                </div>
              )}
            </div>
@@ -787,8 +780,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         {step === 1 && (
           <div className="space-y-8">
             <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Service Configuration</h2>
-              <p className="text-gray-600 dark:text-gray-300">Configure file paths and ports for your services:</p>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('setup.step1.heading')}</h2>
+              <p className="text-gray-600 dark:text-gray-300">{t('setup.step1.subtitle')}</p>
             </div>
             <div className="space-y-6">
               {Object.keys(selected).filter((svc) => selected[svc]).map((svc) => {
@@ -815,7 +808,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             <Card>
               <Card.Header>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white">Environment Settings</h3>
+                  <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.environmentSettings')}</h3>
                 </div>
               </Card.Header>
               <Card.Body>
@@ -837,16 +830,16 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 <Card.Header>
                   <div className="flex items-center gap-2">
                     <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Jellyfin</span>
-                    <h3 className="text-xl font-medium text-gray-900 dark:text-white">Jellyfin Admin Account</h3>
+                    <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.jellyfinAccount')}</h3>
                   </div>
                 </Card.Header>
                 <Card.Body>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 text-left">
-                    Choose the admin login for Jellyfin. Ensembler uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.
+                    {t('setup.step1.jellyfinIntro')}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">Admin username</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">{t('setup.step1.adminUsername')}</label>
                       <TextInput
                         value={jellyfinUsername}
                         onChange={e => setJellyfinUsername(e.target.value)}
@@ -855,7 +848,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                       {envErrors.jellyfinUsername && <p className="text-sm text-red-500 mt-1 text-left">{envErrors.jellyfinUsername}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">Admin password</label>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">{t('setup.step1.adminPassword')}</label>
                       <TextInput
                         type="password"
                         value={jellyfinPassword}
@@ -873,7 +866,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 click from here rather than a separate review step. */}
             <Card>
               <Card.Body>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-left">Ready to set up</h3>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-left">{t('setup.step1.readyToSetUp')}</h3>
                 <div className="space-y-1.5">
                   {Object.keys(selected).filter(key => selected[key]).map((key) => {
                     const service = serviceConfig.find(s => s.key === key);
@@ -881,7 +874,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                     return (
                       <div key={key} className="flex items-center gap-2 text-sm text-left">
                         <span className="font-medium text-gray-900 dark:text-white min-w-[120px]">{service?.name || key}</span>
-                        <Badge color="blue">Port {ports[key] || service?.defaultPort}</Badge>
+                        <Badge color="blue">{t('setup.step1.port', { port: ports[key] || service?.defaultPort })}</Badge>
                         {primaryPath && <span className="text-gray-500 dark:text-gray-400 font-mono truncate">{primaryPath}</span>}
                       </div>
                     );
@@ -895,14 +888,14 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           <div className="space-y-6">
             <div>
               <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-left">
-                {applyDone ? 'Your media center is ready' : applyError ? 'Setup ran into a problem' : 'Setting things up'}
+                {applyDone ? t('setup.apply.titleDone') : applyError ? t('setup.apply.titleError') : t('setup.apply.titleRunning')}
               </h2>
               <p className="text-gray-600 dark:text-gray-300 text-left">
                 {applyDone
-                  ? 'Everything is running. Here is how the automatic setup went.'
+                  ? t('setup.apply.subtitleDone')
                   : applyError
-                    ? 'Your services may be partly set up. You can go back and try again.'
-                    : 'Applying your configuration and starting your media center.'}
+                    ? t('setup.apply.subtitleError')
+                    : t('setup.apply.subtitleRunning')}
               </p>
             </div>
 
@@ -943,7 +936,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                     <div className="flex-1">
                       <p className="text-gray-900 dark:text-white font-medium">{applyError}</p>
                       <Button color="gray" outline className="mt-3" onClick={() => setStep(1)}>
-                        Back to configuration
+                        {t('setup.apply.backToConfig')}
                       </Button>
                     </div>
                   </div>
@@ -967,7 +960,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                     </div>
                   )}
                   <Button color="green" onClick={onComplete}>
-                    Go to Dashboard
+                    {t('setup.apply.goToDashboard')}
                   </Button>
                 </Card.Body>
               </Card>
@@ -984,21 +977,21 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
-                Previous
+                {t('setup.nav.previous')}
               </Button>
             )}
           </div>
           <div>
             {step === 0 ? (
               <Button color="blue" onClick={handleNext} disabled={!Object.values(selected).some(Boolean)}>
-                Next
+                {t('setup.nav.next')}
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </Button>
             ) : (
               <Button variant="primary" onClick={handleApply}>
-                Apply Setup
+                {t('setup.nav.apply')}
                 <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
@@ -1007,6 +1000,18 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
           </div>
         </div>
       )}
+
+      {/* Appearance-only settings (theme + language) reachable during setup. */}
+      <Drawer
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        position="right"
+        className="!w-[900px] max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700"
+      >
+        <div className="h-full bg-white dark:bg-gray-800">
+          <AdvancedSettings appearanceOnly onClose={() => setShowSettings(false)} />
+        </div>
+      </Drawer>
     </div>
   );
 }

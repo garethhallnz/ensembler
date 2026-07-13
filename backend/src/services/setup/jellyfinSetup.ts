@@ -263,6 +263,9 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
       service: 'jellyfin',
       step: 'sign-in',
       success: false,
+      code: alreadyConfigured
+        ? 'messages.jellyfin.setUpOpenToAddLibraries'
+        : 'messages.jellyfin.needsAdminAccount',
       message: alreadyConfigured
         ? 'Jellyfin is set up — open it to add your libraries'
         : 'Jellyfin needs its admin account — re-run setup or finish it in Jellyfin'
@@ -272,9 +275,9 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
   if (!alreadyConfigured) {
     try {
       await completeStartup(setup.baseUrl, setup.credentials, setup.readyTimeoutMs);
-      results.push({ service: 'jellyfin', step: 'account', success: true, message: 'Created admin account and completed setup' });
+      results.push({ service: 'jellyfin', step: 'account', success: true, code: 'messages.jellyfin.accountCreated', message: 'Created admin account and completed setup' });
     } catch (err) {
-      return [{ service: 'jellyfin', step: 'account', success: false, message: (err as Error).message }];
+      return [{ service: 'jellyfin', step: 'account', success: false, code: 'messages.jellyfin.accountFailed', params: { error: (err as Error).message }, message: (err as Error).message }];
     }
   }
 
@@ -284,7 +287,7 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
   } catch (err) {
     return [
       ...results,
-      { service: 'jellyfin', step: 'authenticate', success: false, message: (err as Error).message }
+      { service: 'jellyfin', step: 'authenticate', success: false, code: 'messages.jellyfin.authenticateFailed', params: { error: (err as Error).message }, message: (err as Error).message }
     ];
   }
 
@@ -296,10 +299,12 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
         service: 'jellyfin',
         step,
         success: true,
+        code: created ? 'messages.jellyfin.libraryCreated' : 'messages.jellyfin.libraryAlreadyConfigured',
+        params: created ? { name: library.name, path: library.path } : { name: library.name },
         message: created ? `Created "${library.name}" library at ${library.path}` : `"${library.name}" already configured`
       });
     } catch (err) {
-      results.push({ service: 'jellyfin', step, success: false, message: (err as Error).message });
+      results.push({ service: 'jellyfin', step, success: false, code: 'messages.jellyfin.libraryFailed', params: { error: (err as Error).message }, message: (err as Error).message });
     }
   }
 
@@ -317,14 +322,16 @@ export async function setupJellyfin(setup: JellyfinSetupOptions): Promise<SetupS
             service: 'jellyfin',
             step: `notify-${target.service}`,
             success: true,
+            code: created ? 'messages.jellyfin.notifyConfigured' : 'messages.jellyfin.notifyAlreadyConfigured',
+            params: { service: target.service },
             message: created ? `${target.service} will refresh Jellyfin on import` : `${target.service} already notifies Jellyfin`
           });
         } catch (err) {
-          results.push({ service: 'jellyfin', step: `notify-${target.service}`, success: false, message: (err as Error).message });
+          results.push({ service: 'jellyfin', step: `notify-${target.service}`, success: false, code: 'messages.jellyfin.notifyFailed', params: { error: (err as Error).message }, message: (err as Error).message });
         }
       }
     } catch (err) {
-      results.push({ service: 'jellyfin', step: 'api-key', success: false, message: (err as Error).message });
+      results.push({ service: 'jellyfin', step: 'api-key', success: false, code: 'messages.jellyfin.apiKeyFailed', params: { error: (err as Error).message }, message: (err as Error).message });
     }
   }
 

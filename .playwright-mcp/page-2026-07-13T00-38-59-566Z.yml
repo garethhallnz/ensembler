@@ -1,0 +1,225 @@
+- generic [ref=f15e24]:
+  - generic [ref=f15e25]:
+    - generic [ref=f15e26]:
+      - generic [ref=f15e27]:
+        - img "Ensembler" [ref=f15e28]
+        - heading "Dashboard" [level=1] [ref=f15e383]
+      - paragraph [ref=f15e36]: Manage your media center services
+    - generic [ref=f15e37]:
+      - generic [ref=f15e38]:
+        - button "Docs" [ref=f15e384] [cursor=pointer]
+        - dialog [ref=f15e42]:
+          - generic [ref=f15e44]:
+            - complementary [ref=f15e45]:
+              - heading "Documentation" [level=2] [ref=f15e385]
+              - navigation [ref=f15e47]:
+                - button "Overview" [ref=f15e386] [cursor=pointer]
+                - button "Getting started" [ref=f15e387] [cursor=pointer]
+                - button "Managing services" [ref=f15e388] [cursor=pointer]
+                - button "Troubleshooting" [ref=f15e389] [cursor=pointer]
+            - article [ref=f15e52]:
+              - generic [ref=f15e53]:
+                - heading "What is Ensembler?" [level=1] [ref=f15e390]
+                - paragraph [ref=f15e55]:
+                  - text: Ensembler sets up and runs a
+                  - strong [ref=f15e56]: home media center
+                  - text: for you — the popular "*arr" stack (Sonarr, Radarr, Prowlarr and friends) plus a media server like Plex or Jellyfin — without you needing to know Docker, YAML, or the command line.
+                - paragraph [ref=f15e57]: You pick the services you want, Ensembler installs them, starts them, wires them together, and gives you a single dashboard to manage everything.
+                - heading "How it works" [level=2] [ref=f15e391]
+                - paragraph [ref=f15e59]:
+                  - text: Under the hood, each service runs in its own
+                  - strong [ref=f15e60]: Docker container
+                  - text: . Ensembler generates the Docker configuration, starts the containers, and connects them to each other so they work as one system. You never have to touch a config file.
+                - paragraph [ref=f15e61]: "The typical journey is:"
+                - list [ref=f15e62]:
+                  - listitem [ref=f15e63]:
+                    - strong [ref=f15e64]: Setup wizard
+                    - text: — choose your services, point Ensembler at your media folders, and click
+                    - strong [ref=f15e65]: Apply
+                    - text: . Ports are checked for you, and free ones are picked automatically if a default is taken.
+                  - listitem [ref=f15e66]:
+                    - strong [ref=f15e67]: Automatic wiring
+                    - text: — Sonarr and Radarr get their download client and folders, Prowlarr links to them, media servers get import notifications, and so on. You watch each step complete.
+                  - listitem [ref=f15e68]:
+                    - strong [ref=f15e69]: Dashboard
+                    - text: "— from then on you manage everything from one place: open a service, start/stop it, check for updates, or add more services."
+                - heading "What the services do" [level=2] [ref=f15e392]
+                - table [ref=f15e72]:
+                  - rowgroup [ref=f15e73]:
+                    - row [ref=f15e393]:
+                      - columnheader "Service" [ref=f15e394]
+                      - columnheader "Role" [ref=f15e395]
+                  - rowgroup [ref=f15e77]:
+                    - row [ref=f15e396]:
+                      - cell [ref=f15e79]:
+                        - strong [ref=f15e80]: Sonarr
+                      - cell "Manages your TV shows" [ref=f15e397]
+                    - row [ref=f15e398]:
+                      - cell [ref=f15e83]:
+                        - strong [ref=f15e84]: Radarr
+                      - cell "Manages your movies" [ref=f15e399]
+                    - row [ref=f15e400]:
+                      - cell [ref=f15e87]:
+                        - strong [ref=f15e88]: Bazarr
+                      - cell "Manages subtitles for Sonarr/Radarr" [ref=f15e401]
+                    - row [ref=f15e402]:
+                      - cell [ref=f15e91]:
+                        - strong [ref=f15e92]: Plex / Jellyfin / Emby
+                      - cell "Stream your media to your devices" [ref=f15e403]
+                    - row [ref=f15e404]:
+                      - cell [ref=f15e95]:
+                        - strong [ref=f15e96]: Transmission / Deluge
+                      - cell "Download clients" [ref=f15e405]
+                    - row [ref=f15e406]:
+                      - cell [ref=f15e99]:
+                        - strong [ref=f15e100]: Prowlarr / Jackett
+                      - cell "Manage where your services search for content" [ref=f15e407]
+                    - row [ref=f15e408]:
+                      - cell [ref=f15e103]:
+                        - strong [ref=f15e104]: Overseerr
+                      - cell "Request and discover media" [ref=f15e409]
+                - heading "What Ensembler does — and doesn't do" [level=2] [ref=f15e410]
+                - paragraph [ref=f15e107]:
+                  - text: Ensembler
+                  - strong [ref=f15e108]: connects your services together
+                  - text: . It does
+                  - strong [ref=f15e109]: not
+                  - text: select, request, or download any content, and it does
+                  - strong [ref=f15e110]: not
+                  - text: configure indexers or trackers for you. You choose your own sources and are responsible for how you use them.
+        - button "Settings" [ref=f15e411] [cursor=pointer]
+      - generic [ref=f15e115]:
+        - button "Stop All" [ref=f15e412] [cursor=pointer]
+        - button "Start All" [disabled]
+  - generic [ref=f15e119]:
+    - generic [ref=f15e120]:
+      - heading "Finish setting up" [level=3] [ref=f15e413]
+      - generic [ref=f15e123]: · 1 step left
+    - list [ref=f15e124]:
+      - listitem [ref=f15e125]:
+        - generic [ref=f15e127]:
+          - text: Sign in to
+          - strong [ref=f15e128]: Plex
+          - text: to create your TV and Movies libraries
+        - button "Open" [ref=f15e414] [cursor=pointer]
+  - generic [ref=f15e133]:
+    - generic [ref=f15e134]:
+      - generic [ref=f15e135]:
+        - heading "Services" [level=2] [ref=f15e415]
+        - paragraph [ref=f15e137]: 1 service configured
+      - generic [ref=f15e138]:
+        - button "Check for updates" [ref=f15e416] [cursor=pointer]
+        - button "Add Service" [ref=f15e417] [cursor=pointer]
+    - generic [ref=f15e146]:
+      - generic [ref=f15e147]:
+        - generic [ref=f15e148]:
+          - heading "Plex" [level=3] [ref=f15e149]
+          - paragraph [ref=f15e150]: Streams your media
+        - generic "Setup needed" [ref=f15e418]
+      - generic [ref=f15e154]:
+        - button "Open Plex" [ref=f15e419] [cursor=pointer]: Open
+        - button "More actions" [ref=f15e420] [cursor=pointer]
+      - generic "On the latest version (v1.43.2)" [ref=f15e421]: v1.43.2
+  - generic [ref=f15e171] [cursor=pointer]:
+    - heading "Diagnostics" [level=2] [ref=f15e422]
+    - generic [ref=f15e175]: All systems operational
+  - dialog [ref=f15e179]:
+    - generic [ref=f15e181]:
+      - generic [ref=f15e182]:
+        - heading "Settings" [level=3] [ref=f15e423]
+        - paragraph [ref=f15e184]: Configure individual services from their cards on the dashboard. These are app-wide settings.
+      - generic [ref=f15e185]:
+        - generic [ref=f15e187]:
+          - generic [ref=f15e188]:
+            - heading "Appearance" [level=4] [ref=f15e424]
+            - paragraph [ref=f15e190]: Choose how the app looks. System follows your operating system.
+          - generic [ref=f15e191]:
+            - generic [ref=f15e192]:
+              - button "Light" [ref=f15e425] [cursor=pointer]
+              - button "Dark" [ref=f15e426] [cursor=pointer]
+              - button "System" [ref=f15e427] [cursor=pointer]
+            - generic [ref=f15e196]:
+              - generic [ref=f15e197]: Language
+              - combobox "Language" [ref=f15e428]:
+                - option "English" [selected]
+                - option "Español"
+                - option "Deutsch"
+                - option "Français"
+                - option "简体中文"
+                - option "Português (Brasil)"
+                - option "Русский"
+              - paragraph [ref=f15e202]: The language used throughout Ensembler.
+        - generic [ref=f15e204]:
+          - heading "General" [level=4] [ref=f15e429]
+          - generic [ref=f15e208]:
+            - generic [ref=f15e209]:
+              - paragraph [ref=f15e210]: Keep running in the tray when I close the window
+              - paragraph [ref=f15e211]: Ensembler stays in your menu bar / system tray for quick access. Your services keep running either way — quit fully from the tray menu.
+            - switch "Keep running in the tray when the window is closed" [checked] [ref=f15e430] [cursor=pointer]
+        - generic [ref=f15e216]:
+          - generic [ref=f15e217]:
+            - heading "Environment" [level=4] [ref=f15e431]
+            - paragraph [ref=f15e219]: Global settings applied to all services.
+          - generic [ref=f15e222]:
+            - generic [ref=f15e223]:
+              - generic [ref=f15e224]: Timezone (TZ) *
+              - combobox [ref=f15e225]:
+                - option "Select timezone..."
+                - option "UTC"
+                - option "America/New_York (EST/EDT)"
+                - option "America/Chicago (CST/CDT)"
+                - option "America/Denver (MST/MDT)"
+                - option "America/Los_Angeles (PST/PDT)"
+                - option "America/Toronto"
+                - option "America/Vancouver"
+                - option "Europe/London (GMT/BST)"
+                - option "Europe/Berlin (CET/CEST)"
+                - option "Europe/Paris (CET/CEST)"
+                - option "Europe/Rome (CET/CEST)"
+                - option "Europe/Madrid (CET/CEST)"
+                - option "Europe/Amsterdam (CET/CEST)"
+                - option "Europe/Stockholm (CET/CEST)"
+                - option "Europe/Zurich (CET/CEST)"
+                - option "Asia/Tokyo (JST)"
+                - option "Asia/Shanghai (CST)"
+                - option "Asia/Singapore (SGT)"
+                - option "Asia/Hong_Kong (HKT)"
+                - option "Asia/Seoul (KST)"
+                - option "Asia/Kolkata (IST)"
+                - option "Asia/Dubai (GST)"
+                - option "Australia/Sydney (AEST/AEDT)"
+                - option "Australia/Melbourne (AEST/AEDT)"
+                - option "Australia/Perth (AWST)"
+                - option "Pacific/Auckland (NZST/NZDT)" [selected]
+              - paragraph [ref=f15e226]: Used for log timestamps and scheduling
+            - generic [ref=f15e227]:
+              - generic [ref=f15e228]: User ID (PUID) *
+              - spinbutton [ref=f15e231]: "1000"
+              - paragraph [ref=f15e232]: User ID for file ownership (usually 1000)
+            - generic [ref=f15e233]:
+              - generic [ref=f15e234]: Group ID (PGID) *
+              - spinbutton [ref=f15e237]: "1000"
+              - paragraph [ref=f15e238]: Group ID for file ownership (usually 1000)
+        - generic [ref=f15e240]:
+          - generic [ref=f15e241]:
+            - heading "Updates" [level=4] [ref=f15e432]
+            - paragraph [ref=f15e243]: Ensembler checks daily for new service versions and shows what's available on the dashboard.
+          - generic [ref=f15e245]:
+            - generic [ref=f15e246]:
+              - paragraph [ref=f15e247]: Install updates automatically
+              - paragraph [ref=f15e248]: When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.
+            - switch "Install updates automatically" [ref=f15e433] [cursor=pointer]
+        - generic [ref=f15e253]:
+          - heading "Danger Zone" [level=4] [ref=f15e434]
+          - generic [ref=f15e257]:
+            - generic [ref=f15e258]:
+              - paragraph [ref=f15e259]: Reset everything
+              - paragraph [ref=f15e260]: Removes all services and their settings, returning to a fresh install. Media files are kept.
+            - button "Reset Everything" [ref=f15e435] [cursor=pointer]
+      - generic [ref=f15e263]:
+        - button "Cancel" [ref=f15e436] [cursor=pointer]
+        - button "Save & Apply" [ref=f15e437] [cursor=pointer]
+  - dialog [ref=f15e266]:
+    - generic [ref=f15e268]:
+      - generic [ref=f15e269]: Logs
+      - generic [ref=f15e270]: Live

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { HiDotsHorizontal } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 
 export interface MenuItem {
   label: string;
@@ -13,6 +14,7 @@ export interface MenuItem {
 // A compact "⋯ More" menu for a service card's secondary/maintenance actions,
 // keeping the card face limited to the primary controls.
 export default function ServiceActionsMenu({ items }: { items: MenuItem[] }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -29,7 +31,7 @@ export default function ServiceActionsMenu({ items }: { items: MenuItem[] }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
-        aria-label="More actions"
+        aria-label={t('actionsMenu.moreActions')}
         className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
       >
         <HiDotsHorizontal className="w-5 h-5" />

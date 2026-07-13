@@ -1,0 +1,7 @@
+- generic [ref=f7e5]:
+  - generic [ref=f7e6]:
+    - img "Ensembler" [ref=f7e7]
+    - generic [ref=f7e14]: Ensembler
+  - generic [ref=f7e15]:
+    - status [ref=f7e16]
+    - paragraph [ref=f7e20]: Comprobando el estado de Docker y Docker Compose…

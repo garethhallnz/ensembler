@@ -1,5 +1,14 @@
 import { SetupStepResult } from './types';
 
+// Stable i18n code + interpolation params travel alongside the English
+// fallback in `message`, so the frontend can localise setup-result strings.
+declare module './types' {
+  interface SetupStepResult {
+    code?: string;
+    params?: Record<string, string>;
+  }
+}
+
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface ArrRequestOptions {
@@ -185,33 +194,56 @@ export async function setupArrService(setup: ArrSetupOptions): Promise<SetupStep
       service: serviceKey,
       step: 'ready',
       success: false,
-      message: (err as Error).message
+      message: (err as Error).message,
+      code: 'messages.setup.stepFailed',
+      params: { error: (err as Error).message }
     }];
   }
 
   try {
     const { created } = await ensureRootFolder(options, rootFolder);
+    const outcome = created
+      ? { message: `Added root folder ${rootFolder}`, code: 'messages.setup.rootFolderAdded' }
+      : { message: `Root folder ${rootFolder} already configured`, code: 'messages.setup.rootFolderExists' };
     results.push({
       service: serviceKey,
       step: 'root-folder',
       success: true,
-      message: created ? `Added root folder ${rootFolder}` : `Root folder ${rootFolder} already configured`
+      ...outcome,
+      params: { path: rootFolder }
     });
   } catch (err) {
-    results.push({ service: serviceKey, step: 'root-folder', success: false, message: (err as Error).message });
+    results.push({
+      service: serviceKey,
+      step: 'root-folder',
+      success: false,
+      message: (err as Error).message,
+      code: 'messages.setup.stepFailed',
+      params: { error: (err as Error).message }
+    });
   }
 
   if (transmission) {
     try {
       const { created } = await ensureTransmissionDownloadClient(options, transmission);
+      const outcome = created
+        ? { message: 'Connected to Transmission', code: 'messages.setup.transmissionConnected' }
+        : { message: 'Transmission already configured', code: 'messages.setup.transmissionExists' };
       results.push({
         service: serviceKey,
         step: 'download-client',
         success: true,
-        message: created ? 'Connected to Transmission' : 'Transmission already configured'
+        ...outcome
       });
     } catch (err) {
-      results.push({ service: serviceKey, step: 'download-client', success: false, message: (err as Error).message });
+      results.push({
+        service: serviceKey,
+        step: 'download-client',
+        success: false,
+        message: (err as Error).message,
+        code: 'messages.setup.stepFailed',
+        params: { error: (err as Error).message }
+      });
     }
   }
 

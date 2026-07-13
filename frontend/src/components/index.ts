@@ -23,3 +23,5 @@ export { default as DocsButton } from './DocsButton';
 export { default as ActionErrorModal } from './ActionErrorModal';
 export { default as ServiceTabsShell } from './ServiceTabsShell';
 export { default as SystemChecksBanner } from './SystemChecksBanner';
+export { default as LanguageSelect } from './LanguageSelect';
+export { default as LanguageMenu } from './LanguageMenu';

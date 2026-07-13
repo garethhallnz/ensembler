@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 interface ConfirmationModalProps {
   show: boolean;
   onClose: () => void;
@@ -8,15 +10,17 @@ interface ConfirmationModalProps {
   cancelText?: string;
 }
 
-export default function ConfirmationModal({ 
-  show, 
-  onClose, 
-  onConfirm, 
-  message, 
+export default function ConfirmationModal({
+  show,
+  onClose,
+  onConfirm,
+  message,
   destructive = false,
-  confirmText = "Yes, I'm sure",
-  cancelText = "No, cancel"
+  confirmText,
+  cancelText
 }: ConfirmationModalProps) {
+  const { t } = useTranslation();
+
   if (!show) {
     return null;
   }
@@ -37,7 +41,7 @@ export default function ConfirmationModal({
               ? 'text-red-600 dark:text-red-400' 
               : 'text-gray-700 dark:text-gray-300'
           }`}>
-            {isDestructive ? 'Destructive Action' : 'Confirm Action'}
+            {isDestructive ? t('confirm.destructiveTitle') : t('confirm.title')}
           </h3>
           <p className="mb-6 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             {message}
@@ -50,7 +54,7 @@ export default function ConfirmationModal({
               onClick={onClose}
               className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md shadow-sm hover:bg-gray-200 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
             >
-              {cancelText}
+              {cancelText ?? t('confirm.cancel')}
             </button>
             <button
               onClick={onConfirm}
@@ -60,7 +64,7 @@ export default function ConfirmationModal({
                   : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
               }`}
             >
-              {confirmText}
+              {confirmText ?? t('confirm.confirm')}
             </button>
           </div>
         </div>

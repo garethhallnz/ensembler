@@ -1,0 +1,225 @@
+- generic [ref=f15e24]:
+  - generic [ref=f15e25]:
+    - generic [ref=f15e26]:
+      - generic [ref=f15e27]:
+        - img "Ensembler" [ref=f15e28]
+        - heading "Панель управления" [level=1] [ref=f15e328]
+      - paragraph [ref=f15e36]: Управление сервисами вашего медиацентра
+    - generic [ref=f15e37]:
+      - generic [ref=f15e38]:
+        - button "Документация" [ref=f15e329] [cursor=pointer]
+        - dialog [ref=f15e42]:
+          - generic [ref=f15e44]:
+            - complementary [ref=f15e45]:
+              - heading "Документация" [level=2] [ref=f15e330]
+              - navigation [ref=f15e47]:
+                - button "Обзор" [ref=f15e331] [cursor=pointer]
+                - button "Начало работы" [ref=f15e332] [cursor=pointer]
+                - button "Управление сервисами" [ref=f15e333] [cursor=pointer]
+                - button "Устранение неполадок" [ref=f15e334] [cursor=pointer]
+            - article [ref=f15e52]:
+              - generic [ref=f15e53]:
+                - heading "Что такое Ensembler?" [level=1] [ref=f15e335]
+                - paragraph [ref=f15e55]:
+                  - text: Ensembler настраивает и запускает за вас
+                  - strong [ref=f15e56]: домашний медиацентр
+                  - text: — популярный стек «*arr» (Sonarr, Radarr, Prowlarr и им подобные) плюс медиасервер, такой как Plex или Jellyfin, — при этом вам не нужно разбираться в Docker, YAML или командной строке.
+                - paragraph [ref=f15e57]: Вы выбираете нужные сервисы, Ensembler устанавливает их, запускает, связывает их между собой и даёт единую панель управления для всего.
+                - heading "Как это работает" [level=2] [ref=f15e336]
+                - paragraph [ref=f15e59]:
+                  - text: Под капотом каждый сервис работает в собственном
+                  - strong [ref=f15e60]: контейнере Docker
+                  - text: . Ensembler генерирует конфигурацию Docker, запускает контейнеры и соединяет их друг с другом, чтобы они работали как единая система. Вам никогда не придётся прикасаться к конфигурационным файлам.
+                - paragraph [ref=f15e61]: "Типичный путь выглядит так:"
+                - list [ref=f15e62]:
+                  - listitem [ref=f15e63]:
+                    - strong [ref=f15e64]: Мастер настройки
+                    - text: — выберите свои сервисы, укажите Ensembler ваши папки с медиафайлами и нажмите
+                    - strong [ref=f15e65]: Применить
+                    - text: . Порты проверяются за вас, и если значение по умолчанию занято, свободные порты подбираются автоматически.
+                  - listitem [ref=f15e66]:
+                    - strong [ref=f15e67]: Автоматическая связка
+                    - text: — Sonarr и Radarr получают свой клиент загрузок и папки, Prowlarr подключается к ним, медиасерверы получают уведомления об импорте и так далее. Вы наблюдаете за завершением каждого шага.
+                  - listitem [ref=f15e68]:
+                    - strong [ref=f15e69]: Панель управления
+                    - text: "— с этого момента вы управляете всем из одного места: откройте сервис, запустите/остановите его, проверьте обновления или добавьте новые сервисы."
+                - heading "Что делают сервисы" [level=2] [ref=f15e337]
+                - table [ref=f15e72]:
+                  - rowgroup [ref=f15e73]:
+                    - row [ref=f15e338]:
+                      - columnheader "Сервис" [ref=f15e339]
+                      - columnheader "Роль" [ref=f15e340]
+                  - rowgroup [ref=f15e77]:
+                    - row [ref=f15e341]:
+                      - cell [ref=f15e79]:
+                        - strong [ref=f15e80]: Sonarr
+                      - cell "Управляет вашими сериалами" [ref=f15e342]
+                    - row [ref=f15e343]:
+                      - cell [ref=f15e83]:
+                        - strong [ref=f15e84]: Radarr
+                      - cell "Управляет вашими фильмами" [ref=f15e344]
+                    - row [ref=f15e345]:
+                      - cell [ref=f15e87]:
+                        - strong [ref=f15e88]: Bazarr
+                      - cell "Управляет субтитрами для Sonarr/Radarr" [ref=f15e346]
+                    - row [ref=f15e347]:
+                      - cell [ref=f15e91]:
+                        - strong [ref=f15e92]: Plex / Jellyfin / Emby
+                      - cell "Транслируют ваши медиафайлы на устройства" [ref=f15e348]
+                    - row [ref=f15e349]:
+                      - cell [ref=f15e95]:
+                        - strong [ref=f15e96]: Transmission / Deluge
+                      - cell "Клиенты загрузок" [ref=f15e350]
+                    - row [ref=f15e351]:
+                      - cell [ref=f15e99]:
+                        - strong [ref=f15e100]: Prowlarr / Jackett
+                      - cell "Управляют тем, где ваши сервисы ищут контент" [ref=f15e352]
+                    - row [ref=f15e353]:
+                      - cell [ref=f15e103]:
+                        - strong [ref=f15e104]: Overseerr
+                      - cell "Запрос и поиск медиафайлов" [ref=f15e354]
+                - heading "Что Ensembler делает — и чего не делает" [level=2] [ref=f15e355]
+                - paragraph [ref=f15e107]:
+                  - text: Ensembler
+                  - strong [ref=f15e108]: связывает ваши сервисы между собой
+                  - text: . Он
+                  - strong [ref=f15e109]: не
+                  - text: выбирает, не запрашивает и не загружает какой-либо контент, и он
+                  - strong [ref=f15e110]: не
+                  - text: настраивает за вас индексаторы или трекеры. Вы выбираете свои собственные источники и сами несёте ответственность за то, как их используете.
+        - button "Настройки" [ref=f15e356] [cursor=pointer]
+      - generic [ref=f15e115]:
+        - button "Остановить все" [ref=f15e357] [cursor=pointer]
+        - button "Запустить все" [disabled]
+  - generic [ref=f15e119]:
+    - generic [ref=f15e120]:
+      - heading "Завершите настройку" [level=3] [ref=f15e358]
+      - generic [ref=f15e123]: · осталось 1 шаг
+    - list [ref=f15e124]:
+      - listitem [ref=f15e125]:
+        - generic [ref=f15e127]:
+          - text: Войдите в
+          - strong [ref=f15e128]: Plex
+          - text: ", чтобы создать медиатеки сериалов и фильмов"
+        - button "Открыть" [ref=f15e359] [cursor=pointer]
+  - generic [ref=f15e133]:
+    - generic [ref=f15e134]:
+      - generic [ref=f15e135]:
+        - heading "Сервисы" [level=2] [ref=f15e360]
+        - paragraph [ref=f15e137]: 1 сервис настроен
+      - generic [ref=f15e138]:
+        - button "Проверить обновления" [ref=f15e361] [cursor=pointer]
+        - button "Добавить сервис" [ref=f15e362] [cursor=pointer]
+    - generic [ref=f15e146]:
+      - generic [ref=f15e147]:
+        - generic [ref=f15e148]:
+          - heading "Plex" [level=3] [ref=f15e149]
+          - paragraph [ref=f15e150]: Транслирует ваши медиа
+        - generic "Требуется настройка" [ref=f15e363]
+      - generic [ref=f15e154]:
+        - button "Открыть Plex" [ref=f15e364] [cursor=pointer]: Открыть
+        - button "Ещё действия" [ref=f15e365] [cursor=pointer]
+      - generic "Установлена последняя версия (v1.43.2)" [ref=f15e366]: v1.43.2
+  - generic [ref=f15e171] [cursor=pointer]:
+    - heading "Диагностика" [level=2] [ref=f15e367]
+    - generic [ref=f15e175]: Все системы работают
+  - dialog [ref=f15e179]:
+    - generic [ref=f15e181]:
+      - generic [ref=f15e182]:
+        - heading "Настройки" [level=3] [ref=f15e368]
+        - paragraph [ref=f15e184]: Настраивайте отдельные сервисы на их карточках на панели управления. Здесь — общие настройки приложения.
+      - generic [ref=f15e185]:
+        - generic [ref=f15e187]:
+          - generic [ref=f15e188]:
+            - heading "Внешний вид" [level=4] [ref=f15e369]
+            - paragraph [ref=f15e190]: Выберите оформление приложения. «Системная» следует настройкам вашей операционной системы.
+          - generic [ref=f15e191]:
+            - generic [ref=f15e192]:
+              - button "Светлая" [ref=f15e370] [cursor=pointer]
+              - button "Тёмная" [ref=f15e371] [cursor=pointer]
+              - button "Системная" [ref=f15e372] [cursor=pointer]
+            - generic [ref=f15e196]:
+              - generic [ref=f15e197]: Язык
+              - combobox "Язык" [ref=f15e373]:
+                - option "English"
+                - option "Español"
+                - option "Deutsch"
+                - option "Français"
+                - option "简体中文"
+                - option "Português (Brasil)"
+                - option "Русский" [selected]
+              - paragraph [ref=f15e202]: Язык, используемый во всём приложении Ensembler.
+        - generic [ref=f15e204]:
+          - heading "Общие" [level=4] [ref=f15e374]
+          - generic [ref=f15e208]:
+            - generic [ref=f15e209]:
+              - paragraph [ref=f15e210]: Продолжать работу в трее при закрытии окна
+              - paragraph [ref=f15e211]: Ensembler остаётся в строке меню / системном трее для быстрого доступа. Ваши сервисы продолжают работать в любом случае — полностью выйти можно через меню трея.
+            - switch "Продолжать работу в трее при закрытии окна" [checked] [ref=f15e375] [cursor=pointer]
+        - generic [ref=f15e216]:
+          - generic [ref=f15e217]:
+            - heading "Окружение" [level=4] [ref=f15e376]
+            - paragraph [ref=f15e219]: Общие настройки, применяемые ко всем сервисам.
+          - generic [ref=f15e222]:
+            - generic [ref=f15e223]:
+              - generic [ref=f15e224]: Часовой пояс (TZ) *
+              - combobox [ref=f15e225]:
+                - option "Выберите часовой пояс..."
+                - option "UTC"
+                - option "America/New_York (EST/EDT)"
+                - option "America/Chicago (CST/CDT)"
+                - option "America/Denver (MST/MDT)"
+                - option "America/Los_Angeles (PST/PDT)"
+                - option "America/Toronto"
+                - option "America/Vancouver"
+                - option "Europe/London (GMT/BST)"
+                - option "Europe/Berlin (CET/CEST)"
+                - option "Europe/Paris (CET/CEST)"
+                - option "Europe/Rome (CET/CEST)"
+                - option "Europe/Madrid (CET/CEST)"
+                - option "Europe/Amsterdam (CET/CEST)"
+                - option "Europe/Stockholm (CET/CEST)"
+                - option "Europe/Zurich (CET/CEST)"
+                - option "Asia/Tokyo (JST)"
+                - option "Asia/Shanghai (CST)"
+                - option "Asia/Singapore (SGT)"
+                - option "Asia/Hong_Kong (HKT)"
+                - option "Asia/Seoul (KST)"
+                - option "Asia/Kolkata (IST)"
+                - option "Asia/Dubai (GST)"
+                - option "Australia/Sydney (AEST/AEDT)"
+                - option "Australia/Melbourne (AEST/AEDT)"
+                - option "Australia/Perth (AWST)"
+                - option "Pacific/Auckland (NZST/NZDT)" [selected]
+              - paragraph [ref=f15e226]: Используется для меток времени в логах и планирования
+            - generic [ref=f15e227]:
+              - generic [ref=f15e228]: ID пользователя (PUID) *
+              - spinbutton [ref=f15e231]: "1000"
+              - paragraph [ref=f15e232]: ID пользователя для владения файлами (обычно 1000)
+            - generic [ref=f15e233]:
+              - generic [ref=f15e234]: ID группы (PGID) *
+              - spinbutton [ref=f15e237]: "1000"
+              - paragraph [ref=f15e238]: ID группы для владения файлами (обычно 1000)
+        - generic [ref=f15e240]:
+          - generic [ref=f15e241]:
+            - heading "Обновления" [level=4] [ref=f15e377]
+            - paragraph [ref=f15e243]: Ensembler ежедневно проверяет новые версии сервисов и показывает доступные на панели управления.
+          - generic [ref=f15e245]:
+            - generic [ref=f15e246]:
+              - paragraph [ref=f15e247]: Устанавливать обновления автоматически
+              - paragraph [ref=f15e248]: Когда включено, доступные обновления применяются в фоновом режиме каждый день. По умолчанию выключено — вы сохраняете контроль и применяете их сами через «Обновить все».
+            - switch "Устанавливать обновления автоматически" [ref=f15e378] [cursor=pointer]
+        - generic [ref=f15e253]:
+          - heading "Опасная зона" [level=4] [ref=f15e379]
+          - generic [ref=f15e257]:
+            - generic [ref=f15e258]:
+              - paragraph [ref=f15e259]: Сбросить всё
+              - paragraph [ref=f15e260]: Удаляет все сервисы и их настройки, возвращая к состоянию после установки. Медиафайлы сохраняются.
+            - button "Сбросить всё" [ref=f15e380] [cursor=pointer]
+      - generic [ref=f15e263]:
+        - button "Отмена" [ref=f15e381] [cursor=pointer]
+        - button "Сохранить и применить" [ref=f15e382] [cursor=pointer]
+  - dialog [ref=f15e266]:
+    - generic [ref=f15e268]:
+      - generic [ref=f15e269]: Логи
+      - generic [ref=f15e270]: В реальном времени

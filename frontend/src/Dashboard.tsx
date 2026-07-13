@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { useTranslation, Trans } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal, SystemChecksBanner } from './components';
@@ -48,30 +49,31 @@ interface DashboardProps {
 }
 
 // Plain-language role for a service, so a card says what it's for rather than
-// relying on jargon like "PVR for Usenet and BitTorrent users".
+// relying on jargon like "PVR for Usenet and BitTorrent users". Values are
+// translation-key suffixes under dashboard.roles.
 const SERVICE_ROLES: { [key: string]: string } = {
-  sonarr: 'Manages your TV shows',
-  radarr: 'Manages your movies',
-  bazarr: 'Manages subtitles',
-  plex: 'Streams your media',
-  jellyfin: 'Streams your media',
-  emby: 'Streams your media',
-  transmission: 'Downloads content',
-  deluge: 'Downloads content',
-  prowlarr: 'Finds content sources',
-  jackett: 'Finds content sources',
-  overseerr: 'Requests & discovers media',
+  sonarr: 'tvShows',
+  radarr: 'movies',
+  bazarr: 'subtitles',
+  plex: 'streams',
+  jellyfin: 'streams',
+  emby: 'streams',
+  transmission: 'downloads',
+  deluge: 'downloads',
+  prowlarr: 'indexers',
+  jackett: 'indexers',
+  overseerr: 'requests',
 };
 
 const CATEGORY_ROLES: { [key: string]: string } = {
-  media: 'Streams your media',
-  management: 'Manages your library',
-  torrent: 'Downloads content',
-  indexer: 'Finds content sources',
-  request: 'Requests & discovers media',
+  media: 'streams',
+  management: 'library',
+  torrent: 'downloads',
+  indexer: 'indexers',
+  request: 'requests',
 };
 
-const serviceRole = (key: string, category: string): string =>
+const serviceRoleKey = (key: string, category: string): string =>
   SERVICE_ROLES[key] || CATEGORY_ROLES[category] || '';
 
 // Reduce a messy image version to a recognizable major.minor.patch, e.g.
@@ -79,6 +81,7 @@ const serviceRole = (key: string, category: string): string =>
 const cleanVersion = (version: string): string => version.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? version;
 
 export default function Dashboard({ onResetComplete }: DashboardProps) {
+  const { t } = useTranslation();
   const { showToast } = useToast();
   const { openService } = useServiceTabs();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
@@ -230,10 +233,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
         }
       } else {
-        showToast(`Could not check ${name} for updates.`, 'error');
+        showToast(t('dashboard.toast.checkFailed', { name }), 'error');
       }
     } catch {
-      showToast(`Could not check ${name} for updates.`, 'error');
+      showToast(t('dashboard.toast.checkFailed', { name }), 'error');
     } finally {
       setUpdateChecking(prev => ({ ...prev, [serviceKey]: false }));
     }
@@ -249,12 +252,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       if (data.success) {
         setServiceUpdates(data.updates || {});
         const count = Object.values(data.updates || {}).filter((u) => (u as { hasUpdate: boolean | null })?.hasUpdate).length;
-        showToast(count > 0 ? `${count} update${count > 1 ? 's' : ''} available.` : 'All services are up to date.', count > 0 ? 'info' : 'success');
+        showToast(count > 0 ? t('dashboard.toast.updatesFound', { count }) : t('dashboard.toast.allUpToDate'), count > 0 ? 'info' : 'success');
       } else {
-        showToast('Could not check for updates.', 'error');
+        showToast(t('dashboard.toast.checkAllFailed'), 'error');
       }
     } catch {
-      showToast('Could not check for updates.', 'error');
+      showToast(t('dashboard.toast.checkAllFailed'), 'error');
     } finally {
       setCheckingAllUpdates(false);
     }
@@ -441,7 +444,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`${serviceName} ${action}ed successfully`, 'success');
+        showToast(t(`dashboard.toast.actionSuccess_${action}`, { name: serviceName }), 'success');
         await fetchServiceStatus();
         const newStatus = await runtimeManager.checkStatus();
         setRuntimeStatus(newStatus); // Ensure up-to-date status
@@ -460,7 +463,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const showActionFailure = (serviceName: string, action: 'start' | 'stop' | 'restart', detail?: string) => {
     const name = serviceConfig.find(s => s.key === serviceName)?.name || serviceName;
     setActionError({
-      title: `Couldn't ${action} ${name}`,
+      title: t(`dashboard.actionError.title_${action}`, { name }),
       detail,
       serviceKey: serviceName,
       retry: () => handleServiceAction(serviceName, action),
@@ -469,9 +472,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const handleGlobalAction = (action: 'start-all' | 'stop-all') => {
     const key = action === 'start-all' ? 'startAll' : 'stopAll';
-    const actionText = action === 'start-all' ? 'start all' : 'stop all';
+    const verb = action === 'start-all' ? 'start' : 'stop';
     setConfirmationModal({
-      message: `Are you sure you want to ${actionText} services?`,
+      message: t(`dashboard.confirm.globalAction_${verb}`),
       onConfirm: async () => {
         setOpenModal(false);
         setActionLoading(prev => ({ ...prev, [key]: true }));
@@ -484,10 +487,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             });
             const data = await res.json();
             if (!data.success) {
-              showToast(`Failed to ${action.split('-')[0]} ${service}: ${data.message}`, 'error');
+              showToast(t(`dashboard.toast.globalItemFailed_${verb}`, { service, message: data.message }), 'error');
             }
           } catch (error) {
-            showToast(`Error ${action.split('-')[0]}ing ${service}: ${error}`, 'error');
+            showToast(t(`dashboard.toast.globalItemError_${verb}`, { service, error: String(error) }), 'error');
           }
           completed += 1;
           setGlobalActionProgress(Math.round((completed / selectedServices.length) * 100));
@@ -497,7 +500,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         await fetchServiceStatus();
         const newStatus = await runtimeManager.checkStatus();
         setRuntimeStatus(newStatus); // Ensure up-to-date status
-        showToast(`All services ${action.split('-')[0]}ed`, 'success');
+        showToast(t(`dashboard.toast.globalDone_${verb}`), 'success');
       }
     });
     setOpenModal(true);
@@ -508,10 +511,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/launch-url`);
       const data = await res.json();
       if (data.success) return data.url;
-      showToast(`Failed to get launch URL for ${serviceKey}: ${data.message}`, 'error');
+      showToast(t('dashboard.toast.launchUrlFailed', { service: serviceKey, message: data.message }), 'error');
       return null;
     } catch (error) {
-      showToast(`Error launching ${serviceKey}: ${error}`, 'error');
+      showToast(t('dashboard.toast.launchError', { service: serviceKey, error: String(error) }), 'error');
       return null;
     }
   };
@@ -583,7 +586,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     if (targets.length === 0) return;
 
     setConfirmationModal({
-      message: `Update ${targets.length} service${targets.length !== 1 ? 's' : ''}? This downloads the latest images and restarts each one.`,
+      message: t('dashboard.confirm.updateAll', { count: targets.length }),
       onConfirm: async () => {
         setOpenModal(false);
         setUpdatingAll(true);
@@ -592,10 +595,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           const data = await res.json();
           const updatedCount = data.updated?.length ?? 0;
           if (data.success) {
-            showToast(`Updated ${updatedCount} service${updatedCount !== 1 ? 's' : ''}`, 'success');
+            showToast(t('dashboard.toast.updatedCount', { count: updatedCount }), 'success');
           } else {
             const failedNames = (data.failed ?? []).map((f: { service: string }) => f.service).join(', ');
-            showToast(`Updated ${updatedCount}; failed: ${failedNames || 'unknown'}`, 'error');
+            showToast(t('dashboard.toast.updatedWithFailures', { count: updatedCount, names: failedNames || t('dashboard.common.unknown') }), 'error');
           }
           // Re-read the (backend-refreshed) availability + status so prompts clear.
           await fetchServiceUpdates();
@@ -603,7 +606,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           await fetchServiceVersions(data.updated ?? []);
           setRuntimeStatus(await runtimeManager.checkStatus());
         } catch (error) {
-          showToast(`Error updating services: ${error}`, 'error');
+          showToast(t('dashboard.toast.updateAllError', { error: String(error) }), 'error');
         } finally {
           setUpdatingAll(false);
         }
@@ -614,7 +617,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const handleServiceUpdate = (serviceName: string) => {
     setConfirmationModal({
-      message: `Are you sure you want to update ${serviceName}? This will download the latest version and restart the service.`,
+      message: t('dashboard.confirm.updateService', { name: serviceName }),
       onConfirm: async () => {
         setOpenModal(false);
         setUpdateLoading(prev => ({ ...prev, [serviceName]: true }));
@@ -624,7 +627,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           });
           const data = await res.json();
           if (data.success) {
-            showToast(`${serviceName} updated successfully`, 'success');
+            showToast(t('dashboard.toast.updateSuccess', { name: serviceName }), 'success');
             await fetchServiceStatus();
             const newStatus = await runtimeManager.checkStatus();
             setRuntimeStatus(newStatus); // Ensure up-to-date status
@@ -633,10 +636,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: data.hasUpdate ?? false } }));
             await fetchServiceVersions([serviceName]);
           } else {
-            showToast(`Failed to update ${serviceName}: ${data.message}`, 'error');
+            showToast(t('dashboard.toast.updateFailed', { name: serviceName, message: data.message }), 'error');
           }
         } catch (error) {
-          showToast(`Error updating ${serviceName}: ${error}`, 'error');
+          showToast(t('dashboard.toast.updateError', { name: serviceName, error: String(error) }), 'error');
         } finally {
           setUpdateLoading(prev => ({ ...prev, [serviceName]: false }));
         }
@@ -689,9 +692,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         <div>
           <div className="flex items-center gap-3">
             <Logo className="w-11 h-11 shrink-0 text-gray-400 dark:text-gray-500" />
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">{t('dashboard.heading.title')}</h1>
           </div>
-          <p className="text-left text-lg text-gray-600 dark:text-gray-400 mt-2 pl-[3.5rem]">Manage your media center services</p>
+          <p className="text-left text-lg text-gray-600 dark:text-gray-400 mt-2 pl-[3.5rem]">{t('dashboard.heading.subtitle')}</p>
         </div>
         <div className="flex items-center gap-4">
           
@@ -701,9 +704,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             <Button
               variant="secondary"
               onClick={() => setShowAdvancedSettings(true)}
-              tooltip="Advanced Settings"
+              tooltip={t('dashboard.settings.tooltip')}
             >
-              <HiCog className="inline-block mr-1" /> Settings
+              <HiCog className="inline-block mr-1" /> {t('dashboard.settings.button')}
             </Button>
           </div>
           
@@ -726,14 +729,14 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                     loading={actionLoading.stopAll}
                     disabled={globalActionProgress !== null || selectedServices.length === 0 || allStopped}
                     tooltip={
-                      selectedServices.length === 0 
-                        ? 'No services to stop' 
-                        : allStopped 
-                          ? 'All services are already stopped' 
-                          : 'Stop All Services'
+                      selectedServices.length === 0
+                        ? t('dashboard.globalControls.noServicesToStop')
+                        : allStopped
+                          ? t('dashboard.globalControls.allStopped')
+                          : t('dashboard.globalControls.stopAllTooltip')
                     }
                   >
-                    <HiStop className="inline-block mr-1" /> Stop All
+                    <HiStop className="inline-block mr-1" /> {t('dashboard.globalControls.stopAll')}
                   </Button>
                   <Button 
                     variant="success"
@@ -741,14 +744,14 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                     loading={actionLoading.startAll}
                     disabled={globalActionProgress !== null || selectedServices.length === 0 || allRunning}
                     tooltip={
-                      selectedServices.length === 0 
-                        ? 'No services to start' 
-                        : allRunning 
-                          ? 'All services are already running' 
-                          : 'Start All Services'
+                      selectedServices.length === 0
+                        ? t('dashboard.globalControls.noServicesToStart')
+                        : allRunning
+                          ? t('dashboard.globalControls.allRunning')
+                          : t('dashboard.globalControls.startAllTooltip')
                     }
                   >
-                    <HiPlay className="inline-block mr-1" /> Start All
+                    <HiPlay className="inline-block mr-1" /> {t('dashboard.globalControls.startAll')}
                   </Button>
                 </>
               );
@@ -766,15 +769,15 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         const tasks = [
           prowlarrNeedsIndexers && {
             key: 'prowlarr',
-            label: <>Add an indexer in <strong className="font-semibold">Prowlarr</strong> so Sonarr and Radarr can search for content</>,
+            label: <Trans i18nKey="dashboard.tasks.prowlarr" components={{ strong: <strong className="font-semibold" /> }} />,
           },
           plexNeedsSignIn && {
             key: 'plex',
-            label: <>Sign in to <strong className="font-semibold">Plex</strong> to create your TV and Movies libraries</>,
+            label: <Trans i18nKey="dashboard.tasks.plex" components={{ strong: <strong className="font-semibold" /> }} />,
           },
           overseerrNeedsSetup && {
             key: 'overseerr',
-            label: <>Finish <strong className="font-semibold">Overseerr</strong> setup — sign in with Plex to discover your services</>,
+            label: <Trans i18nKey="dashboard.tasks.overseerr" components={{ strong: <strong className="font-semibold" /> }} />,
           },
         ].filter(Boolean) as { key: string; label: React.ReactNode }[];
 
@@ -784,9 +787,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           <div className="mb-6 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/20 px-5 py-4">
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">Finish setting up</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('dashboard.setupChecklist.heading')}</h3>
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                · {tasks.length} step{tasks.length !== 1 ? 's' : ''} left
+                {t('dashboard.setupChecklist.stepsLeft', { count: tasks.length })}
               </span>
             </div>
             <ul className="divide-y divide-amber-200/70 dark:divide-amber-900/40">
@@ -798,7 +801,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                     onClick={() => handleLaunchService(task.key)}
                     className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                   >
-                    Open <HiExternalLink className="w-4 h-4" />
+                    {t('dashboard.common.open')} <HiExternalLink className="w-4 h-4" />
                   </button>
                 </li>
               ))}
@@ -818,11 +821,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">Services</h2>
+            <h2 className="text-left text-2xl font-bold text-gray-900 dark:text-white">{t('dashboard.services.heading')}</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              {selectedServices.length} service{selectedServices.length !== 1 ? 's' : ''} configured
+              {t('dashboard.services.configured', { count: selectedServices.length })}
               {pendingUpdateCount > 0 && (
-                <span className="text-amber-600 dark:text-amber-400 font-medium"> · {pendingUpdateCount} update{pendingUpdateCount !== 1 ? 's' : ''} available</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">{t('dashboard.services.updatesAvailable', { count: pendingUpdateCount })}</span>
               )}
             </p>
           </div>
@@ -832,9 +835,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 variant="secondary"
                 onClick={handleUpdateAll}
                 loading={updatingAll}
-                tooltip={`Update the ${pendingUpdateCount} service${pendingUpdateCount !== 1 ? 's' : ''} with a new version available`}
+                tooltip={t('dashboard.services.updateAllTooltip', { count: pendingUpdateCount })}
               >
-                <HiArrowCircleUp className="inline-block mr-1" /> {updatingAll ? 'Updating…' : `Update all (${pendingUpdateCount})`}
+                <HiArrowCircleUp className="inline-block mr-1" /> {updatingAll ? t('dashboard.common.updating') : t('dashboard.services.updateAll', { count: pendingUpdateCount })}
               </Button>
             )}
             <Button
@@ -842,13 +845,13 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               onClick={checkAllUpdates}
               loading={checkingAllUpdates}
               disabled={selectedServices.length === 0}
-              tooltip="Check every service for available updates"
+              tooltip={t('dashboard.services.checkAllTooltip')}
             >
-              <HiArrowCircleUp className="inline-block mr-1" /> {checkingAllUpdates ? 'Checking…' : 'Check for updates'}
+              <HiArrowCircleUp className="inline-block mr-1" /> {checkingAllUpdates ? t('dashboard.common.checking') : t('dashboard.services.checkForUpdates')}
             </Button>
             {serviceConfig.some(s => !selectedServices.includes(s.key)) && (
-              <Button variant="primary" onClick={() => setShowAddService(true)} tooltip="Add another service">
-                <HiPlus className="inline-block mr-1" /> Add Service
+              <Button variant="primary" onClick={() => setShowAddService(true)} tooltip={t('dashboard.services.addTooltip')}>
+                <HiPlus className="inline-block mr-1" /> {t('dashboard.services.addService')}
               </Button>
             )}
           </div>
@@ -858,17 +861,16 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             <Card.Body className="text-center py-12">
               <div className="space-y-4">
                 <div className="text-6xl text-gray-400">🚀</div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Services Configured</h3>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t('dashboard.empty.title')}</h3>
                 <p className="text-gray-600 dark:text-gray-400 max-w-md mx-auto">
-                  Get started by adding and configuring your media center services. 
-                  You can add services individually as needed.
+                  {t('dashboard.empty.description')}
                 </p>
                 <Button
                   variant="primary"
                   onClick={() => setShowAddService(true)}
                   className="mt-4"
                 >
-                  <HiPlus className="inline-block mr-2" /> Add Service
+                  <HiPlus className="inline-block mr-2" /> {t('dashboard.services.addService')}
                 </Button>
               </div>
             </Card.Body>
@@ -896,14 +898,16 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               const pendingAction = (['start', 'stop', 'restart'] as const).find(
                 a => actionLoading[`${serviceKey}:${a}`]
               );
-              const pendingLabel = pendingAction === 'start' ? 'Starting…'
-                : pendingAction === 'stop' ? 'Stopping…'
-                : pendingAction === 'restart' ? 'Restarting…' : null;
+              const pendingLabel = pendingAction === 'start' ? t('dashboard.status.starting')
+                : pendingAction === 'stop' ? t('dashboard.status.stopping')
+                : pendingAction === 'restart' ? t('dashboard.status.restarting') : null;
+
+              const roleKey = serviceRoleKey(serviceKey, service.category);
 
               const statusLabel = pendingLabel
                 ? pendingLabel
-                : needsSetup ? 'Setup needed'
-                : unhealthy ? 'Needs attention' : isRunning ? 'Running' : (status === 'Unknown' ? 'Stopped' : status);
+                : needsSetup ? t('dashboard.status.setupNeeded')
+                : unhealthy ? t('dashboard.status.needsAttention') : isRunning ? t('dashboard.status.running') : (status === 'Unknown' ? t('dashboard.status.stopped') : status);
               const statusDotClass = pendingLabel ? 'bg-blue-500 animate-pulse'
                 : needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
 
@@ -916,9 +920,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white">{service.name}</h3>
-                      <p className="text-left text-sm text-gray-600 dark:text-gray-400">{serviceRole(serviceKey, service.category)}</p>
+                      <p className="text-left text-sm text-gray-600 dark:text-gray-400">{roleKey ? t(`dashboard.roles.${roleKey}`) : ''}</p>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0" title={unhealthy ? 'Service is running but not responding normally' : statusLabel}>
+                    <div className="flex items-center gap-2 shrink-0" title={unhealthy ? t('dashboard.status.unhealthyTooltip') : statusLabel}>
                       <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{statusLabel}</span>
                     </div>
@@ -931,10 +935,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                       variant="primary"
                       onClick={() => handleLaunchService(serviceKey, service.name)}
                       disabled={!isRunning}
-                      aria-label={`Open ${service.name}`}
-                      tooltip={!isRunning ? 'Start the service to open it' : `Open ${service.name}`}
+                      aria-label={t('dashboard.common.openNamed', { name: service.name })}
+                      tooltip={!isRunning ? t('dashboard.card.openDisabledTooltip') : t('dashboard.common.openNamed', { name: service.name })}
                     >
-                      <HiExternalLink className="inline-block mr-1" /> Open
+                      <HiExternalLink className="inline-block mr-1" /> {t('dashboard.common.open')}
                     </Button>
                     <div className="ml-auto">
                       <ServiceActionsMenu
@@ -942,32 +946,32 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                           // Lifecycle controls live in the menu so "Open" is the
                           // single clear action on every card.
                           ...(isDesktopApp() && isRunning ? [{
-                            label: 'Open in browser',
+                            label: t('dashboard.menu.openInBrowser'),
                             icon: <HiExternalLink className="w-4 h-4" />,
                             onClick: () => openServiceInBrowser(serviceKey),
                           }] : []),
                           {
-                            label: isRunning ? 'Stop' : 'Start',
+                            label: isRunning ? t('dashboard.menu.stop') : t('dashboard.menu.start'),
                             icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
                             onClick: () => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start'),
                           },
                           ...(isRunning ? [{
-                            label: 'Restart',
+                            label: t('dashboard.menu.restart'),
                             icon: <HiRefresh className="w-4 h-4" />,
                             onClick: () => handleServiceAction(serviceKey, 'restart'),
                           }] : []),
                           {
-                            label: 'View logs',
+                            label: t('dashboard.menu.viewLogs'),
                             icon: <HiDocumentText className="w-4 h-4" />,
                             onClick: () => openLogsDrawer(serviceKey),
                           },
                           {
-                            label: 'Check for updates',
+                            label: t('dashboard.services.checkForUpdates'),
                             icon: <HiArrowCircleUp className="w-4 h-4" />,
                             onClick: () => checkServiceForUpdate(serviceKey),
                           },
                           {
-                            label: 'Configure',
+                            label: t('dashboard.menu.configure'),
                             icon: <HiCog className="w-4 h-4" />,
                             onClick: () => setConfigModal({ service, mode: 'edit' }),
                           },
@@ -981,7 +985,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                     <div className="min-w-0">
                       {updateChecking[serviceKey] ? (
                         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                          <Spinner size="sm" /> Checking for updates…
+                          <Spinner size="sm" /> {t('dashboard.card.checkingUpdates')}
                         </div>
                       ) : updateInfo?.hasUpdate ? (
                         <button
@@ -990,11 +994,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                           className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
                         >
                           <HiArrowCircleUp className="w-4 h-4" />
-                          {isUpdating ? 'Updating…' : 'Update available — update now'}
+                          {isUpdating ? t('dashboard.common.updating') : t('dashboard.card.updateAvailable')}
                         </button>
                       ) : recentlyChecked[serviceKey] ? (
                         <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                          <HiCheckCircle className="w-4 h-4" /> Up to date
+                          <HiCheckCircle className="w-4 h-4" /> {t('dashboard.card.upToDate')}
                         </div>
                       ) : null}
                     </div>
@@ -1003,10 +1007,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                       const shown = cleanVersion(serviceVersions[serviceKey]);
                       const isPinned = !!pinnedVersions[serviceKey];
                       const title = isPinned
-                        ? `Locked to v${shown}`
+                        ? t('dashboard.card.version.pinned', { version: shown })
                         : updateInfo?.hasUpdate
-                          ? `On v${shown} · update available`
-                          : `On the latest version (v${shown})`;
+                          ? t('dashboard.card.version.updateAvailable', { version: shown })
+                          : t('dashboard.card.version.latest', { version: shown });
                       return (
                         <span
                           title={title}
@@ -1040,11 +1044,11 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className={`w-2.5 h-2.5 rounded-full ${allOk ? 'bg-green-500' : 'bg-amber-500'}`} />
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Diagnostics</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.diagnostics.heading')}</h2>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {allOk ? 'All systems operational' : 'Attention needed'}
+                    {allOk ? t('dashboard.diagnostics.allOk') : t('dashboard.diagnostics.attention')}
                   </span>
                   {isSystemStatusExpanded
                     ? <HiChevronUp className="w-5 h-5 text-gray-500" />
@@ -1057,35 +1061,35 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                   <div className="flex items-center justify-between gap-2">
                     <dt className="text-gray-600 dark:text-gray-400">Docker</dt>
-                    <dd>{dockerStatus.running ? <Badge variant="success">Running</Badge> : <Badge variant="error">Not running</Badge>}</dd>
+                    <dd>{dockerStatus.running ? <Badge variant="success">{t('dashboard.diagnostics.running')}</Badge> : <Badge variant="error">{t('dashboard.diagnostics.notRunning')}</Badge>}</dd>
                   </div>
                   {runtimeStatus && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">App</dt>
-                      <dd>{runtimeStatus.appRunning ? <Badge variant="success">Active</Badge> : <Badge variant="neutral">Inactive</Badge>}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.app')}</dt>
+                      <dd>{runtimeStatus.appRunning ? <Badge variant="success">{t('dashboard.diagnostics.active')}</Badge> : <Badge variant="neutral">{t('dashboard.diagnostics.inactive')}</Badge>}</dd>
                     </div>
                   )}
                   {runtimeStatus && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">Backend connection</dt>
-                      <dd>{runtimeStatus.backendConnected ? <Badge variant="success">Connected</Badge> : <Badge variant="error">Disconnected</Badge>}</dd>
+                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.backendConnection')}</dt>
+                      <dd>{runtimeStatus.backendConnected ? <Badge variant="success">{t('dashboard.diagnostics.connected')}</Badge> : <Badge variant="error">{t('dashboard.diagnostics.disconnected')}</Badge>}</dd>
                     </div>
                   )}
                   {runtimeStatus && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">Services running</dt>
+                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.servicesRunning')}</dt>
                       <dd className="font-medium text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</dd>
                     </div>
                   )}
                   {runtimeStatus && (
                     <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">Last checked</dt>
+                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.lastChecked')}</dt>
                       <dd className="text-gray-900 dark:text-white">{runtimeStatus.lastCheck.toLocaleTimeString()}</dd>
                     </div>
                   )}
                 </dl>
                 <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                  Docker services keep running independently, and continue even when the app is closed.
+                  {t('dashboard.diagnostics.note')}
                 </p>
               </Card.Body>
             )}
@@ -1165,15 +1169,15 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         <div className="h-full flex flex-col bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
             <span className="text-lg font-semibold text-gray-900 dark:text-white">
-              {drawerService ? `${drawerService} — logs` : 'Logs'}
+              {drawerService ? t('dashboard.logs.titleNamed', { name: drawerService }) : t('dashboard.logs.title')}
             </span>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Live
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> {t('dashboard.logs.live')}
             </span>
           </div>
           <div ref={logScrollRef} onScroll={handleLogScroll} className="flex-1 overflow-auto bg-gray-900 px-4 py-3">
             <pre className="text-left text-gray-100 text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
-              {drawerService ? (serviceLogs[drawerService] ?? 'Loading logs…') : ''}
+              {drawerService ? (serviceLogs[drawerService] ?? t('dashboard.logs.loading')) : ''}
             </pre>
           </div>
         </div>

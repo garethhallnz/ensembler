@@ -1,0 +1,644 @@
+{
+  "language": {
+    "chooseTitle": "Wähle deine Sprache",
+    "chooseSubtitle": "Du kannst dies jederzeit in den Einstellungen ändern.",
+    "continue": "Weiter",
+    "label": "Sprache",
+    "settingHint": "Die in Ensembler durchgehend verwendete Sprache."
+  },
+  "app": {
+    "checkingStatus": "Docker- und Docker-Compose-Status wird geprüft…",
+    "dockerRequired": {
+      "title": "Docker erforderlich",
+      "subtitle": "Ensembler benötigt Docker – oder eine andere Container-Laufzeit –, um deine Dienste auszuführen",
+      "toGetStarted": "So legst du los:",
+      "step1": "Docker Desktop herunterladen und installieren",
+      "step2": "Docker Desktop starten und warten, bis es läuft",
+      "step3": "Achte auf den grünen Status „Docker Desktop is running“",
+      "step4": "Komm hierher zurück und klicke unten auf „Erneut prüfen“",
+      "downloadHeading": "Docker Desktop herunterladen:",
+      "downloadButton": "Docker Desktop herunterladen",
+      "otherRuntimes": "Nutzt du bereits OrbStack, Podman oder eine andere Container-Laufzeit? Das funktioniert auch – stelle nur sicher, dass sie installiert ist und läuft.",
+      "checkAgain": "Erneut prüfen",
+      "refreshPage": "Seite neu laden",
+      "refreshConfirm": "Dadurch wird die Seite neu geladen und der Docker-Status erneut geprüft.",
+      "havingTrouble": "Probleme? Stelle sicher, dass deine Container-Laufzeit vollständig gestartet ist (nicht nur installiert), und lade diese Seite neu.",
+      "readDocs": "Dokumentation lesen"
+    },
+    "composeMissing": {
+      "title": "Docker Compose nicht verfügbar",
+      "heading": "Docker Compose ist nicht verfügbar"
+    },
+    "install": {
+      "mac": {
+        "docker": "Installiere Docker Desktop von https://www.docker.com/products/docker-desktop/ und starte es aus dem Programme-Ordner.",
+        "compose": "Docker Compose ist unter macOS in Docker Desktop enthalten."
+      },
+      "win": {
+        "docker": "Installiere Docker Desktop von https://www.docker.com/products/docker-desktop/ und starte es über das Startmenü.",
+        "compose": "Docker Compose ist unter Windows in Docker Desktop enthalten."
+      },
+      "linux": {
+        "docker": "Installiere Docker Engine: https://docs.docker.com/engine/install/ und starte den Dienst (z. B. sudo systemctl start docker).",
+        "compose": "Installiere Docker Compose: https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "Nicht unterstütztes Betriebssystem. Siehe https://docs.docker.com/get-docker/",
+        "compose": "Nicht unterstütztes Betriebssystem. Siehe https://docs.docker.com/compose/install/"
+      }
+    }
+  },
+  "setup": {
+    "loading": "Dienstkonfiguration wird geladen…",
+    "title": "Einrichtung",
+    "steps": { "selection": "Dienstauswahl", "configuration": "Konfiguration", "apply": "Anwenden" },
+    "selectAtLeastOne": "Wähle mindestens einen Dienst, um fortzufahren.",
+    "selectAtLeastOneToast": "Bitte wähle mindestens einen Dienst, um fortzufahren.",
+    "portsPrefilled": "Einige Standard-Ports waren bereits belegt, daher haben wir freie vorausgewählt ({{list}}). Du kannst diese unten ändern.",
+    "step0": {
+      "heading": "Dienste auswählen",
+      "subtitle": "Wähle die Dienste, die du ausführen möchtest:",
+      "quickActions": "Schnellaktionen",
+      "recommendedOn": "Empfohlene Dienste abwählen",
+      "recommendedOff": "Empfohlene Dienste für ein vollständiges Media-Center auswählen",
+      "toggleRecommended": "Empfohlene umschalten",
+      "required": "Erforderlich",
+      "recommended": "Empfohlen"
+    },
+    "categories": {
+      "media": { "title": "Media-Server", "description": "Media-Streaming-Server (wähle einen)" },
+      "management": { "title": "Medienverwaltung", "description": "Verwaltung von Mediensammlungen (du kannst mehrere auswählen)" },
+      "torrent": { "title": "Download-Clients", "description": "BitTorrent-Download-Clients (wähle einen)" },
+      "indexer": { "title": "Indexer", "description": "Verwaltung von Torrent-Indexern (wähle einen)" },
+      "request": { "title": "Anfrageverwaltung", "description": "Tools für Medienanfragen und -entdeckung (wähle einen)" }
+    },
+    "step1": {
+      "heading": "Dienstkonfiguration",
+      "subtitle": "Konfiguriere Dateipfade und Ports für deine Dienste:",
+      "environmentSettings": "Umgebungseinstellungen",
+      "jellyfinAccount": "Jellyfin-Adminkonto",
+      "jellyfinIntro": "Wähle den Admin-Login für Jellyfin. Ensembler nutzt ihn einmalig, um Jellyfin einzurichten und deine Bibliotheken anzulegen – er wird nie auf der Festplatte gespeichert, bewahre diese Daten also sicher auf.",
+      "adminUsername": "Admin-Benutzername",
+      "adminPassword": "Admin-Passwort",
+      "readyToSetUp": "Bereit zur Einrichtung",
+      "port": "Port {{port}}"
+    },
+    "apply": {
+      "titleDone": "Dein Media-Center ist bereit",
+      "titleError": "Bei der Einrichtung ist ein Problem aufgetreten",
+      "titleRunning": "Wird eingerichtet",
+      "subtitleDone": "Alles läuft. So verlief die automatische Einrichtung.",
+      "subtitleError": "Deine Dienste sind möglicherweise nur teilweise eingerichtet. Du kannst zurückgehen und es erneut versuchen.",
+      "subtitleRunning": "Deine Konfiguration wird angewendet und dein Media-Center gestartet.",
+      "phaseSave": "Deine Konfiguration wird gespeichert",
+      "phaseCompose": "Docker-Setup wird erstellt",
+      "phaseStart": "Dienste werden gestartet",
+      "phaseStartDetail": "Images werden heruntergeladen und Container gestartet. Beim ersten Durchlauf kann dies einige Minuten dauern.",
+      "phaseConnect": "Dienste werden miteinander verbunden",
+      "phaseConnectDetail": "Es wird gewartet, bis jeder Dienst bereit ist, dann werden sie verknüpft. Das kann eine Minute dauern.",
+      "backToConfig": "Zurück zur Konfiguration",
+      "goToDashboard": "Zum Dashboard"
+    },
+    "nav": { "previous": "Zurück", "next": "Weiter", "apply": "Einrichtung anwenden" },
+    "errors": {
+      "save": "Deine Konfiguration konnte nicht gespeichert werden.",
+      "compose": "Das Docker-Setup konnte nicht erstellt werden.",
+      "start": "Die Dienste konnten nicht gestartet werden.",
+      "generic": "Bei der Einrichtung ist ein Fehler aufgetreten.",
+      "tzRequired": "Zeitzone ist erforderlich.",
+      "puid": "PUID muss eine nicht-negative Zahl sein.",
+      "pgid": "PGID muss eine nicht-negative Zahl sein.",
+      "jellyfinUsername": "Jellyfin-Admin-Benutzername ist erforderlich.",
+      "jellyfinPassword": "Jellyfin-Admin-Passwort muss mindestens 4 Zeichen lang sein.",
+      "portRange": "Port muss zwischen 1024 und 65535 liegen.",
+      "portConflictSelected": "Port steht in Konflikt mit einem anderen ausgewählten Dienst.",
+      "portInUseSwitched": "Port {{port}} ist belegt – zu einem freien Port gewechselt, {{suggestion}}.",
+      "portInUseNoFree": "Port {{port}} ist belegt und es konnte kein freier Port gefunden werden. Bitte wähle einen anderen.",
+      "pathMediaConflict": "Pfad steht in Konflikt mit einem anderen Medientyp in {{service}}",
+      "pathDownloadConflict": "Download-Pfad steht in Konflikt mit dem Nicht-Download-Dienst {{service}}",
+      "pathUsedBy": "Pfad wird bereits von {{service}} verwendet"
+    }
+  },
+  "dashboard": {
+    "heading": { "title": "Dashboard", "subtitle": "Verwalte deine Media-Center-Dienste" },
+    "settings": { "tooltip": "Erweiterte Einstellungen", "button": "Einstellungen" },
+    "globalControls": {
+      "stopAll": "Alle stoppen",
+      "startAll": "Alle starten",
+      "noServicesToStop": "Keine Dienste zum Stoppen",
+      "allStopped": "Alle Dienste sind bereits gestoppt",
+      "stopAllTooltip": "Alle Dienste stoppen",
+      "noServicesToStart": "Keine Dienste zum Starten",
+      "allRunning": "Alle Dienste laufen bereits",
+      "startAllTooltip": "Alle Dienste starten"
+    },
+    "roles": {
+      "tvShows": "Verwaltet deine Serien",
+      "movies": "Verwaltet deine Filme",
+      "subtitles": "Verwaltet Untertitel",
+      "streams": "Streamt deine Medien",
+      "downloads": "Lädt Inhalte herunter",
+      "indexers": "Findet Inhaltsquellen",
+      "requests": "Fragt Medien an und entdeckt sie",
+      "library": "Verwaltet deine Bibliothek"
+    },
+    "setupChecklist": {
+      "heading": "Einrichtung abschließen",
+      "stepsLeft_one": "· {{count}} Schritt übrig",
+      "stepsLeft_other": "· {{count}} Schritte übrig"
+    },
+    "tasks": {
+      "prowlarr": "Füge einen Indexer in <strong>Prowlarr</strong> hinzu, damit Sonarr und Radarr nach Inhalten suchen können",
+      "plex": "Melde dich bei <strong>Plex</strong> an, um deine Serien- und Filmbibliotheken zu erstellen",
+      "overseerr": "Schließe die <strong>Overseerr</strong>-Einrichtung ab – melde dich mit Plex an, um deine Dienste zu entdecken"
+    },
+    "services": {
+      "heading": "Dienste",
+      "configured_one": "{{count}} Dienst konfiguriert",
+      "configured_other": "{{count}} Dienste konfiguriert",
+      "updatesAvailable_one": " · {{count}} Update verfügbar",
+      "updatesAvailable_other": " · {{count}} Updates verfügbar",
+      "updateAllTooltip_one": "Den {{count}} Dienst mit neuer verfügbarer Version aktualisieren",
+      "updateAllTooltip_other": "Die {{count}} Dienste mit neuer verfügbarer Version aktualisieren",
+      "updateAll": "Alle aktualisieren ({{count}})",
+      "checkAllTooltip": "Alle Dienste auf verfügbare Updates prüfen",
+      "checkForUpdates": "Nach Updates suchen",
+      "addTooltip": "Weiteren Dienst hinzufügen",
+      "addService": "Dienst hinzufügen"
+    },
+    "empty": {
+      "title": "Keine Dienste konfiguriert",
+      "description": "Lege los, indem du deine Media-Center-Dienste hinzufügst und konfigurierst. Du kannst Dienste bei Bedarf einzeln hinzufügen."
+    },
+    "status": {
+      "starting": "Wird gestartet…",
+      "stopping": "Wird gestoppt…",
+      "restarting": "Wird neu gestartet…",
+      "setupNeeded": "Einrichtung nötig",
+      "needsAttention": "Erfordert Aufmerksamkeit",
+      "running": "Läuft",
+      "stopped": "Gestoppt",
+      "unhealthyTooltip": "Dienst läuft, reagiert aber nicht normal"
+    },
+    "card": {
+      "openDisabledTooltip": "Starte den Dienst, um ihn zu öffnen",
+      "checkingUpdates": "Nach Updates wird gesucht…",
+      "updateAvailable": "Update verfügbar – jetzt aktualisieren",
+      "upToDate": "Aktuell",
+      "version": {
+        "pinned": "Fixiert auf v{{version}}",
+        "updateAvailable": "Auf v{{version}} · Update verfügbar",
+        "latest": "Auf der neuesten Version (v{{version}})"
+      }
+    },
+    "common": {
+      "open": "Öffnen",
+      "openNamed": "{{name}} öffnen",
+      "updating": "Wird aktualisiert…",
+      "checking": "Wird geprüft…",
+      "unknown": "unbekannt"
+    },
+    "menu": {
+      "openInBrowser": "Im Browser öffnen",
+      "start": "Starten",
+      "stop": "Stoppen",
+      "restart": "Neu starten",
+      "viewLogs": "Logs ansehen",
+      "configure": "Konfigurieren"
+    },
+    "diagnostics": {
+      "heading": "Diagnose",
+      "allOk": "Alle Systeme betriebsbereit",
+      "attention": "Aufmerksamkeit erforderlich",
+      "running": "Läuft",
+      "notRunning": "Läuft nicht",
+      "app": "App",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "backendConnection": "Backend-Verbindung",
+      "connected": "Verbunden",
+      "disconnected": "Getrennt",
+      "servicesRunning": "Laufende Dienste",
+      "lastChecked": "Zuletzt geprüft",
+      "note": "Docker-Dienste laufen unabhängig weiter, auch wenn die App geschlossen ist."
+    },
+    "logs": {
+      "title": "Logs",
+      "titleNamed": "{{name}} – Logs",
+      "live": "Live",
+      "loading": "Logs werden geladen…"
+    },
+    "toast": {
+      "checkFailed": "{{name}} konnte nicht auf Updates geprüft werden.",
+      "checkAllFailed": "Es konnte nicht auf Updates geprüft werden.",
+      "updatesFound_one": "{{count}} Update verfügbar.",
+      "updatesFound_other": "{{count}} Updates verfügbar.",
+      "allUpToDate": "Alle Dienste sind aktuell.",
+      "actionSuccess_start": "{{name}} erfolgreich gestartet",
+      "actionSuccess_stop": "{{name}} erfolgreich gestoppt",
+      "actionSuccess_restart": "{{name}} erfolgreich neu gestartet",
+      "globalItemFailed_start": "Start von {{service}} fehlgeschlagen: {{message}}",
+      "globalItemFailed_stop": "Stopp von {{service}} fehlgeschlagen: {{message}}",
+      "globalItemError_start": "Fehler beim Starten von {{service}}: {{error}}",
+      "globalItemError_stop": "Fehler beim Stoppen von {{service}}: {{error}}",
+      "globalDone_start": "Alle Dienste gestartet",
+      "globalDone_stop": "Alle Dienste gestoppt",
+      "launchUrlFailed": "Start-URL für {{service}} konnte nicht abgerufen werden: {{message}}",
+      "launchError": "Fehler beim Starten von {{service}}: {{error}}",
+      "updatedCount_one": "{{count}} Dienst aktualisiert",
+      "updatedCount_other": "{{count}} Dienste aktualisiert",
+      "updatedWithFailures": "{{count}} aktualisiert; fehlgeschlagen: {{names}}",
+      "updateAllError": "Fehler beim Aktualisieren der Dienste: {{error}}",
+      "updateSuccess": "{{name}} erfolgreich aktualisiert",
+      "updateFailed": "Aktualisierung von {{name}} fehlgeschlagen: {{message}}",
+      "updateError": "Fehler beim Aktualisieren von {{name}}: {{error}}"
+    },
+    "actionError": {
+      "title_start": "{{name}} konnte nicht gestartet werden",
+      "title_stop": "{{name}} konnte nicht gestoppt werden",
+      "title_restart": "{{name}} konnte nicht neu gestartet werden"
+    },
+    "confirm": {
+      "globalAction_start": "Möchtest du wirklich alle Dienste starten?",
+      "globalAction_stop": "Möchtest du wirklich alle Dienste stoppen?",
+      "updateAll_one": "{{count}} Dienst aktualisieren? Dies lädt die neuesten Images herunter und startet jeden neu.",
+      "updateAll_other": "{{count}} Dienste aktualisieren? Dies lädt die neuesten Images herunter und startet jeden neu.",
+      "updateService": "Möchtest du {{name}} wirklich aktualisieren? Dies lädt die neueste Version herunter und startet den Dienst neu."
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "subtitle": "Einzelne Dienste konfigurierst du über deren Karten auf dem Dashboard. Dies sind app-weite Einstellungen.",
+    "loading": "Einstellungen werden geladen...",
+    "errorTitle": "Fehler",
+    "loadError": "Konfiguration konnte nicht geladen werden. Bitte versuche es erneut.",
+    "close": "Schließen",
+    "cancel": "Abbrechen",
+    "save": "Speichern & Anwenden",
+    "saving": "Wird angewendet…",
+    "toast": {
+      "savedPartial": "Einstellungen gespeichert. Einige Dienste müssen möglicherweise manuell gestartet werden.",
+      "saved": "Einstellungen gespeichert und angewendet.",
+      "saveFailed": "Einstellungen konnten nicht gespeichert werden. Bitte versuche es erneut.",
+      "resetFailed": "Zurücksetzen der Anwendung fehlgeschlagen: {{error}}"
+    },
+    "appearance": {
+      "heading": "Darstellung",
+      "description": "Wähle, wie die App aussieht. „System“ folgt deinem Betriebssystem.",
+      "theme": { "light": "Hell", "dark": "Dunkel", "system": "System" }
+    },
+    "general": {
+      "heading": "Allgemein",
+      "trayLabel": "Beim Schließen des Fensters im Tray weiterlaufen lassen",
+      "trayDescription": "Ensembler bleibt für schnellen Zugriff in deiner Menüleiste / im System-Tray. Deine Dienste laufen so oder so weiter – beende die App vollständig über das Tray-Menü.",
+      "trayAriaLabel": "Beim Schließen des Fensters im Tray weiterlaufen lassen"
+    },
+    "environment": {
+      "heading": "Umgebung",
+      "description": "Globale Einstellungen, die auf alle Dienste angewendet werden."
+    },
+    "updates": {
+      "heading": "Updates",
+      "description": "Ensembler prüft täglich auf neue Dienstversionen und zeigt Verfügbares auf dem Dashboard an.",
+      "autoLabel": "Updates automatisch installieren",
+      "autoDescription": "Wenn aktiviert, werden verfügbare Updates täglich im Hintergrund angewendet. Standardmäßig aus – du behältst die Kontrolle und wendest sie selbst mit „Alle aktualisieren“ an.",
+      "autoAriaLabel": "Updates automatisch installieren"
+    },
+    "danger": {
+      "heading": "Gefahrenzone",
+      "resetLabel": "Alles zurücksetzen",
+      "resetDescription": "Entfernt alle Dienste und ihre Einstellungen und kehrt zu einer frischen Installation zurück. Mediendateien bleiben erhalten.",
+      "resetButton": "Alles zurücksetzen",
+      "confirm": "⚠️ ZERSTÖRERISCHE AKTION: Dies stoppt und entfernt alle Dienste und löscht alle ihre Einstellungen, Verläufe und Datenbanken und kehrt zu einer frischen Installation zurück. Deine Mediendateien (Serien, Filme, Downloads) werden NICHT gelöscht. Diese Aktion kann nicht rückgängig gemacht werden. Bist du dir absolut sicher?"
+    },
+    "reset": {
+      "phaseStop": "Dienste werden gestoppt und entfernt",
+      "phaseClean": "Konfiguration und Daten werden entfernt",
+      "completeTitle": "Zurücksetzen abgeschlossen",
+      "completeSubtitle": "Frische Einrichtung wird gestartet…",
+      "runningTitle": "Deine Einrichtung wird zurückgesetzt",
+      "runningSubtitle": "Es wird zu einer frischen Installation zurückgekehrt. Deine Mediendateien sind nicht betroffen.",
+      "errorMessage": "Etwas ist schiefgelaufen. Du kannst dies schließen und es erneut versuchen."
+    }
+  },
+  "serviceConfig": {
+    "loadError": "Aktuelle Konfiguration konnte nicht geladen werden.",
+    "fieldRequired": "{{label}} ist erforderlich.",
+    "portRerouted": "Port {{port}} war belegt, daher läuft {{name}} auf {{finalPort}}.",
+    "serviceAdded": "{{name}} hinzugefügt.",
+    "serviceUpdated": "{{name}} aktualisiert.",
+    "addFailed": "{{name}} konnte nicht hinzugefügt werden: {{message}}",
+    "updateFailed": "{{name}} konnte nicht aktualisiert werden: {{message}}",
+    "serviceRemoved": "{{name}} entfernt. Die Mediendateien wurden nicht gelöscht.",
+    "removeFailed": "{{name}} konnte nicht entfernt werden: {{message}}",
+    "addTitle": "{{name}} hinzufügen",
+    "configureTitle": "{{name}} konfigurieren",
+    "loading": "Wird geladen…",
+    "removeConfirmTitle": "{{name}} entfernen?",
+    "removeConfirmBody": "Dies stoppt {{name}} und löscht seine Einstellungen. Deine Mediendateien bleiben erhalten. Dies kann nicht rückgängig gemacht werden.",
+    "portLabel": "Port",
+    "defaultPort": "Standard: {{port}}",
+    "versionLabel": "Version",
+    "loadingVersions": "Versionen werden geladen…",
+    "latestRecommended": "Neueste (empfohlen)",
+    "versionHelp": "Behalte <1>Neueste</1> bei, um immer die neueste Version auszuführen. Fixiere eine bestimmte Version, um sie dort zu halten – fixierte Dienste bieten keine Updates an.",
+    "removeService": "Dienst entfernen",
+    "keep": "Behalten",
+    "removeNamed": "{{name}} entfernen",
+    "cancel": "Abbrechen",
+    "addService": "Dienst hinzufügen",
+    "saveChanges": "Änderungen speichern"
+  },
+  "addService": {
+    "title": "Dienst hinzufügen",
+    "subtitle": "Wähle einen Dienst, den du deinem Media-Center hinzufügen möchtest. Pfade und Port legst du im nächsten Schritt fest.",
+    "allAdded": "Alle verfügbaren Dienste wurden bereits hinzugefügt.",
+    "recommended": "Empfohlen",
+    "add": "Hinzufügen",
+    "cancel": "Abbrechen"
+  },
+  "actionsMenu": {
+    "moreActions": "Weitere Aktionen"
+  },
+  "systemChecks": {
+    "heading": "Prüfe deine Einrichtung",
+    "dismiss": "Verwerfen",
+    "dockerMemoryWarning": "Docker hat nur {{allocated}} GB Arbeitsspeicher. Media-Dienste (besonders Plex) laufen besser mit {{recommended}} GB oder mehr – erhöhe ihn in den Einstellungen deiner Container-Laufzeit (Docker Desktop → Settings → Resources).",
+    "diskWarning": "Nur {{free}} GB frei am Speicherort der Medien. Downloads können fehlschlagen, wenn der Platz ausgeht – gib Platz frei oder verweise Dienste auf ein größeres Laufwerk."
+  },
+  "actionError": {
+    "description": "Etwas ist schiefgelaufen. Prüfe die Logs für Details oder versuche es erneut.",
+    "dismiss": "Verwerfen",
+    "viewLogs": "Logs ansehen",
+    "retry": "Erneut versuchen"
+  },
+  "confirm": {
+    "title": "Aktion bestätigen",
+    "destructiveTitle": "Zerstörerische Aktion",
+    "confirm": "Ja, ich bin sicher",
+    "cancel": "Nein, abbrechen"
+  },
+  "environment": {
+    "timezone": {
+      "label": "Zeitzone (TZ)",
+      "placeholder": "Zeitzone auswählen...",
+      "help": "Wird für Log-Zeitstempel und Zeitplanung verwendet"
+    },
+    "puid": {
+      "label": "Benutzer-ID (PUID)",
+      "help": "Benutzer-ID für Dateibesitz (normalerweise 1000)"
+    },
+    "pgid": {
+      "label": "Gruppen-ID (PGID)",
+      "help": "Gruppen-ID für Dateibesitz (normalerweise 1000)"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "Port",
+    "portConfiguration": "Port-Konfiguration",
+    "servicePort": "{{name}} Port:",
+    "portDefault": "Standard: {{port}}",
+    "infoBadge": "Info",
+    "serviceInformation": "Dienstinformationen",
+    "noPathsRequired": "Keine Dateipfade erforderlich",
+    "noPathsDescription": "Dieser Dienst erfordert keine Dateipfad-Konfiguration."
+  },
+  "pathConfig": {
+    "badge": "Pfade",
+    "heading": "Dateipfade",
+    "placeholder": "{{description}} (Standard: {{default}})",
+    "useDefaultTitle": "Standardpfad verwenden",
+    "default": "Standard",
+    "browseTitle": "Nach einem Ordner suchen",
+    "browse": "Durchsuchen"
+  },
+  "docsButton": {
+    "label": "Doku",
+    "tooltip": "Dokumentation"
+  },
+  "docsViewer": {
+    "heading": "Dokumentation",
+    "pages": {
+      "overview": "Überblick",
+      "gettingStarted": "Erste Schritte",
+      "managing": "Dienste verwalten",
+      "troubleshooting": "Fehlerbehebung"
+    }
+  },
+  "tabs": {
+    "dashboard": "Dashboard",
+    "closeService": "{{name}} schließen",
+    "reload": "Neu laden",
+    "reloadService": "{{name}} neu laden",
+    "openInBrowser": "Im Browser öffnen",
+    "openServiceInBrowser": "{{name}} im Browser öffnen"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "Indexer-Manager/-Proxy auf Basis des beliebten arr-Stacks"
+    },
+    "sonarr": {
+      "description": "PVR für Usenet- und BitTorrent-Nutzer",
+      "paths": [
+        {
+          "label": "Serien-Pfad",
+          "description": "Verzeichnis, in dem Serien gespeichert werden"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "Filmsammlungs-Manager für Usenet- und BitTorrent-Nutzer",
+      "paths": [
+        {
+          "label": "Filme-Pfad",
+          "description": "Verzeichnis, in dem Filme gespeichert werden"
+        }
+      ]
+    },
+    "plex": {
+      "description": "Media-Server zum Streamen deiner Inhalte",
+      "paths": [
+        {
+          "label": "Serien-Pfad",
+          "description": "Verzeichnis mit deinen Serien"
+        },
+        {
+          "label": "Filme-Pfad",
+          "description": "Verzeichnis mit deinen Filmen"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "BitTorrent-Client",
+      "paths": [
+        {
+          "label": "Download-Pfad",
+          "description": "Verzeichnis, in dem Downloads gespeichert werden"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "Tool für Anfrageverwaltung und Medienentdeckung"
+    },
+    "jellyfin": {
+      "description": "Open-Source-Media-Server ohne Lizenzgebühren",
+      "paths": [
+        {
+          "label": "Serien-Pfad",
+          "description": "Verzeichnis mit deinen Serien"
+        },
+        {
+          "label": "Filme-Pfad",
+          "description": "Verzeichnis mit deinen Filmen"
+        }
+      ]
+    },
+    "emby": {
+      "description": "Funktionsreicher Media-Server mit mobilen Apps",
+      "paths": [
+        {
+          "label": "Serien-Pfad",
+          "description": "Verzeichnis mit deinen Serien"
+        },
+        {
+          "label": "Filme-Pfad",
+          "description": "Verzeichnis mit deinen Filmen"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "Begleit-App für Sonarr und Radarr zur Verwaltung von Untertiteln",
+      "paths": [
+        {
+          "label": "Serien-Pfad",
+          "description": "Verzeichnis mit deinen Serien (wie bei Sonarr)"
+        },
+        {
+          "label": "Filme-Pfad",
+          "description": "Verzeichnis mit deinen Filmen (wie bei Radarr)"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "BitTorrent-Client mit Weboberfläche",
+      "paths": [
+        {
+          "label": "Download-Pfad",
+          "description": "Verzeichnis, in dem Downloads gespeichert werden"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "API-Unterstützung für deine bevorzugten Torrent-Tracker"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "Ungültige Eingabe"
+    },
+    "ports": {
+      "validateFailed": "Ports konnten nicht validiert werden."
+    },
+    "docker": {
+      "composeNotFound": "Docker Compose nicht gefunden oder funktioniert nicht.",
+      "notRunning": "Docker läuft nicht oder ist nicht installiert.",
+      "autostartUnsupportedOs": "Nicht unterstütztes Betriebssystem für Autostart.",
+      "autostartFailed": "Docker konnte nicht automatisch gestartet werden.",
+      "started": "Docker erfolgreich gestartet.",
+      "startCheckFailed": "Docker wurde nicht erfolgreich gestartet.",
+      "startError": "Fehler beim Versuch, Docker zu starten."
+    },
+    "config": {
+      "saved": "Konfiguration erfolgreich gespeichert.",
+      "saveFailed": "Konfiguration konnte nicht gespeichert werden.",
+      "notFound": "config.json nicht gefunden.",
+      "currentFailed": "Aktuelle Konfiguration konnte nicht abgerufen werden."
+    },
+    "compose": {
+      "generated": "Docker-Compose-Dateien erfolgreich erstellt.",
+      "generateFailed": "Docker-Compose-Dateien konnten nicht erstellt werden."
+    },
+    "service": {
+      "statusFailed": "Dienststatus konnte nicht abgerufen werden.",
+      "started": "{{name}} erfolgreich gestartet.",
+      "startFailed": "{{name}} konnte nicht gestartet werden.",
+      "stopped": "{{name}} erfolgreich gestoppt.",
+      "stopFailed": "{{name}} konnte nicht gestoppt werden.",
+      "restarted": "{{name}} erfolgreich neu gestartet.",
+      "restartFailed": "{{name}} konnte nicht neu gestartet werden.",
+      "logsFailed": "Logs für {{name}} konnten nicht abgerufen werden.",
+      "notFound": "Dienst nicht gefunden.",
+      "versionFailed": "Version für {{name}} konnte nicht abgerufen werden.",
+      "startAllSucceeded": "Alle aktivierten Dienste erfolgreich gestartet.",
+      "startAllFailed": "Dienste konnten nicht gestartet werden.",
+      "stopAllSucceeded": "Alle Dienste erfolgreich gestoppt.",
+      "stopAllFailed": "Alle Dienste konnten nicht gestoppt werden.",
+      "launchUrlFailed": "Start-URL konnte nicht abgerufen werden.",
+      "configFailed": "Dienstkonfiguration konnte nicht abgerufen werden.",
+      "invalidSelectionFormat": "Ungültiges Format von selectedServices.",
+      "selectionRequiresArr": "Du musst mindestens Sonarr oder Radarr auswählen.",
+      "selectionValid": "Dienstauswahl ist gültig.",
+      "selectionValidateFailed": "Dienstauswahl konnte nicht validiert werden.",
+      "checkUpdatesFailed": "Updates für {{name}} konnten nicht geprüft werden.",
+      "checkUpdatesAllFailed": "Es konnte nicht auf Updates geprüft werden.",
+      "updated": "{{name}} erfolgreich aktualisiert.",
+      "updateFailed": "{{name}} konnte nicht aktualisiert werden.",
+      "updateAllFailed": "Dienste konnten nicht aktualisiert werden.",
+      "monitorFailed": "Dienste konnten nicht überwacht werden."
+    },
+    "setup": {
+      "bazarrRestartFailed": "Konfiguration eingespielt, aber Bazarr konnte nicht neu gestartet werden: {{error}}",
+      "connectionsFailed": "Dienstverbindungen konnten nicht eingerichtet werden.",
+      "plexFailed": "Plex konnte nicht eingerichtet werden.",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission läuft",
+      "transmissionUnreachable": "Transmission ist nicht erreichbar: {{error}}",
+      "plexSignInRequired": "Plex benötigt eine einmalige Anmeldung – öffne Plex über das Dashboard und melde dich an; Bibliotheken werden dann automatisch erstellt",
+      "rootFolderAdded": "Stammordner {{path}} hinzugefügt",
+      "rootFolderExists": "Stammordner {{path}} bereits konfiguriert",
+      "transmissionConnected": "Mit Transmission verbunden",
+      "transmissionExists": "Transmission bereits konfiguriert",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "{{app}} verbunden – Indexer werden automatisch synchronisiert",
+      "prowlarrAppAlreadyConnected": "{{app}} bereits verbunden",
+      "prowlarrTransmissionConnected": "Mit Transmission verbunden",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission bereits konfiguriert"
+    },
+    "reset": {
+      "servicesStopped": "Dienste gestoppt und entfernt.",
+      "stopServicesFailed": "Dienste konnten nicht gestoppt werden.",
+      "cleaned": "Konfiguration und Daten entfernt.",
+      "cleanFailed": "Konfiguration und Daten konnten nicht entfernt werden.",
+      "completed": "Alle Einstellungen erfolgreich zurückgesetzt.",
+      "failed": "Einstellungen konnten nicht zurückgesetzt werden."
+    },
+    "bazarr": {
+      "configNotFound": "Bazarr-config.yaml noch nicht gefunden – läuft Bazarr?",
+      "connected": "Bazarr mit {{services}} verbunden",
+      "alreadyConnected": "Bazarr bereits mit {{services}} verbunden"
+    },
+    "jellyfin": {
+      "notReady": "{{error}}",
+      "setUpOpenToAddLibraries": "Jellyfin ist eingerichtet – öffne es, um deine Bibliotheken hinzuzufügen",
+      "needsAdminAccount": "Jellyfin benötigt sein Adminkonto – führe die Einrichtung erneut aus oder schließe sie in Jellyfin ab",
+      "accountCreated": "Adminkonto erstellt und Einrichtung abgeschlossen",
+      "accountFailed": "{{error}}",
+      "authenticateFailed": "{{error}}",
+      "libraryCreated": "Bibliothek „{{name}}“ unter {{path}} erstellt",
+      "libraryAlreadyConfigured": "„{{name}}“ bereits konfiguriert",
+      "libraryFailed": "{{error}}",
+      "notifyConfigured": "{{service}} aktualisiert Jellyfin beim Import",
+      "notifyAlreadyConfigured": "{{service}} benachrichtigt Jellyfin bereits",
+      "notifyFailed": "{{error}}",
+      "apiKeyFailed": "{{error}}"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "Bibliothek „{{name}}“ unter {{location}} erstellt",
+      "libraryExists": "Eine {{type}}-Bibliothek deckt {{location}} bereits ab",
+      "notifyConfigured": "{{service}} aktualisiert Plex beim Import",
+      "notifyExists": "{{service}} benachrichtigt Plex bereits"
+    }
+  }
+}

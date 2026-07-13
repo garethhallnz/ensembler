@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Drawer } from 'flowbite-react';
 import { HiBookOpen } from 'react-icons/hi';
+import { useTranslation } from 'react-i18next';
 import Button from './Button';
 import Docs from './Docs';
 
@@ -13,12 +14,13 @@ interface DocsButtonProps {
 // every surface (setup wizard, the Docker-required screen, the dashboard)
 // without each one wiring up its own state. Only one surface renders at a time,
 // so a drawer per button is fine.
-export default function DocsButton({ label = 'Docs', className = '' }: DocsButtonProps) {
+export default function DocsButton({ label, className = '' }: DocsButtonProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button variant="secondary" onClick={() => setOpen(true)} tooltip="Documentation" className={className}>
-        <HiBookOpen className="inline-block mr-1" /> {label}
+      <Button variant="secondary" onClick={() => setOpen(true)} tooltip={t('docsButton.tooltip')} className={className}>
+        <HiBookOpen className="inline-block mr-1" /> {label ?? t('docsButton.label')}
       </Button>
       <Drawer
         open={open}

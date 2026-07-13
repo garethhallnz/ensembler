@@ -3,6 +3,13 @@ import path from 'path';
 import { ensureMediaServerNotification } from './arrSetup';
 import { ArrTarget, SetupStepResult } from './types';
 
+// SetupStepResult carrying a stable message code (and interpolation params) for
+// client-side localization. The literal `message` remains the English fallback.
+type LocalizedStepResult = SetupStepResult & {
+  code: string;
+  params?: Record<string, string>;
+};
+
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Plex writes its account token into Preferences.xml once the user completes
@@ -155,33 +162,52 @@ export interface PlexSetupOptions {
 
 export async function setupPlex(setup: PlexSetupOptions): Promise<SetupStepResult[]> {
   const libraries = setup.libraries ?? DEFAULT_PLEX_LIBRARIES;
-  const results: SetupStepResult[] = [];
+  const results: LocalizedStepResult[] = [];
 
   try {
     await waitForPlexReady(setup.baseUrl, setup.readyTimeoutMs);
   } catch (err) {
-    return [{
+    const readyResult: LocalizedStepResult = {
       service: 'plex',
       step: 'ready',
       success: false,
+      code: 'messages.plex.stepFailed',
+      params: { error: (err as Error).message },
       message: (err as Error).message
-    }];
+    };
+    return [readyResult];
   }
 
   for (const library of libraries) {
     const step = `library-${library.type}`;
     try {
       const { created } = await ensurePlexLibrary(setup.baseUrl, setup.token, library);
+      results.push(created
+        ? {
+            service: 'plex',
+            step,
+            success: true,
+            code: 'messages.plex.libraryCreated',
+            params: { name: library.name, location: library.location },
+            message: `Created "${library.name}" library at ${library.location}`
+          }
+        : {
+            service: 'plex',
+            step,
+            success: true,
+            code: 'messages.plex.libraryExists',
+            params: { type: library.type, location: library.location },
+            message: `A ${library.type} library already covers ${library.location}`
+          });
+    } catch (err) {
       results.push({
         service: 'plex',
         step,
-        success: true,
-        message: created
-          ? `Created "${library.name}" library at ${library.location}`
-          : `A ${library.type} library already covers ${library.location}`
+        success: false,
+        code: 'messages.plex.stepFailed',
+        params: { error: (err as Error).message },
+        message: (err as Error).message
       });
-    } catch (err) {
-      results.push({ service: 'plex', step, success: false, message: (err as Error).message });
     }
   }
 
@@ -193,14 +219,32 @@ export async function setupPlex(setup: PlexSetupOptions): Promise<SetupStepResul
           { baseUrl: target.baseUrl, apiKey: target.apiKey },
           { kind: 'plex', name: 'Plex', host: setup.networkHost.host, port: setup.networkHost.port, credential: setup.token }
         );
+        results.push(created
+          ? {
+              service: 'plex',
+              step: `notify-${target.service}`,
+              success: true,
+              code: 'messages.plex.notifyConfigured',
+              params: { service: target.service },
+              message: `${target.service} will refresh Plex on import`
+            }
+          : {
+              service: 'plex',
+              step: `notify-${target.service}`,
+              success: true,
+              code: 'messages.plex.notifyExists',
+              params: { service: target.service },
+              message: `${target.service} already notifies Plex`
+            });
+      } catch (err) {
         results.push({
           service: 'plex',
           step: `notify-${target.service}`,
-          success: true,
-          message: created ? `${target.service} will refresh Plex on import` : `${target.service} already notifies Plex`
+          success: false,
+          code: 'messages.plex.stepFailed',
+          params: { error: (err as Error).message },
+          message: (err as Error).message
         });
-      } catch (err) {
-        results.push({ service: 'plex', step: `notify-${target.service}`, success: false, message: (err as Error).message });
       }
     }
   }

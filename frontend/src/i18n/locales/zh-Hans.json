@@ -1,0 +1,644 @@
+{
+  "language": {
+    "chooseTitle": "选择您的语言",
+    "chooseSubtitle": "您可以随时在“设置”中更改。",
+    "continue": "继续",
+    "label": "语言",
+    "settingHint": "Ensembler 全程使用的语言。"
+  },
+  "app": {
+    "checkingStatus": "正在检查 Docker 和 Docker Compose 状态…",
+    "dockerRequired": {
+      "title": "需要 Docker",
+      "subtitle": "Ensembler 需要 Docker（或其他容器运行时）来运行您的服务",
+      "toGetStarted": "开始使用：",
+      "step1": "下载并安装 Docker Desktop",
+      "step2": "启动 Docker Desktop 并等待其就绪",
+      "step3": "查看绿色的“Docker Desktop is running”状态",
+      "step4": "返回此处并点击下方的“再次检查”",
+      "downloadHeading": "下载 Docker Desktop：",
+      "downloadButton": "下载 Docker Desktop",
+      "otherRuntimes": "已在使用 OrbStack、Podman 或其他容器运行时？也可以——只需确保它已安装并正在运行。",
+      "checkAgain": "再次检查",
+      "refreshPage": "刷新页面",
+      "refreshConfirm": "这将刷新页面并重新检查 Docker 状态。",
+      "havingTrouble": "遇到问题？请确保您的容器运行时已完全启动（而不只是安装），然后尝试刷新此页面。",
+      "readDocs": "阅读文档"
+    },
+    "composeMissing": {
+      "title": "Docker Compose 不可用",
+      "heading": "Docker Compose 不可用"
+    },
+    "install": {
+      "mac": {
+        "docker": "从 https://www.docker.com/products/docker-desktop/ 安装 Docker Desktop，并从“应用程序”启动它。",
+        "compose": "macOS 上的 Docker Desktop 已内置 Docker Compose。"
+      },
+      "win": {
+        "docker": "从 https://www.docker.com/products/docker-desktop/ 安装 Docker Desktop，并从“开始”菜单启动它。",
+        "compose": "Windows 上的 Docker Desktop 已内置 Docker Compose。"
+      },
+      "linux": {
+        "docker": "安装 Docker Engine：https://docs.docker.com/engine/install/ 并启动服务（例如 sudo systemctl start docker）。",
+        "compose": "安装 Docker Compose：https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "不支持的操作系统。请参阅 https://docs.docker.com/get-docker/",
+        "compose": "不支持的操作系统。请参阅 https://docs.docker.com/compose/install/"
+      }
+    }
+  },
+  "setup": {
+    "loading": "正在加载服务配置…",
+    "title": "设置",
+    "steps": { "selection": "选择服务", "configuration": "配置", "apply": "应用" },
+    "selectAtLeastOne": "请至少选择一项服务以继续。",
+    "selectAtLeastOneToast": "请至少选择一项服务以继续。",
+    "portsPrefilled": "部分默认端口已被占用，因此我们已预选了空闲端口（{{list}}）。您可以在下方更改。",
+    "step0": {
+      "heading": "选择服务",
+      "subtitle": "选择您想要运行的服务：",
+      "quickActions": "快捷操作",
+      "recommendedOn": "取消选择推荐服务",
+      "recommendedOff": "选择推荐服务以搭建完整的媒体中心",
+      "toggleRecommended": "切换推荐项",
+      "required": "必需",
+      "recommended": "推荐"
+    },
+    "categories": {
+      "media": { "title": "媒体服务器", "description": "媒体流媒体服务器（选择一项）" },
+      "management": { "title": "媒体管理", "description": "媒体收藏管理工具（可多选）" },
+      "torrent": { "title": "下载客户端", "description": "BitTorrent 下载客户端（选择一项）" },
+      "indexer": { "title": "索引器", "description": "种子索引器管理（选择一项）" },
+      "request": { "title": "请求管理", "description": "媒体请求与发现工具（选择一项）" }
+    },
+    "step1": {
+      "heading": "服务配置",
+      "subtitle": "为您的服务配置文件路径和端口：",
+      "environmentSettings": "环境设置",
+      "jellyfinAccount": "Jellyfin 管理员账户",
+      "jellyfinIntro": "选择 Jellyfin 的管理员登录信息。Ensembler 仅使用一次来完成 Jellyfin 的设置并创建媒体库——它不会保存到磁盘，因此请妥善保管这些信息。",
+      "adminUsername": "管理员用户名",
+      "adminPassword": "管理员密码",
+      "readyToSetUp": "准备就绪",
+      "port": "端口 {{port}}"
+    },
+    "apply": {
+      "titleDone": "您的媒体中心已就绪",
+      "titleError": "设置遇到问题",
+      "titleRunning": "正在设置",
+      "subtitleDone": "一切正常运行。以下是自动设置的情况。",
+      "subtitleError": "您的服务可能只完成了部分设置。您可以返回重试。",
+      "subtitleRunning": "正在应用您的配置并启动媒体中心。",
+      "phaseSave": "正在保存您的配置",
+      "phaseCompose": "正在生成 Docker 配置",
+      "phaseStart": "正在启动服务",
+      "phaseStartDetail": "正在下载镜像并启动容器。首次运行可能需要几分钟。",
+      "phaseConnect": "正在互连各项服务",
+      "phaseConnectDetail": "正在等待每项服务就绪，然后将它们连接起来。这可能需要一分钟。",
+      "backToConfig": "返回配置",
+      "goToDashboard": "前往仪表板"
+    },
+    "nav": { "previous": "上一步", "next": "下一步", "apply": "应用设置" },
+    "errors": {
+      "save": "无法保存您的配置。",
+      "compose": "无法生成 Docker 配置。",
+      "start": "无法启动服务。",
+      "generic": "设置过程中出错。",
+      "tzRequired": "时区为必填项。",
+      "puid": "PUID 必须为非负数。",
+      "pgid": "PGID 必须为非负数。",
+      "jellyfinUsername": "Jellyfin 管理员用户名为必填项。",
+      "jellyfinPassword": "Jellyfin 管理员密码至少需要 4 个字符。",
+      "portRange": "端口必须介于 1024 和 65535 之间。",
+      "portConflictSelected": "端口与另一项已选服务冲突。",
+      "portInUseSwitched": "端口 {{port}} 已被占用——已切换到空闲端口 {{suggestion}}。",
+      "portInUseNoFree": "端口 {{port}} 已被占用，且未能找到空闲端口。请选择其他端口。",
+      "pathMediaConflict": "路径与 {{service}} 中不同的媒体类型冲突",
+      "pathDownloadConflict": "下载路径与非下载服务 {{service}} 冲突",
+      "pathUsedBy": "路径已被 {{service}} 使用"
+    }
+  },
+  "dashboard": {
+    "heading": { "title": "仪表板", "subtitle": "管理您的媒体中心服务" },
+    "settings": { "tooltip": "高级设置", "button": "设置" },
+    "globalControls": {
+      "stopAll": "全部停止",
+      "startAll": "全部启动",
+      "noServicesToStop": "没有可停止的服务",
+      "allStopped": "所有服务均已停止",
+      "stopAllTooltip": "停止所有服务",
+      "noServicesToStart": "没有可启动的服务",
+      "allRunning": "所有服务均已在运行",
+      "startAllTooltip": "启动所有服务"
+    },
+    "roles": {
+      "tvShows": "管理您的电视剧",
+      "movies": "管理您的电影",
+      "subtitles": "管理字幕",
+      "streams": "串流您的媒体",
+      "downloads": "下载内容",
+      "indexers": "查找内容来源",
+      "requests": "请求并发现媒体",
+      "library": "管理您的媒体库"
+    },
+    "setupChecklist": {
+      "heading": "完成设置",
+      "stepsLeft_one": "· 还剩 {{count}} 步",
+      "stepsLeft_other": "· 还剩 {{count}} 步"
+    },
+    "tasks": {
+      "prowlarr": "在 <strong>Prowlarr</strong> 中添加索引器，以便 Sonarr 和 Radarr 能够搜索内容",
+      "plex": "登录 <strong>Plex</strong> 以创建您的电视剧和电影媒体库",
+      "overseerr": "完成 <strong>Overseerr</strong> 设置——使用 Plex 登录以发现您的服务"
+    },
+    "services": {
+      "heading": "服务",
+      "configured_one": "已配置 {{count}} 项服务",
+      "configured_other": "已配置 {{count}} 项服务",
+      "updatesAvailable_one": " · {{count}} 项更新可用",
+      "updatesAvailable_other": " · {{count}} 项更新可用",
+      "updateAllTooltip_one": "更新有新版本可用的 {{count}} 项服务",
+      "updateAllTooltip_other": "更新有新版本可用的 {{count}} 项服务",
+      "updateAll": "全部更新（{{count}}）",
+      "checkAllTooltip": "检查每项服务是否有可用更新",
+      "checkForUpdates": "检查更新",
+      "addTooltip": "添加其他服务",
+      "addService": "添加服务"
+    },
+    "empty": {
+      "title": "尚未配置任何服务",
+      "description": "先添加并配置您的媒体中心服务即可开始。您可以按需逐项添加服务。"
+    },
+    "status": {
+      "starting": "正在启动…",
+      "stopping": "正在停止…",
+      "restarting": "正在重启…",
+      "setupNeeded": "需要设置",
+      "needsAttention": "需要注意",
+      "running": "运行中",
+      "stopped": "已停止",
+      "unhealthyTooltip": "服务正在运行，但响应异常"
+    },
+    "card": {
+      "openDisabledTooltip": "启动服务后才能打开",
+      "checkingUpdates": "正在检查更新…",
+      "updateAvailable": "有更新可用——立即更新",
+      "upToDate": "已是最新",
+      "version": {
+        "pinned": "已锁定到 v{{version}}",
+        "updateAvailable": "当前 v{{version}} · 有更新可用",
+        "latest": "已是最新版本（v{{version}}）"
+      }
+    },
+    "common": {
+      "open": "打开",
+      "openNamed": "打开 {{name}}",
+      "updating": "正在更新…",
+      "checking": "正在检查…",
+      "unknown": "未知"
+    },
+    "menu": {
+      "openInBrowser": "在浏览器中打开",
+      "start": "启动",
+      "stop": "停止",
+      "restart": "重启",
+      "viewLogs": "查看日志",
+      "configure": "配置"
+    },
+    "diagnostics": {
+      "heading": "诊断",
+      "allOk": "所有系统运行正常",
+      "attention": "需要注意",
+      "running": "运行中",
+      "notRunning": "未运行",
+      "app": "应用",
+      "active": "已激活",
+      "inactive": "未激活",
+      "backendConnection": "后端连接",
+      "connected": "已连接",
+      "disconnected": "已断开",
+      "servicesRunning": "运行中的服务",
+      "lastChecked": "上次检查",
+      "note": "Docker 服务独立运行，即使关闭应用也会继续运行。"
+    },
+    "logs": {
+      "title": "日志",
+      "titleNamed": "{{name}} — 日志",
+      "live": "实时",
+      "loading": "正在加载日志…"
+    },
+    "toast": {
+      "checkFailed": "无法检查 {{name}} 的更新。",
+      "checkAllFailed": "无法检查更新。",
+      "updatesFound_one": "{{count}} 项更新可用。",
+      "updatesFound_other": "{{count}} 项更新可用。",
+      "allUpToDate": "所有服务均为最新。",
+      "actionSuccess_start": "{{name}} 已成功启动",
+      "actionSuccess_stop": "{{name}} 已成功停止",
+      "actionSuccess_restart": "{{name}} 已成功重启",
+      "globalItemFailed_start": "启动 {{service}} 失败：{{message}}",
+      "globalItemFailed_stop": "停止 {{service}} 失败：{{message}}",
+      "globalItemError_start": "启动 {{service}} 时出错：{{error}}",
+      "globalItemError_stop": "停止 {{service}} 时出错：{{error}}",
+      "globalDone_start": "所有服务已启动",
+      "globalDone_stop": "所有服务已停止",
+      "launchUrlFailed": "无法获取 {{service}} 的启动地址：{{message}}",
+      "launchError": "启动 {{service}} 时出错：{{error}}",
+      "updatedCount_one": "已更新 {{count}} 项服务",
+      "updatedCount_other": "已更新 {{count}} 项服务",
+      "updatedWithFailures": "已更新 {{count}} 项；失败：{{names}}",
+      "updateAllError": "更新服务时出错：{{error}}",
+      "updateSuccess": "{{name}} 已成功更新",
+      "updateFailed": "更新 {{name}} 失败：{{message}}",
+      "updateError": "更新 {{name}} 时出错：{{error}}"
+    },
+    "actionError": {
+      "title_start": "无法启动 {{name}}",
+      "title_stop": "无法停止 {{name}}",
+      "title_restart": "无法重启 {{name}}"
+    },
+    "confirm": {
+      "globalAction_start": "确定要启动所有服务吗？",
+      "globalAction_stop": "确定要停止所有服务吗？",
+      "updateAll_one": "更新 {{count}} 项服务？这将下载最新镜像并重启每一项。",
+      "updateAll_other": "更新 {{count}} 项服务？这将下载最新镜像并重启每一项。",
+      "updateService": "确定要更新 {{name}} 吗？这将下载最新版本并重启该服务。"
+    }
+  },
+  "settings": {
+    "title": "设置",
+    "subtitle": "在仪表板上从各服务卡片配置单个服务。这里是应用范围内的设置。",
+    "loading": "正在加载设置...",
+    "errorTitle": "错误",
+    "loadError": "加载配置失败。请重试。",
+    "close": "关闭",
+    "cancel": "取消",
+    "save": "保存并应用",
+    "saving": "正在应用…",
+    "toast": {
+      "savedPartial": "设置已保存。部分服务可能需要手动启动。",
+      "saved": "设置已保存并应用。",
+      "saveFailed": "保存设置失败。请重试。",
+      "resetFailed": "重置应用失败：{{error}}"
+    },
+    "appearance": {
+      "heading": "外观",
+      "description": "选择应用的外观。“跟随系统”将采用您的操作系统设置。",
+      "theme": { "light": "浅色", "dark": "深色", "system": "跟随系统" }
+    },
+    "general": {
+      "heading": "常规",
+      "trayLabel": "关闭窗口时保持在托盘中运行",
+      "trayDescription": "Ensembler 会保留在菜单栏／系统托盘中以便快速访问。无论如何您的服务都会继续运行——可从托盘菜单完全退出。",
+      "trayAriaLabel": "关闭窗口时保持在托盘中运行"
+    },
+    "environment": {
+      "heading": "环境",
+      "description": "应用于所有服务的全局设置。"
+    },
+    "updates": {
+      "heading": "更新",
+      "description": "Ensembler 每天检查新的服务版本，并在仪表板上显示可用更新。",
+      "autoLabel": "自动安装更新",
+      "autoDescription": "开启后，每天会在后台应用可用更新。默认关闭——您可自行掌控，通过“全部更新”手动应用。",
+      "autoAriaLabel": "自动安装更新"
+    },
+    "danger": {
+      "heading": "危险区域",
+      "resetLabel": "重置全部",
+      "resetDescription": "移除所有服务及其设置，恢复到全新安装状态。媒体文件将会保留。",
+      "resetButton": "重置全部",
+      "confirm": "⚠️ 破坏性操作：这将停止并移除所有服务，删除它们的全部设置、历史记录和数据库，恢复到全新安装状态。您的媒体文件（电视剧、电影、下载内容）不会被删除。此操作无法撤销。您确定要继续吗？"
+    },
+    "reset": {
+      "phaseStop": "正在停止并移除服务",
+      "phaseClean": "正在移除配置和数据",
+      "completeTitle": "重置完成",
+      "completeSubtitle": "正在开始全新设置…",
+      "runningTitle": "正在重置您的设置",
+      "runningSubtitle": "正在恢复到全新安装状态。您的媒体文件不受影响。",
+      "errorMessage": "出错了。您可以关闭此窗口并重试。"
+    }
+  },
+  "serviceConfig": {
+    "loadError": "无法加载当前配置。",
+    "fieldRequired": "{{label}} 为必填项。",
+    "portRerouted": "端口 {{port}} 已被占用，因此 {{name}} 使用 {{finalPort}}。",
+    "serviceAdded": "{{name}} 已添加。",
+    "serviceUpdated": "{{name}} 已更新。",
+    "addFailed": "无法添加 {{name}}：{{message}}",
+    "updateFailed": "无法更新 {{name}}：{{message}}",
+    "serviceRemoved": "{{name}} 已移除。其媒体文件未被删除。",
+    "removeFailed": "无法移除 {{name}}：{{message}}",
+    "addTitle": "添加 {{name}}",
+    "configureTitle": "配置 {{name}}",
+    "loading": "正在加载…",
+    "removeConfirmTitle": "移除 {{name}}？",
+    "removeConfirmBody": "这将停止 {{name}} 并删除其设置。您的媒体文件将会保留。此操作无法撤销。",
+    "portLabel": "端口",
+    "defaultPort": "默认：{{port}}",
+    "versionLabel": "版本",
+    "loadingVersions": "正在加载版本…",
+    "latestRecommended": "最新（推荐）",
+    "versionHelp": "保持 <1>最新</1> 可始终运行最新版本。固定某个特定版本可将其锁定在该版本——已固定的服务不会提示更新。",
+    "removeService": "移除服务",
+    "keep": "保留",
+    "removeNamed": "移除 {{name}}",
+    "cancel": "取消",
+    "addService": "添加服务",
+    "saveChanges": "保存更改"
+  },
+  "addService": {
+    "title": "添加服务",
+    "subtitle": "选择要添加到媒体中心的服务。接下来您将设置其路径和端口。",
+    "allAdded": "所有可用服务均已添加。",
+    "recommended": "推荐",
+    "add": "添加",
+    "cancel": "取消"
+  },
+  "actionsMenu": {
+    "moreActions": "更多操作"
+  },
+  "systemChecks": {
+    "heading": "检查您的设置",
+    "dismiss": "忽略",
+    "dockerMemoryWarning": "Docker 仅分配了 {{allocated}} GB 内存。媒体服务（尤其是 Plex）在 {{recommended}} GB 或更多内存下运行更佳——请在容器运行时设置中调高（Docker Desktop → Settings → Resources）。",
+    "diskWarning": "媒体存储位置仅剩 {{free}} GB 空闲空间。空间不足时下载可能失败——请释放空间或将服务指向更大的驱动器。"
+  },
+  "actionError": {
+    "description": "出错了。请查看日志了解详情，或重试。",
+    "dismiss": "忽略",
+    "viewLogs": "查看日志",
+    "retry": "重试"
+  },
+  "confirm": {
+    "title": "确认操作",
+    "destructiveTitle": "破坏性操作",
+    "confirm": "是的，我确定",
+    "cancel": "不，取消"
+  },
+  "environment": {
+    "timezone": {
+      "label": "时区 (TZ)",
+      "placeholder": "选择时区...",
+      "help": "用于日志时间戳和计划任务"
+    },
+    "puid": {
+      "label": "用户 ID (PUID)",
+      "help": "用于文件所有权的用户 ID（通常为 1000）"
+    },
+    "pgid": {
+      "label": "组 ID (PGID)",
+      "help": "用于文件所有权的组 ID（通常为 1000）"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "端口",
+    "portConfiguration": "端口配置",
+    "servicePort": "{{name}} 端口：",
+    "portDefault": "默认：{{port}}",
+    "infoBadge": "信息",
+    "serviceInformation": "服务信息",
+    "noPathsRequired": "无需文件路径",
+    "noPathsDescription": "此服务无需配置任何文件路径。"
+  },
+  "pathConfig": {
+    "badge": "路径",
+    "heading": "文件路径",
+    "placeholder": "{{description}}（默认：{{default}}）",
+    "useDefaultTitle": "使用默认路径",
+    "default": "默认",
+    "browseTitle": "浏览文件夹",
+    "browse": "浏览"
+  },
+  "docsButton": {
+    "label": "文档",
+    "tooltip": "文档"
+  },
+  "docsViewer": {
+    "heading": "文档",
+    "pages": {
+      "overview": "概览",
+      "gettingStarted": "快速开始",
+      "managing": "管理服务",
+      "troubleshooting": "故障排查"
+    }
+  },
+  "tabs": {
+    "dashboard": "仪表板",
+    "closeService": "关闭 {{name}}",
+    "reload": "重新加载",
+    "reloadService": "重新加载 {{name}}",
+    "openInBrowser": "在浏览器中打开",
+    "openServiceInBrowser": "在浏览器中打开 {{name}}"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "基于流行 arr 技术栈构建的索引器管理器/代理"
+    },
+    "sonarr": {
+      "description": "面向 Usenet 和 BitTorrent 用户的 PVR",
+      "paths": [
+        {
+          "label": "电视剧路径",
+          "description": "存放电视剧的目录"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "面向 Usenet 和 BitTorrent 用户的电影收藏管理工具",
+      "paths": [
+        {
+          "label": "电影路径",
+          "description": "存放电影的目录"
+        }
+      ]
+    },
+    "plex": {
+      "description": "用于串流内容的媒体服务器",
+      "paths": [
+        {
+          "label": "电视剧路径",
+          "description": "包含您电视剧的目录"
+        },
+        {
+          "label": "电影路径",
+          "description": "包含您电影的目录"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "BitTorrent 客户端",
+      "paths": [
+        {
+          "label": "下载路径",
+          "description": "存放下载内容的目录"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "请求管理与媒体发现工具"
+    },
+    "jellyfin": {
+      "description": "无授权费用的开源媒体服务器",
+      "paths": [
+        {
+          "label": "电视剧路径",
+          "description": "包含您电视剧的目录"
+        },
+        {
+          "label": "电影路径",
+          "description": "包含您电影的目录"
+        }
+      ]
+    },
+    "emby": {
+      "description": "功能丰富、配有移动应用的媒体服务器",
+      "paths": [
+        {
+          "label": "电视剧路径",
+          "description": "包含您电视剧的目录"
+        },
+        {
+          "label": "电影路径",
+          "description": "包含您电影的目录"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "配合 Sonarr 和 Radarr 管理字幕的辅助应用",
+      "paths": [
+        {
+          "label": "电视剧路径",
+          "description": "包含您电视剧的目录（与 Sonarr 相同）"
+        },
+        {
+          "label": "电影路径",
+          "description": "包含您电影的目录（与 Radarr 相同）"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "带网页界面的 BitTorrent 客户端",
+      "paths": [
+        {
+          "label": "下载路径",
+          "description": "存放下载内容的目录"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "为您喜爱的种子站点提供 API 支持"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "输入无效"
+    },
+    "ports": {
+      "validateFailed": "端口校验失败。"
+    },
+    "docker": {
+      "composeNotFound": "未找到 Docker Compose 或其无法正常工作。",
+      "notRunning": "Docker 未运行或未安装。",
+      "autostartUnsupportedOs": "该操作系统不支持自动启动。",
+      "autostartFailed": "自动启动 Docker 失败。",
+      "started": "Docker 已成功启动。",
+      "startCheckFailed": "Docker 未能成功启动。",
+      "startError": "尝试启动 Docker 时出错。"
+    },
+    "config": {
+      "saved": "配置已成功保存。",
+      "saveFailed": "保存配置失败。",
+      "notFound": "未找到 config.json。",
+      "currentFailed": "获取当前配置失败。"
+    },
+    "compose": {
+      "generated": "Docker Compose 文件已成功生成。",
+      "generateFailed": "生成 Docker Compose 文件失败。"
+    },
+    "service": {
+      "statusFailed": "获取服务状态失败。",
+      "started": "{{name}} 已成功启动。",
+      "startFailed": "启动 {{name}} 失败。",
+      "stopped": "{{name}} 已成功停止。",
+      "stopFailed": "停止 {{name}} 失败。",
+      "restarted": "{{name}} 已成功重启。",
+      "restartFailed": "重启 {{name}} 失败。",
+      "logsFailed": "获取 {{name}} 的日志失败。",
+      "notFound": "未找到服务。",
+      "versionFailed": "获取 {{name}} 的版本失败。",
+      "startAllSucceeded": "所有已启用的服务均已成功启动。",
+      "startAllFailed": "启动服务失败。",
+      "stopAllSucceeded": "所有服务均已成功停止。",
+      "stopAllFailed": "停止所有服务失败。",
+      "launchUrlFailed": "获取启动地址失败。",
+      "configFailed": "获取服务配置失败。",
+      "invalidSelectionFormat": "selectedServices 格式无效。",
+      "selectionRequiresArr": "您必须至少选择 Sonarr 或 Radarr。",
+      "selectionValid": "服务选择有效。",
+      "selectionValidateFailed": "校验服务选择失败。",
+      "checkUpdatesFailed": "检查 {{name}} 的更新失败。",
+      "checkUpdatesAllFailed": "检查更新失败。",
+      "updated": "{{name}} 已成功更新。",
+      "updateFailed": "更新 {{name}} 失败。",
+      "updateAllFailed": "更新服务失败。",
+      "monitorFailed": "监控服务失败。"
+    },
+    "setup": {
+      "bazarrRestartFailed": "已写入配置，但重启 Bazarr 失败：{{error}}",
+      "connectionsFailed": "设置服务互连失败。",
+      "plexFailed": "设置 Plex 失败。",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission 正在运行",
+      "transmissionUnreachable": "无法连接到 Transmission：{{error}}",
+      "plexSignInRequired": "Plex 需要一次性登录——请从仪表板打开 Plex 并登录；媒体库随后会自动创建",
+      "rootFolderAdded": "已添加根文件夹 {{path}}",
+      "rootFolderExists": "根文件夹 {{path}} 已配置",
+      "transmissionConnected": "已连接到 Transmission",
+      "transmissionExists": "Transmission 已配置",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "已连接 {{app}}——索引器将自动同步",
+      "prowlarrAppAlreadyConnected": "{{app}} 已连接",
+      "prowlarrTransmissionConnected": "已连接到 Transmission",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission 已配置"
+    },
+    "reset": {
+      "servicesStopped": "服务已停止并移除。",
+      "stopServicesFailed": "停止服务失败。",
+      "cleaned": "配置和数据已移除。",
+      "cleanFailed": "移除配置和数据失败。",
+      "completed": "所有设置已成功重置。",
+      "failed": "重置设置失败。"
+    },
+    "bazarr": {
+      "configNotFound": "尚未找到 Bazarr 的 config.yaml——Bazarr 是否正在运行？",
+      "connected": "已将 Bazarr 连接到 {{services}}",
+      "alreadyConnected": "Bazarr 已连接到 {{services}}"
+    },
+    "jellyfin": {
+      "notReady": "{{error}}",
+      "setUpOpenToAddLibraries": "Jellyfin 已设置完成——打开它即可添加媒体库",
+      "needsAdminAccount": "Jellyfin 需要其管理员账户——请重新运行设置或在 Jellyfin 中完成",
+      "accountCreated": "已创建管理员账户并完成设置",
+      "accountFailed": "{{error}}",
+      "authenticateFailed": "{{error}}",
+      "libraryCreated": "已在 {{path}} 创建“{{name}}”媒体库",
+      "libraryAlreadyConfigured": "“{{name}}”已配置",
+      "libraryFailed": "{{error}}",
+      "notifyConfigured": "{{service}} 将在导入时刷新 Jellyfin",
+      "notifyAlreadyConfigured": "{{service}} 已在通知 Jellyfin",
+      "notifyFailed": "{{error}}",
+      "apiKeyFailed": "{{error}}"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "已在 {{location}} 创建“{{name}}”媒体库",
+      "libraryExists": "已有 {{type}} 媒体库覆盖 {{location}}",
+      "notifyConfigured": "{{service}} 将在导入时刷新 Plex",
+      "notifyExists": "{{service}} 已在通知 Plex"
+    }
+  }
+}

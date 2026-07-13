@@ -1,0 +1,644 @@
+{
+  "language": {
+    "chooseTitle": "Выберите язык",
+    "chooseSubtitle": "Вы можете изменить его в любой момент в настройках.",
+    "continue": "Продолжить",
+    "label": "Язык",
+    "settingHint": "Язык, используемый во всём приложении Ensembler."
+  },
+  "app": {
+    "checkingStatus": "Проверка состояния Docker и Docker Compose…",
+    "dockerRequired": {
+      "title": "Требуется Docker",
+      "subtitle": "Для запуска ваших сервисов Ensembler нужен Docker — или другая среда контейнеризации",
+      "toGetStarted": "Чтобы начать:",
+      "step1": "Скачайте и установите Docker Desktop",
+      "step2": "Запустите Docker Desktop и дождитесь его старта",
+      "step3": "Дождитесь зелёного статуса «Docker Desktop is running»",
+      "step4": "Вернитесь сюда и нажмите «Проверить снова» ниже",
+      "downloadHeading": "Скачать Docker Desktop:",
+      "downloadButton": "Скачать Docker Desktop",
+      "otherRuntimes": "Уже используете OrbStack, Podman или другую среду контейнеризации? Это тоже подойдёт — просто убедитесь, что она установлена и запущена.",
+      "checkAgain": "Проверить снова",
+      "refreshPage": "Обновить страницу",
+      "refreshConfirm": "Страница будет обновлена, и состояние Docker будет проверено снова.",
+      "havingTrouble": "Возникли трудности? Убедитесь, что среда контейнеризации полностью запущена (а не просто установлена), и попробуйте обновить эту страницу.",
+      "readDocs": "Читать документацию"
+    },
+    "composeMissing": {
+      "title": "Docker Compose недоступен",
+      "heading": "Docker Compose недоступен"
+    },
+    "install": {
+      "mac": {
+        "docker": "Установите Docker Desktop со страницы https://www.docker.com/products/docker-desktop/ и запустите его из Программ.",
+        "compose": "Docker Compose входит в состав Docker Desktop на macOS."
+      },
+      "win": {
+        "docker": "Установите Docker Desktop со страницы https://www.docker.com/products/docker-desktop/ и запустите его из меню «Пуск».",
+        "compose": "Docker Compose входит в состав Docker Desktop на Windows."
+      },
+      "linux": {
+        "docker": "Установите Docker Engine: https://docs.docker.com/engine/install/ и запустите службу (например, sudo systemctl start docker).",
+        "compose": "Установите Docker Compose: https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "Неподдерживаемая ОС. См. https://docs.docker.com/get-docker/",
+        "compose": "Неподдерживаемая ОС. См. https://docs.docker.com/compose/install/"
+      }
+    }
+  },
+  "setup": {
+    "loading": "Загрузка конфигурации сервисов…",
+    "title": "Настройка",
+    "steps": { "selection": "Выбор сервисов", "configuration": "Конфигурация", "apply": "Применение" },
+    "selectAtLeastOne": "Выберите хотя бы один сервис, чтобы продолжить.",
+    "selectAtLeastOneToast": "Выберите хотя бы один сервис, чтобы продолжить.",
+    "portsPrefilled": "Некоторые порты по умолчанию уже заняты, поэтому мы заранее выбрали свободные ({{list}}). Вы можете изменить их ниже.",
+    "step0": {
+      "heading": "Выбор сервисов",
+      "subtitle": "Выберите сервисы, которые хотите запустить:",
+      "quickActions": "Быстрые действия",
+      "recommendedOn": "Снять выбор с рекомендуемых сервисов",
+      "recommendedOff": "Выбрать рекомендуемые сервисы для полноценного медиацентра",
+      "toggleRecommended": "Переключить рекомендуемые",
+      "required": "Обязательно",
+      "recommended": "Рекомендуется"
+    },
+    "categories": {
+      "media": { "title": "Медиасерверы", "description": "Серверы потокового вещания (выберите один)" },
+      "management": { "title": "Управление медиатекой", "description": "Менеджеры медиаколлекций (можно выбрать несколько)" },
+      "torrent": { "title": "Клиенты загрузки", "description": "Клиенты загрузки BitTorrent (выберите один)" },
+      "indexer": { "title": "Индексаторы", "description": "Управление торрент-индексаторами (выберите один)" },
+      "request": { "title": "Управление запросами", "description": "Инструменты запроса и поиска медиа (выберите один)" }
+    },
+    "step1": {
+      "heading": "Конфигурация сервисов",
+      "subtitle": "Настройте пути к файлам и порты для ваших сервисов:",
+      "environmentSettings": "Настройки окружения",
+      "jellyfinAccount": "Учётная запись администратора Jellyfin",
+      "jellyfinIntro": "Выберите данные входа администратора для Jellyfin. Ensembler использует их один раз, чтобы настроить Jellyfin и создать ваши медиатеки — они никогда не сохраняются на диск, поэтому храните эти данные в надёжном месте.",
+      "adminUsername": "Имя администратора",
+      "adminPassword": "Пароль администратора",
+      "readyToSetUp": "Готово к настройке",
+      "port": "Порт {{port}}"
+    },
+    "apply": {
+      "titleDone": "Ваш медиацентр готов",
+      "titleError": "При настройке возникла проблема",
+      "titleRunning": "Идёт настройка",
+      "subtitleDone": "Всё запущено. Вот как прошла автоматическая настройка.",
+      "subtitleError": "Ваши сервисы могут быть настроены частично. Вы можете вернуться и попробовать снова.",
+      "subtitleRunning": "Применение конфигурации и запуск вашего медиацентра.",
+      "phaseSave": "Сохранение конфигурации",
+      "phaseCompose": "Генерация настройки Docker",
+      "phaseStart": "Запуск сервисов",
+      "phaseStartDetail": "Загрузка образов и запуск контейнеров. При первом запуске это может занять несколько минут.",
+      "phaseConnect": "Связывание сервисов между собой",
+      "phaseConnectDetail": "Ожидание готовности каждого сервиса, затем их связывание. Это может занять минуту.",
+      "backToConfig": "Назад к конфигурации",
+      "goToDashboard": "Перейти к панели управления"
+    },
+    "nav": { "previous": "Назад", "next": "Далее", "apply": "Применить настройку" },
+    "errors": {
+      "save": "Не удалось сохранить конфигурацию.",
+      "compose": "Не удалось сгенерировать настройку Docker.",
+      "start": "Не удалось запустить сервисы.",
+      "generic": "Во время настройки что-то пошло не так.",
+      "tzRequired": "Часовой пояс обязателен.",
+      "puid": "PUID должен быть неотрицательным числом.",
+      "pgid": "PGID должен быть неотрицательным числом.",
+      "jellyfinUsername": "Имя администратора Jellyfin обязательно.",
+      "jellyfinPassword": "Пароль администратора Jellyfin должен содержать не менее 4 символов.",
+      "portRange": "Порт должен быть в диапазоне от 1024 до 65535.",
+      "portConflictSelected": "Порт конфликтует с другим выбранным сервисом.",
+      "portInUseSwitched": "Порт {{port}} занят — переключено на свободный порт {{suggestion}}.",
+      "portInUseNoFree": "Порт {{port}} занят, и свободный порт найти не удалось. Пожалуйста, выберите другой.",
+      "pathMediaConflict": "Путь конфликтует с другим типом медиа в {{service}}",
+      "pathDownloadConflict": "Путь загрузки конфликтует с сервисом {{service}}, не связанным с загрузками",
+      "pathUsedBy": "Путь уже используется сервисом {{service}}"
+    }
+  },
+  "dashboard": {
+    "heading": { "title": "Панель управления", "subtitle": "Управление сервисами вашего медиацентра" },
+    "settings": { "tooltip": "Дополнительные настройки", "button": "Настройки" },
+    "globalControls": {
+      "stopAll": "Остановить все",
+      "startAll": "Запустить все",
+      "noServicesToStop": "Нет сервисов для остановки",
+      "allStopped": "Все сервисы уже остановлены",
+      "stopAllTooltip": "Остановить все сервисы",
+      "noServicesToStart": "Нет сервисов для запуска",
+      "allRunning": "Все сервисы уже запущены",
+      "startAllTooltip": "Запустить все сервисы"
+    },
+    "roles": {
+      "tvShows": "Управляет вашими сериалами",
+      "movies": "Управляет вашими фильмами",
+      "subtitles": "Управляет субтитрами",
+      "streams": "Транслирует ваши медиа",
+      "downloads": "Загружает контент",
+      "indexers": "Находит источники контента",
+      "requests": "Запрашивает и находит медиа",
+      "library": "Управляет вашей медиатекой"
+    },
+    "setupChecklist": {
+      "heading": "Завершите настройку",
+      "stepsLeft_one": "· осталось {{count}} шаг",
+      "stepsLeft_other": "· осталось {{count}} шагов"
+    },
+    "tasks": {
+      "prowlarr": "Добавьте индексатор в <strong>Prowlarr</strong>, чтобы Sonarr и Radarr могли искать контент",
+      "plex": "Войдите в <strong>Plex</strong>, чтобы создать медиатеки сериалов и фильмов",
+      "overseerr": "Завершите настройку <strong>Overseerr</strong> — войдите через Plex, чтобы находить ваши сервисы"
+    },
+    "services": {
+      "heading": "Сервисы",
+      "configured_one": "{{count}} сервис настроен",
+      "configured_other": "настроено сервисов: {{count}}",
+      "updatesAvailable_one": " · доступно {{count}} обновление",
+      "updatesAvailable_other": " · доступно обновлений: {{count}}",
+      "updateAllTooltip_one": "Обновить {{count}} сервис с доступной новой версией",
+      "updateAllTooltip_other": "Обновить сервисы с доступными новыми версиями: {{count}}",
+      "updateAll": "Обновить все ({{count}})",
+      "checkAllTooltip": "Проверить все сервисы на наличие обновлений",
+      "checkForUpdates": "Проверить обновления",
+      "addTooltip": "Добавить ещё сервис",
+      "addService": "Добавить сервис"
+    },
+    "empty": {
+      "title": "Нет настроенных сервисов",
+      "description": "Начните с добавления и настройки сервисов вашего медиацентра. Вы можете добавлять сервисы по отдельности по мере необходимости."
+    },
+    "status": {
+      "starting": "Запуск…",
+      "stopping": "Остановка…",
+      "restarting": "Перезапуск…",
+      "setupNeeded": "Требуется настройка",
+      "needsAttention": "Требует внимания",
+      "running": "Работает",
+      "stopped": "Остановлен",
+      "unhealthyTooltip": "Сервис работает, но отвечает некорректно"
+    },
+    "card": {
+      "openDisabledTooltip": "Запустите сервис, чтобы открыть его",
+      "checkingUpdates": "Проверка обновлений…",
+      "updateAvailable": "Доступно обновление — обновить сейчас",
+      "upToDate": "Актуальная версия",
+      "version": {
+        "pinned": "Зафиксировано на v{{version}}",
+        "updateAvailable": "Версия v{{version}} · доступно обновление",
+        "latest": "Установлена последняя версия (v{{version}})"
+      }
+    },
+    "common": {
+      "open": "Открыть",
+      "openNamed": "Открыть {{name}}",
+      "updating": "Обновление…",
+      "checking": "Проверка…",
+      "unknown": "неизвестно"
+    },
+    "menu": {
+      "openInBrowser": "Открыть в браузере",
+      "start": "Запустить",
+      "stop": "Остановить",
+      "restart": "Перезапустить",
+      "viewLogs": "Показать логи",
+      "configure": "Настроить"
+    },
+    "diagnostics": {
+      "heading": "Диагностика",
+      "allOk": "Все системы работают",
+      "attention": "Требуется внимание",
+      "running": "Работает",
+      "notRunning": "Не работает",
+      "app": "Приложение",
+      "active": "Активно",
+      "inactive": "Неактивно",
+      "backendConnection": "Соединение с бэкендом",
+      "connected": "Подключено",
+      "disconnected": "Отключено",
+      "servicesRunning": "Работающие сервисы",
+      "lastChecked": "Последняя проверка",
+      "note": "Сервисы Docker продолжают работать независимо, в том числе после закрытия приложения."
+    },
+    "logs": {
+      "title": "Логи",
+      "titleNamed": "{{name}} — логи",
+      "live": "В реальном времени",
+      "loading": "Загрузка логов…"
+    },
+    "toast": {
+      "checkFailed": "Не удалось проверить обновления для {{name}}.",
+      "checkAllFailed": "Не удалось проверить обновления.",
+      "updatesFound_one": "Доступно {{count}} обновление.",
+      "updatesFound_other": "Доступно обновлений: {{count}}.",
+      "allUpToDate": "Все сервисы актуальны.",
+      "actionSuccess_start": "{{name}} успешно запущен",
+      "actionSuccess_stop": "{{name}} успешно остановлен",
+      "actionSuccess_restart": "{{name}} успешно перезапущен",
+      "globalItemFailed_start": "Не удалось запустить {{service}}: {{message}}",
+      "globalItemFailed_stop": "Не удалось остановить {{service}}: {{message}}",
+      "globalItemError_start": "Ошибка при запуске {{service}}: {{error}}",
+      "globalItemError_stop": "Ошибка при остановке {{service}}: {{error}}",
+      "globalDone_start": "Все сервисы запущены",
+      "globalDone_stop": "Все сервисы остановлены",
+      "launchUrlFailed": "Не удалось получить URL запуска для {{service}}: {{message}}",
+      "launchError": "Ошибка при запуске {{service}}: {{error}}",
+      "updatedCount_one": "Обновлён {{count}} сервис",
+      "updatedCount_other": "Обновлено сервисов: {{count}}",
+      "updatedWithFailures": "Обновлено: {{count}}; не удалось: {{names}}",
+      "updateAllError": "Ошибка при обновлении сервисов: {{error}}",
+      "updateSuccess": "{{name}} успешно обновлён",
+      "updateFailed": "Не удалось обновить {{name}}: {{message}}",
+      "updateError": "Ошибка при обновлении {{name}}: {{error}}"
+    },
+    "actionError": {
+      "title_start": "Не удалось запустить {{name}}",
+      "title_stop": "Не удалось остановить {{name}}",
+      "title_restart": "Не удалось перезапустить {{name}}"
+    },
+    "confirm": {
+      "globalAction_start": "Вы уверены, что хотите запустить все сервисы?",
+      "globalAction_stop": "Вы уверены, что хотите остановить все сервисы?",
+      "updateAll_one": "Обновить {{count}} сервис? Будут загружены последние образы и перезапущен каждый из них.",
+      "updateAll_other": "Обновить {{count}} сервисов? Будут загружены последние образы и перезапущен каждый из них.",
+      "updateService": "Вы уверены, что хотите обновить {{name}}? Будет загружена последняя версия и перезапущен сервис."
+    }
+  },
+  "settings": {
+    "title": "Настройки",
+    "subtitle": "Настраивайте отдельные сервисы на их карточках на панели управления. Здесь — общие настройки приложения.",
+    "loading": "Загрузка настроек...",
+    "errorTitle": "Ошибка",
+    "loadError": "Не удалось загрузить конфигурацию. Пожалуйста, попробуйте снова.",
+    "close": "Закрыть",
+    "cancel": "Отмена",
+    "save": "Сохранить и применить",
+    "saving": "Применение…",
+    "toast": {
+      "savedPartial": "Настройки сохранены. Некоторые сервисы, возможно, придётся запустить вручную.",
+      "saved": "Настройки сохранены и применены.",
+      "saveFailed": "Не удалось сохранить настройки. Пожалуйста, попробуйте снова.",
+      "resetFailed": "Не удалось сбросить приложение: {{error}}"
+    },
+    "appearance": {
+      "heading": "Внешний вид",
+      "description": "Выберите оформление приложения. «Системная» следует настройкам вашей операционной системы.",
+      "theme": { "light": "Светлая", "dark": "Тёмная", "system": "Системная" }
+    },
+    "general": {
+      "heading": "Общие",
+      "trayLabel": "Продолжать работу в трее при закрытии окна",
+      "trayDescription": "Ensembler остаётся в строке меню / системном трее для быстрого доступа. Ваши сервисы продолжают работать в любом случае — полностью выйти можно через меню трея.",
+      "trayAriaLabel": "Продолжать работу в трее при закрытии окна"
+    },
+    "environment": {
+      "heading": "Окружение",
+      "description": "Общие настройки, применяемые ко всем сервисам."
+    },
+    "updates": {
+      "heading": "Обновления",
+      "description": "Ensembler ежедневно проверяет новые версии сервисов и показывает доступные на панели управления.",
+      "autoLabel": "Устанавливать обновления автоматически",
+      "autoDescription": "Когда включено, доступные обновления применяются в фоновом режиме каждый день. По умолчанию выключено — вы сохраняете контроль и применяете их сами через «Обновить все».",
+      "autoAriaLabel": "Устанавливать обновления автоматически"
+    },
+    "danger": {
+      "heading": "Опасная зона",
+      "resetLabel": "Сбросить всё",
+      "resetDescription": "Удаляет все сервисы и их настройки, возвращая к состоянию после установки. Медиафайлы сохраняются.",
+      "resetButton": "Сбросить всё",
+      "confirm": "⚠️ ОПАСНОЕ ДЕЙСТВИЕ: Это остановит и удалит все сервисы, а также удалит все их настройки, историю и базы данных, вернув к состоянию после установки. Ваши медиафайлы (сериалы, фильмы, загрузки) НЕ будут удалены. Это действие нельзя отменить. Вы абсолютно уверены?"
+    },
+    "reset": {
+      "phaseStop": "Остановка и удаление сервисов",
+      "phaseClean": "Удаление конфигурации и данных",
+      "completeTitle": "Сброс завершён",
+      "completeSubtitle": "Запуск новой настройки…",
+      "runningTitle": "Сброс вашей конфигурации",
+      "runningSubtitle": "Возврат к состоянию после установки. Ваши медиафайлы не затрагиваются.",
+      "errorMessage": "Что-то пошло не так. Вы можете закрыть это окно и попробовать снова."
+    }
+  },
+  "serviceConfig": {
+    "loadError": "Не удалось загрузить текущую конфигурацию.",
+    "fieldRequired": "Поле «{{label}}» обязательно.",
+    "portRerouted": "Порт {{port}} был занят, поэтому {{name}} работает на порту {{finalPort}}.",
+    "serviceAdded": "{{name}} добавлен.",
+    "serviceUpdated": "{{name}} обновлён.",
+    "addFailed": "Не удалось добавить {{name}}: {{message}}",
+    "updateFailed": "Не удалось обновить {{name}}: {{message}}",
+    "serviceRemoved": "{{name}} удалён. Его медиафайлы не были удалены.",
+    "removeFailed": "Не удалось удалить {{name}}: {{message}}",
+    "addTitle": "Добавить {{name}}",
+    "configureTitle": "Настроить {{name}}",
+    "loading": "Загрузка…",
+    "removeConfirmTitle": "Удалить {{name}}?",
+    "removeConfirmBody": "Это остановит {{name}} и удалит его настройки. Ваши медиафайлы сохранятся. Отменить это нельзя.",
+    "portLabel": "Порт",
+    "defaultPort": "По умолчанию: {{port}}",
+    "versionLabel": "Версия",
+    "loadingVersions": "Загрузка версий…",
+    "latestRecommended": "Последняя (рекомендуется)",
+    "versionHelp": "Оставьте <1>Последняя</1>, чтобы всегда использовать новейшую версию. Зафиксируйте конкретную версию, чтобы остаться на ней — для зафиксированных сервисов обновления не предлагаются.",
+    "removeService": "Удалить сервис",
+    "keep": "Оставить",
+    "removeNamed": "Удалить {{name}}",
+    "cancel": "Отмена",
+    "addService": "Добавить сервис",
+    "saveChanges": "Сохранить изменения"
+  },
+  "addService": {
+    "title": "Добавить сервис",
+    "subtitle": "Выберите сервис для добавления в ваш медиацентр. Пути и порт вы зададите на следующем шаге.",
+    "allAdded": "Все доступные сервисы уже добавлены.",
+    "recommended": "Рекомендуется",
+    "add": "Добавить",
+    "cancel": "Отмена"
+  },
+  "actionsMenu": {
+    "moreActions": "Ещё действия"
+  },
+  "systemChecks": {
+    "heading": "Проверьте вашу настройку",
+    "dismiss": "Скрыть",
+    "dockerMemoryWarning": "Docker выделено всего {{allocated}} ГБ памяти. Медиасервисы (особенно Plex) работают лучше при {{recommended}} ГБ и более — увеличьте объём в настройках среды контейнеризации (Docker Desktop → Settings → Resources).",
+    "diskWarning": "Всего {{free}} ГБ свободно там, где хранятся медиа. При нехватке места загрузки могут завершаться с ошибкой — освободите место или укажите сервисам диск большего объёма."
+  },
+  "actionError": {
+    "description": "Что-то пошло не так. Проверьте логи для подробностей или попробуйте снова.",
+    "dismiss": "Скрыть",
+    "viewLogs": "Показать логи",
+    "retry": "Повторить"
+  },
+  "confirm": {
+    "title": "Подтвердите действие",
+    "destructiveTitle": "Необратимое действие",
+    "confirm": "Да, я уверен",
+    "cancel": "Нет, отмена"
+  },
+  "environment": {
+    "timezone": {
+      "label": "Часовой пояс (TZ)",
+      "placeholder": "Выберите часовой пояс...",
+      "help": "Используется для меток времени в логах и планирования"
+    },
+    "puid": {
+      "label": "ID пользователя (PUID)",
+      "help": "ID пользователя для владения файлами (обычно 1000)"
+    },
+    "pgid": {
+      "label": "ID группы (PGID)",
+      "help": "ID группы для владения файлами (обычно 1000)"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "Порт",
+    "portConfiguration": "Настройка порта",
+    "servicePort": "Порт {{name}}:",
+    "portDefault": "По умолчанию: {{port}}",
+    "infoBadge": "Информация",
+    "serviceInformation": "Информация о сервисе",
+    "noPathsRequired": "Пути к файлам не требуются",
+    "noPathsDescription": "Этому сервису не требуется настройка путей к файлам."
+  },
+  "pathConfig": {
+    "badge": "Пути",
+    "heading": "Пути к файлам",
+    "placeholder": "{{description}} (по умолчанию: {{default}})",
+    "useDefaultTitle": "Использовать путь по умолчанию",
+    "default": "По умолчанию",
+    "browseTitle": "Выбрать папку",
+    "browse": "Обзор"
+  },
+  "docsButton": {
+    "label": "Документация",
+    "tooltip": "Документация"
+  },
+  "docsViewer": {
+    "heading": "Документация",
+    "pages": {
+      "overview": "Обзор",
+      "gettingStarted": "Начало работы",
+      "managing": "Управление сервисами",
+      "troubleshooting": "Устранение неполадок"
+    }
+  },
+  "tabs": {
+    "dashboard": "Панель управления",
+    "closeService": "Закрыть {{name}}",
+    "reload": "Перезагрузить",
+    "reloadService": "Перезагрузить {{name}}",
+    "openInBrowser": "Открыть в браузере",
+    "openServiceInBrowser": "Открыть {{name}} в браузере"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "Менеджер/прокси индексаторов на основе популярного стека arr"
+    },
+    "sonarr": {
+      "description": "PVR для пользователей Usenet и BitTorrent",
+      "paths": [
+        {
+          "label": "Путь к сериалам",
+          "description": "Каталог, где будут храниться сериалы"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "Менеджер коллекции фильмов для пользователей Usenet и BitTorrent",
+      "paths": [
+        {
+          "label": "Путь к фильмам",
+          "description": "Каталог, где будут храниться фильмы"
+        }
+      ]
+    },
+    "plex": {
+      "description": "Медиасервер для потоковой трансляции вашего контента",
+      "paths": [
+        {
+          "label": "Путь к сериалам",
+          "description": "Каталог с вашими сериалами"
+        },
+        {
+          "label": "Путь к фильмам",
+          "description": "Каталог с вашими фильмами"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "Клиент BitTorrent",
+      "paths": [
+        {
+          "label": "Путь к загрузкам",
+          "description": "Каталог, где будут храниться загрузки"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "Инструмент управления запросами и поиска медиа"
+    },
+    "jellyfin": {
+      "description": "Медиасервер с открытым исходным кодом без лицензионных сборов",
+      "paths": [
+        {
+          "label": "Путь к сериалам",
+          "description": "Каталог с вашими сериалами"
+        },
+        {
+          "label": "Путь к фильмам",
+          "description": "Каталог с вашими фильмами"
+        }
+      ]
+    },
+    "emby": {
+      "description": "Многофункциональный медиасервер с мобильными приложениями",
+      "paths": [
+        {
+          "label": "Путь к сериалам",
+          "description": "Каталог с вашими сериалами"
+        },
+        {
+          "label": "Путь к фильмам",
+          "description": "Каталог с вашими фильмами"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "Приложение-компаньон для Sonarr и Radarr для управления субтитрами",
+      "paths": [
+        {
+          "label": "Путь к сериалам",
+          "description": "Каталог с вашими сериалами (тот же, что и у Sonarr)"
+        },
+        {
+          "label": "Путь к фильмам",
+          "description": "Каталог с вашими фильмами (тот же, что и у Radarr)"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "Клиент BitTorrent с веб-интерфейсом",
+      "paths": [
+        {
+          "label": "Путь к загрузкам",
+          "description": "Каталог, где будут храниться загрузки"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "Поддержка API для ваших любимых торрент-трекеров"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "Неверный ввод"
+    },
+    "ports": {
+      "validateFailed": "Не удалось проверить порты."
+    },
+    "docker": {
+      "composeNotFound": "Docker Compose не найден или не работает.",
+      "notRunning": "Docker не запущен или не установлен.",
+      "autostartUnsupportedOs": "ОС не поддерживает автозапуск.",
+      "autostartFailed": "Не удалось запустить Docker автоматически.",
+      "started": "Docker успешно запущен.",
+      "startCheckFailed": "Docker не удалось запустить.",
+      "startError": "Ошибка при попытке запустить Docker."
+    },
+    "config": {
+      "saved": "Конфигурация успешно сохранена.",
+      "saveFailed": "Не удалось сохранить конфигурацию.",
+      "notFound": "Файл config.json не найден.",
+      "currentFailed": "Не удалось получить текущую конфигурацию."
+    },
+    "compose": {
+      "generated": "Файлы Docker Compose успешно сгенерированы.",
+      "generateFailed": "Не удалось сгенерировать файлы Docker Compose."
+    },
+    "service": {
+      "statusFailed": "Не удалось получить статус сервиса.",
+      "started": "{{name}} успешно запущен.",
+      "startFailed": "Не удалось запустить {{name}}.",
+      "stopped": "{{name}} успешно остановлен.",
+      "stopFailed": "Не удалось остановить {{name}}.",
+      "restarted": "{{name}} успешно перезапущен.",
+      "restartFailed": "Не удалось перезапустить {{name}}.",
+      "logsFailed": "Не удалось получить логи для {{name}}.",
+      "notFound": "Сервис не найден.",
+      "versionFailed": "Не удалось получить версию для {{name}}.",
+      "startAllSucceeded": "Все включённые сервисы успешно запущены.",
+      "startAllFailed": "Не удалось запустить сервисы.",
+      "stopAllSucceeded": "Все сервисы успешно остановлены.",
+      "stopAllFailed": "Не удалось остановить все сервисы.",
+      "launchUrlFailed": "Не удалось получить URL запуска.",
+      "configFailed": "Не удалось получить конфигурацию сервиса.",
+      "invalidSelectionFormat": "Неверный формат selectedServices.",
+      "selectionRequiresArr": "Необходимо выбрать хотя бы Sonarr или Radarr.",
+      "selectionValid": "Выбор сервисов корректен.",
+      "selectionValidateFailed": "Не удалось проверить выбор сервисов.",
+      "checkUpdatesFailed": "Не удалось проверить обновления для {{name}}.",
+      "checkUpdatesAllFailed": "Не удалось проверить обновления.",
+      "updated": "{{name}} успешно обновлён.",
+      "updateFailed": "Не удалось обновить {{name}}.",
+      "updateAllFailed": "Не удалось обновить сервисы.",
+      "monitorFailed": "Не удалось отслеживать сервисы."
+    },
+    "setup": {
+      "bazarrRestartFailed": "Конфигурация задана, но не удалось перезапустить Bazarr: {{error}}",
+      "connectionsFailed": "Не удалось настроить связи между сервисами.",
+      "plexFailed": "Не удалось настроить Plex.",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission работает",
+      "transmissionUnreachable": "Transmission недоступен: {{error}}",
+      "plexSignInRequired": "Plex требует однократного входа — откройте Plex на панели управления и войдите; после этого медиатеки создаются автоматически",
+      "rootFolderAdded": "Добавлена корневая папка {{path}}",
+      "rootFolderExists": "Корневая папка {{path}} уже настроена",
+      "transmissionConnected": "Подключено к Transmission",
+      "transmissionExists": "Transmission уже настроен",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "Подключён {{app}} — индексаторы будут синхронизироваться автоматически",
+      "prowlarrAppAlreadyConnected": "{{app}} уже подключён",
+      "prowlarrTransmissionConnected": "Подключено к Transmission",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission уже настроен"
+    },
+    "reset": {
+      "servicesStopped": "Сервисы остановлены и удалены.",
+      "stopServicesFailed": "Не удалось остановить сервисы.",
+      "cleaned": "Конфигурация и данные удалены.",
+      "cleanFailed": "Не удалось удалить конфигурацию и данные.",
+      "completed": "Все настройки успешно сброшены.",
+      "failed": "Не удалось сбросить настройки."
+    },
+    "bazarr": {
+      "configNotFound": "Файл config.yaml для Bazarr пока не найден — Bazarr запущен?",
+      "connected": "Bazarr подключён к {{services}}",
+      "alreadyConnected": "Bazarr уже подключён к {{services}}"
+    },
+    "jellyfin": {
+      "notReady": "{{error}}",
+      "setUpOpenToAddLibraries": "Jellyfin настроен — откройте его, чтобы добавить медиатеки",
+      "needsAdminAccount": "Jellyfin требует учётную запись администратора — повторите настройку или завершите её в Jellyfin",
+      "accountCreated": "Создана учётная запись администратора, настройка завершена",
+      "accountFailed": "{{error}}",
+      "authenticateFailed": "{{error}}",
+      "libraryCreated": "Создана медиатека «{{name}}» в {{path}}",
+      "libraryAlreadyConfigured": "«{{name}}» уже настроена",
+      "libraryFailed": "{{error}}",
+      "notifyConfigured": "{{service}} будет обновлять Jellyfin при импорте",
+      "notifyAlreadyConfigured": "{{service}} уже уведомляет Jellyfin",
+      "notifyFailed": "{{error}}",
+      "apiKeyFailed": "{{error}}"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "Создана медиатека «{{name}}» в {{location}}",
+      "libraryExists": "Медиатека типа {{type}} уже охватывает {{location}}",
+      "notifyConfigured": "{{service}} будет обновлять Plex при импорте",
+      "notifyExists": "{{service}} уже уведомляет Plex"
+    }
+  }
+}

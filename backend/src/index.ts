@@ -213,7 +213,7 @@ app.get('/api/config/status', (req: Request, res: Response) => {
 app.post('/api/paths/validate', (req, res) => {
     const { paths } = req.body;
     if (!paths || !Array.isArray(paths)) {
-      return res.status(400).json({ success: false, message: 'Invalid input' });
+      return res.status(400).json({ success: false, code: 'messages.common.invalidInput', message: 'Invalid input' });
     }
   
     const results = paths.map(p => {
@@ -241,7 +241,7 @@ app.post('/api/paths/validate', (req, res) => {
 app.post('/api/ports/validate', async (req: Request, res: Response) => {
   const { ports } = req.body;
   if (!ports || typeof ports !== 'object') {
-    return res.status(400).json({ success: false, message: 'Invalid input' });
+    return res.status(400).json({ success: false, code: 'messages.common.invalidInput', message: 'Invalid input' });
   }
 
   const requested = Object.entries(ports).map(([service, port]) => ({
@@ -261,7 +261,7 @@ app.post('/api/ports/validate', async (req: Request, res: Response) => {
     const conflicts = await findPortConflicts(requested, ownPorts);
     res.json({ success: conflicts.length === 0, conflicts });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to validate ports.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.ports.validateFailed', message: 'Failed to validate ports.', error: (err as Error).message });
   }
 });
 
@@ -273,12 +273,12 @@ app.get('/api/docker/status', async (req: Request, res: Response) => {
     // Docker Compose check: try to run 'docker compose version' via child_process
     exec('docker compose version', (err, stdout) => {
       if (err) {
-        return res.json({ docker: true, compose: false, message: 'Docker Compose not found or not working.' });
+        return res.json({ docker: true, compose: false, code: 'messages.docker.composeNotFound', message: 'Docker Compose not found or not working.' });
       }
       res.json({ docker: true, compose: true, composeVersion: stdout.trim() });
     });
   } catch (e) {
-    res.json({ docker: false, compose: false, message: 'Docker not running or not installed.' });
+    res.json({ docker: false, compose: false, code: 'messages.docker.notRunning', message: 'Docker not running or not installed.' });
   }
 });
 
@@ -394,9 +394,9 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ success: true, message: 'Configuration saved successfully.' });
+    res.json({ success: true, code: 'messages.config.saved', message: 'Configuration saved successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to save configuration.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.config.saveFailed', message: 'Failed to save configuration.', error: (err as Error).message });
   }
 });
 
@@ -410,26 +410,26 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
   } else if (platform === 'linux') {
     startCmd = 'systemctl start docker';
   } else {
-    return res.status(400).json({ success: false, message: 'Unsupported OS for auto-start.' });
+    return res.status(400).json({ success: false, code: 'messages.docker.autostartUnsupportedOs', message: 'Unsupported OS for auto-start.' });
   }
   try {
     exec(startCmd, async (err) => {
       if (err) {
-        return res.status(500).json({ success: false, message: 'Failed to start Docker automatically.' });
+        return res.status(500).json({ success: false, code: 'messages.docker.autostartFailed', message: 'Failed to start Docker automatically.' });
       }
       // Wait and re-check Docker status
       setTimeout(async () => {
         try {
           const docker = new Docker({ socketPath: '/var/run/docker.sock' });
           await docker.container.list();
-          res.json({ success: true, message: 'Docker started successfully.' });
+          res.json({ success: true, code: 'messages.docker.started', message: 'Docker started successfully.' });
         } catch {
-          res.status(500).json({ success: false, message: 'Docker did not start successfully.' });
+          res.status(500).json({ success: false, code: 'messages.docker.startCheckFailed', message: 'Docker did not start successfully.' });
         }
       }, 5000);
     });
   } catch (e) {
-    res.status(500).json({ success: false, message: 'Error attempting to start Docker.' });
+    res.status(500).json({ success: false, code: 'messages.docker.startError', message: 'Error attempting to start Docker.' });
   }
 });
 
@@ -548,9 +548,9 @@ app.post('/api/config/generate-compose', (req: Request, res: Response) => {
     const composeContent = `name: ensembler\n\nservices:\n${composeServices}`;
     fs.writeFileSync(composeFile, composeContent);
 
-    res.json({ success: true, message: 'Docker Compose files generated successfully.' });
+    res.json({ success: true, code: 'messages.compose.generated', message: 'Docker Compose files generated successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to generate Docker Compose files.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.compose.generateFailed', message: 'Failed to generate Docker Compose files.', error: (err as Error).message });
   }
 });
 
@@ -585,7 +585,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
 
     res.json({ success: true, serviceStatus });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to get service status.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.statusFailed', message: 'Failed to get service status.', error: (err as Error).message });
   }
 });
 
@@ -594,9 +594,9 @@ app.post('/api/services/:serviceName/start', async (req: Request, res: Response)
   const { serviceName } = req.params;
   try {
     await composeUp(serviceName, true);
-    res.json({ success: true, message: `${serviceName} started successfully.` });
+    res.json({ success: true, code: 'messages.service.started', params: { name: serviceName }, message: `${serviceName} started successfully.` });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to start ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.startFailed', params: { name: serviceName }, message: `Failed to start ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -604,9 +604,9 @@ app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) 
   const { serviceName } = req.params;
   try {
     await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop ${serviceName}`);
-    res.json({ success: true, message: `${serviceName} stopped successfully.` });
+    res.json({ success: true, code: 'messages.service.stopped', params: { name: serviceName }, message: `${serviceName} stopped successfully.` });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to stop ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.stopFailed', params: { name: serviceName }, message: `Failed to stop ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -614,9 +614,9 @@ app.post('/api/services/:serviceName/restart', async (req: Request, res: Respons
   const { serviceName } = req.params;
   try {
     await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" restart ${serviceName}`);
-    res.json({ success: true, message: `${serviceName} restarted successfully.` });
+    res.json({ success: true, code: 'messages.service.restarted', params: { name: serviceName }, message: `${serviceName} restarted successfully.` });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to restart ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.restartFailed', params: { name: serviceName }, message: `Failed to restart ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -632,7 +632,7 @@ app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) =
     );
     res.json({ success: true, logs: stdout });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to get logs for ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.logsFailed', params: { name: serviceName }, message: `Failed to get logs for ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -641,7 +641,7 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
   try {
     const serviceConfig = getServiceConfig(serviceName);
     if (!serviceConfig) {
-      return res.status(404).json({ success: false, message: 'Service not found.' });
+      return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
     }
 
     // Helper to exec inside container
@@ -775,7 +775,7 @@ app.get('/api/services/:serviceName/version', async (req: Request, res: Response
       return res.json({ success: true, version: 'Not installed' });
     }
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to get version for ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.versionFailed', params: { name: serviceName }, message: `Failed to get version for ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -783,16 +783,16 @@ app.post('/api/services/start-all', async (req: Request, res: Response) => {
   try {
     // composeUp cleans up orphans and self-heals container-name conflicts.
     await composeUp();
-    res.json({ success: true, message: 'All enabled services started successfully.' });
+    res.json({ success: true, code: 'messages.service.startAllSucceeded', message: 'All enabled services started successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to start services.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.startAllFailed', message: 'Failed to start services.', error: (err as Error).message });
   }
 });
 
 app.post('/api/services/setup-connections', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     // Jellyfin admin credentials arrive in the request body from the wizard and
@@ -813,6 +813,8 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
           service: 'bazarr',
           step: 'restart',
           success: false,
+          code: 'messages.setup.bazarrRestartFailed',
+          params: { error: (err as Error).message },
           message: `Seeded config but failed to restart Bazarr: ${(err as Error).message}`
         });
         result.success = false;
@@ -821,7 +823,7 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
 
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to set up service connections.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.setup.connectionsFailed', message: 'Failed to set up service connections.', error: (err as Error).message });
   }
 });
 
@@ -918,22 +920,22 @@ app.get('/api/services/overseerr/setup-status', async (req: Request, res: Respon
 app.post('/api/services/plex/setup', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const result = await setupPlexConnections(config, configDir);
     res.json(result);
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to set up Plex.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.setup.plexFailed', message: 'Failed to set up Plex.', error: (err as Error).message });
   }
 });
 
 app.post('/api/services/stop-all', async (req: Request, res: Response) => {
   try {
     await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop`);
-    res.json({ success: true, message: 'All services stopped successfully.' });
+    res.json({ success: true, code: 'messages.service.stopAllSucceeded', message: 'All services stopped successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to stop all services.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.stopAllFailed', message: 'Failed to stop all services.', error: (err as Error).message });
   }
 });
 
@@ -942,7 +944,7 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
   try {
     if (!fs.existsSync(configFile)) {
       console.error('config.json not found at', configFile);
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const serviceConfig = getServiceConfig(serviceName);
@@ -955,7 +957,7 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
 
     if (!serviceConfig) {
       console.error('Service config not found for', serviceName);
-      return res.status(404).json({ success: false, message: 'Service not found.' });
+      return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
     }
     
     const port = config.ports[serviceName] || serviceConfig.defaultPort;
@@ -968,7 +970,7 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
     res.json({ success: true, url });
   } catch (err) {
     console.error('Error getting launch URL:', err);
-    res.status(500).json({ success: false, message: 'Failed to get launch URL.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.launchUrlFailed', message: 'Failed to get launch URL.', error: (err as Error).message });
   }
 });
 
@@ -976,12 +978,12 @@ app.get('/api/services/:serviceName/launch-url', async (req: Request, res: Respo
 app.get('/api/config/current', (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     res.json(config);
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to get current configuration.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.config.currentFailed', message: 'Failed to get current configuration.', error: (err as Error).message });
   }
 });
 
@@ -1002,7 +1004,7 @@ app.get('/api/services/config', (req: Request, res: Response) => {
       }))
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to get service configuration.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.configFailed', message: 'Failed to get service configuration.', error: (err as Error).message });
   }
 });
 
@@ -1010,22 +1012,23 @@ app.post('/api/services/validate-selection', (req: Request, res: Response) => {
   try {
     const { selectedServices } = req.body;
     if (!selectedServices || !Array.isArray(selectedServices)) {
-      return res.status(400).json({ success: false, message: 'Invalid selectedServices format.' });
+      return res.status(400).json({ success: false, code: 'messages.service.invalidSelectionFormat', message: 'Invalid selectedServices format.' });
     }
     
     
     // Check if at least Sonarr or Radarr is selected
     const hasRequiredService = selectedServices.includes('sonarr') || selectedServices.includes('radarr');
     if (!hasRequiredService) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'You must select at least Sonarr or Radarr.' 
+      return res.status(400).json({
+        success: false,
+        code: 'messages.service.selectionRequiresArr',
+        message: 'You must select at least Sonarr or Radarr.'
       });
     }
     
-    res.json({ success: true, message: 'Service selection is valid.' });
+    res.json({ success: true, code: 'messages.service.selectionValid', message: 'Service selection is valid.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to validate service selection.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.selectionValidateFailed', message: 'Failed to validate service selection.', error: (err as Error).message });
   }
 });
 
@@ -1072,18 +1075,18 @@ function resetCleanFilesAndData(): void {
 app.post('/api/config/reset/stop-services', async (req: Request, res: Response) => {
   try {
     await resetStopServices();
-    res.json({ success: true, message: 'Services stopped and removed.' });
+    res.json({ success: true, code: 'messages.reset.servicesStopped', message: 'Services stopped and removed.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to stop services.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.reset.stopServicesFailed', message: 'Failed to stop services.', error: (err as Error).message });
   }
 });
 
 app.post('/api/config/reset/clean', async (req: Request, res: Response) => {
   try {
     resetCleanFilesAndData();
-    res.json({ success: true, message: 'Configuration and data removed.' });
+    res.json({ success: true, code: 'messages.reset.cleaned', message: 'Configuration and data removed.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to remove configuration and data.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.reset.cleanFailed', message: 'Failed to remove configuration and data.', error: (err as Error).message });
   }
 });
 
@@ -1091,9 +1094,9 @@ app.post('/api/config/reset', async (req: Request, res: Response) => {
   try {
     await resetStopServices();
     resetCleanFilesAndData();
-    res.json({ success: true, message: 'All settings reset successfully.' });
+    res.json({ success: true, code: 'messages.reset.completed', message: 'All settings reset successfully.' });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to reset settings.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.reset.failed', message: 'Failed to reset settings.', error: (err as Error).message });
   }
 });
 
@@ -1102,7 +1105,7 @@ app.get('/api/services/:serviceName/versions', async (req: Request, res: Respons
   const { serviceName } = req.params;
   const serviceConfig = getServiceConfig(serviceName);
   if (!serviceConfig) {
-    return res.status(404).json({ success: false, message: 'Service not found.' });
+    return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
   }
   try {
     const versions = await fetchAvailableVersions(serviceConfig.image);
@@ -1118,13 +1121,13 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
   const { serviceName } = req.params;
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const serviceConfig = getServiceConfig(serviceName);
     if (!serviceConfig) {
-      return res.status(404).json({ success: false, message: 'Service not found.' });
+      return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
     }
 
     const imageName = getEffectiveImage(serviceName, config);
@@ -1144,7 +1147,7 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
 
     res.json({ success: true, hasUpdate, currentVersion });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to check updates for ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.checkUpdatesFailed', params: { name: serviceName }, message: `Failed to check updates for ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -1162,7 +1165,7 @@ app.get('/api/services/updates', (req: Request, res: Response) => {
 app.post('/api/services/updates/check', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     await refreshUpdateCache();
     res.json({
@@ -1171,7 +1174,7 @@ app.post('/api/services/updates/check', async (req: Request, res: Response) => {
       lastChecked: updateCheckStore.lastServiceCheck
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to check for updates.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.checkUpdatesAllFailed', message: 'Failed to check for updates.', error: (err as Error).message });
   }
 });
 
@@ -1179,7 +1182,7 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
   const { serviceName } = req.params;
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     
     const composeFile = path.join(configDir, 'docker-compose.yml');
@@ -1200,9 +1203,9 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
       updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
     }
 
-    res.json({ success: true, message: `${serviceName} updated successfully.`, hasUpdate });
+    res.json({ success: true, code: 'messages.service.updated', params: { name: serviceName }, message: `${serviceName} updated successfully.`, hasUpdate });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Failed to update ${serviceName}.`, error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.updateFailed', params: { name: serviceName }, message: `Failed to update ${serviceName}.`, error: (err as Error).message });
   }
 });
 
@@ -1239,12 +1242,12 @@ async function applyAvailableUpdates(): Promise<{ updated: string[]; failed: { s
 app.post('/api/services/updates/apply-all', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const { updated, failed } = await applyAvailableUpdates();
     res.json({ success: failed.length === 0, updated, failed });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to update services.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.updateAllFailed', message: 'Failed to update services.', error: (err as Error).message });
   }
 });
 
@@ -1252,7 +1255,7 @@ app.post('/api/services/updates/apply-all', async (req: Request, res: Response) 
 app.get('/api/services/monitor', async (req: Request, res: Response) => {
   try {
     if (!fs.existsSync(configFile)) {
-      return res.status(404).json({ success: false, message: 'config.json not found.' });
+      return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
@@ -1284,7 +1287,7 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
     
     res.json({ success: true, services: serviceHealthChecks });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Failed to monitor services.', error: (err as Error).message });
+    res.status(500).json({ success: false, code: 'messages.service.monitorFailed', message: 'Failed to monitor services.', error: (err as Error).message });
   }
 });
 

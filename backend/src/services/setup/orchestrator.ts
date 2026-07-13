@@ -7,6 +7,15 @@ import { setupJellyfin, JellyfinCredentials } from './jellyfinSetup';
 import { seedBazarrConfig } from './bazarrSetup';
 import { ArrTarget, SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
 
+// Stable message code (+ interpolation params) so the frontend can localise a
+// step result; `message` stays as the English fallback.
+declare module './types' {
+  interface SetupStepResult {
+    code?: string;
+    params?: Record<string, string>;
+  }
+}
+
 // Root folders are container-side paths fixed by the volume mappings in
 // serviceConfig, not the user's host paths.
 const ARR_SERVICES = [
@@ -115,7 +124,9 @@ export async function setupConnections(
         service: serviceKey,
         step: 'api-key',
         success: false,
-        message: (read.reason as Error).message
+        message: (read.reason as Error).message,
+        code: 'messages.setup.apiKeyReadFailed',
+        params: { error: (read.reason as Error).message }
       });
     }
   });
@@ -128,7 +139,8 @@ export async function setupConnections(
         service: 'transmission',
         step: 'ready',
         success: true,
-        message: 'Transmission is running'
+        message: 'Transmission is running',
+        code: 'messages.setup.transmissionRunning'
       });
       transmission = { host: 'transmission', port: getServiceConfig('transmission')!.internalPort };
     } catch (err) {
@@ -136,7 +148,9 @@ export async function setupConnections(
         service: 'transmission',
         step: 'ready',
         success: false,
-        message: `Transmission is not reachable: ${(err as Error).message}`
+        message: `Transmission is not reachable: ${(err as Error).message}`,
+        code: 'messages.setup.transmissionUnreachable',
+        params: { error: (err as Error).message }
       });
     }
   }
@@ -225,7 +239,8 @@ async function runPlexSetup(
       service: 'plex',
       step: 'sign-in',
       success: false,
-      message: 'Plex needs a one-time sign-in — open Plex from the Dashboard and log in; libraries are then created automatically'
+      message: 'Plex needs a one-time sign-in — open Plex from the Dashboard and log in; libraries are then created automatically',
+      code: 'messages.setup.plexSignInRequired'
     }];
   }
   return setupPlex({

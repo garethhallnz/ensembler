@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HiHome, HiX, HiRefresh, HiExternalLink } from 'react-icons/hi';
 import { useServiceTabs } from '../contexts/ServiceTabsContext';
 
@@ -34,6 +35,7 @@ function TabPill({ active, onSelect, children }: TabPillProps) {
 // "Not Secure" address bar. Inactive views are kept mounted (hidden via
 // visibility, not display:none, which breaks <webview> rendering on re-show).
 export default function ServiceTabsShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { tabs, activeId, closeService, setActive } = useServiceTabs();
   const webviews = useRef<Record<string, WebviewElement | null>>({});
   const activeTab = tabs.find(t => t.key === activeId);
@@ -44,7 +46,7 @@ export default function ServiceTabsShell({ children }: { children: ReactNode }) 
         <div className="flex items-center gap-1 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 px-2 py-1.5">
           <TabPill active={activeId === 'dashboard'} onSelect={() => setActive('dashboard')}>
             <HiHome className="w-4 h-4 shrink-0" />
-            <span>Dashboard</span>
+            <span>{t('tabs.dashboard')}</span>
           </TabPill>
 
           {tabs.map(tab => (
@@ -53,7 +55,7 @@ export default function ServiceTabsShell({ children }: { children: ReactNode }) 
               <span
                 role="button"
                 tabIndex={0}
-                aria-label={`Close ${tab.name}`}
+                aria-label={t('tabs.closeService', { name: tab.name })}
                 onClick={e => { e.stopPropagation(); closeService(tab.key); }}
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); closeService(tab.key); } }}
                 className="ml-1 -mr-1 p-0.5 rounded hover:bg-gray-300/70 dark:hover:bg-gray-600"
@@ -68,8 +70,8 @@ export default function ServiceTabsShell({ children }: { children: ReactNode }) 
               <button
                 type="button"
                 onClick={() => webviews.current[activeTab.key]?.reload()}
-                aria-label={`Reload ${activeTab.name}`}
-                title="Reload"
+                aria-label={t('tabs.reloadService', { name: activeTab.name })}
+                title={t('tabs.reload')}
                 className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <HiRefresh className="w-4 h-4" />
@@ -77,8 +79,8 @@ export default function ServiceTabsShell({ children }: { children: ReactNode }) 
               <button
                 type="button"
                 onClick={() => window.open(activeTab.url, '_blank')}
-                aria-label={`Open ${activeTab.name} in browser`}
-                title="Open in browser"
+                aria-label={t('tabs.openServiceInBrowser', { name: activeTab.name })}
+                title={t('tabs.openInBrowser')}
                 className="h-8 w-8 flex items-center justify-center rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <HiExternalLink className="w-4 h-4" />

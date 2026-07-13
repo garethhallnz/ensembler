@@ -1,0 +1,7 @@
+- generic [ref=f15e5]:
+  - generic [ref=f15e6]:
+    - img "Ensembler" [ref=f15e7]
+    - generic [ref=f15e14]: Ensembler
+  - generic [ref=f15e15]:
+    - status [ref=f15e16]
+    - paragraph [ref=f15e20]: 正在检查 Docker 和 Docker Compose 状态…

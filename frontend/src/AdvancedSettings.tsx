@@ -1,13 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Button, Spinner, Alert, Card, EnvironmentSettings, Toggle } from './components';
+import { useTranslation } from 'react-i18next';
+import { Button, Spinner, Alert, Card, EnvironmentSettings, Toggle, Select } from './components';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import { useTheme, type ThemePreference } from './contexts/ThemeContext';
+import { SUPPORTED_LANGUAGES } from './i18n/config';
 import ConfirmationModal from './components/ConfirmationModal';
 
 interface AdvancedSettingsProps {
   onClose: () => void;
-  onResetComplete: () => void;
+  onResetComplete?: () => void;
+  // During setup there's no config to manage yet, so show only Appearance
+  // (theme + language) with a Close — never the config-dependent sections.
+  appearanceOnly?: boolean;
 }
 
 interface ConfigType {
@@ -28,7 +33,8 @@ type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 // App-level settings only. Per-service configuration and adding services live
 // on the dashboard now, so this is limited to global environment settings and
 // a clearly separated danger zone (full reset).
-export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedSettingsProps) {
+export default function AdvancedSettings({ onClose, onResetComplete, appearanceOnly = false }: AdvancedSettingsProps) {
+  const { t, i18n } = useTranslation();
   const { showToast } = useToast();
   const { preference, setPreference } = useTheme();
   const [config, setConfig] = useState<ConfigType | null>(null);
@@ -44,6 +50,12 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
   });
 
   useEffect(() => {
+    // Appearance-only mode (during setup) doesn't use config — skip the fetch,
+    // which would 404 before any config exists.
+    if (appearanceOnly) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
         const res = await fetch('http://localhost:3001/api/config/current');
@@ -56,7 +68,7 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
         setLoading(false);
       }
     })();
-  }, []);
+  }, [appearanceOnly]);
 
   const handleEnvironmentChange = (field: string, value: string | number) => {
     if (!config) return;
@@ -66,9 +78,9 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
   const validateEnvironment = (): boolean => {
     if (!config) return false;
     const errs: { [key: string]: string } = {};
-    if (!config.environment.tz?.trim()) errs.tz = 'Timezone is required.';
-    if (isNaN(config.environment.puid) || config.environment.puid < 0) errs.puid = 'PUID must be a non-negative number.';
-    if (isNaN(config.environment.pgid) || config.environment.pgid < 0) errs.pgid = 'PGID must be a non-negative number.';
+    if (!config.environment.tz?.trim()) errs.tz = t('setup.errors.tzRequired');
+    if (isNaN(config.environment.puid) || config.environment.puid < 0) errs.puid = t('setup.errors.puid');
+    if (isNaN(config.environment.pgid) || config.environment.pgid < 0) errs.pgid = t('setup.errors.pgid');
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -89,14 +101,14 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
       const startRes = await fetch('http://localhost:3001/api/services/start-all', { method: 'POST' });
       if (!startRes.ok) {
-        showToast('Settings saved. Some services may need to be started manually.', 'warning');
+        showToast(t('settings.toast.savedPartial'), 'warning');
       } else {
-        showToast('Settings saved and applied.', 'success');
+        showToast(t('settings.toast.saved'), 'success');
       }
       onClose();
     } catch (error) {
       console.error('Error saving settings:', error);
-      showToast('Failed to save settings. Please try again.', 'error');
+      showToast(t('settings.toast.saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -104,14 +116,14 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
   const handleCompleteReset = () => {
     setConfirmationModal({
-      message: '⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?',
+      message: t('settings.danger.confirm'),
       onConfirm: async () => {
         setOpenModal(false);
         setResetStage('running');
 
         const phases = [
-          { key: 'stop', label: 'Stopping and removing services', status: 'pending' as ResetPhaseStatus },
-          { key: 'clean', label: 'Removing configuration and data', status: 'pending' as ResetPhaseStatus }
+          { key: 'stop', label: t('settings.reset.phaseStop'), status: 'pending' as ResetPhaseStatus },
+          { key: 'clean', label: t('settings.reset.phaseClean'), status: 'pending' as ResetPhaseStatus }
         ];
         setResetPhases(phases);
         const setPhase = (key: string, status: ResetPhaseStatus) =>
@@ -133,15 +145,70 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
           // Brief "done" state, then hand back to the app to return to the
           // wizard in place (no window reload).
           setResetStage('done');
-          setTimeout(() => onResetComplete(), 1400);
+          setTimeout(() => onResetComplete?.(), 1400);
         } catch (error) {
           setResetStage('error');
-          showToast(`Failed to reset application: ${error}`, 'error');
+          showToast(t('settings.toast.resetFailed', { error }), 'error');
         }
       },
     });
     setOpenModal(true);
   };
+
+  // During setup there's no saved config to manage, so show only appearance
+  // (theme + language) — no config load, no Save/Reset.
+  if (appearanceOnly) {
+    return (
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.title')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.subtitle')}</p>
+        </div>
+        <div className="flex-1 overflow-auto p-4 space-y-6">
+          <Card>
+            <Card.Header>
+              <h4 className="text-lg font-medium">{t('settings.appearance.heading')}</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.appearance.description')}</p>
+            </Card.Header>
+            <Card.Body>
+              <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1">
+                {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setPreference(opt)}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
+                      preference === opt
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {t(`settings.appearance.theme.${opt}`)}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-5">
+                <label htmlFor="setup-language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('language.label')}
+                </label>
+                <div className="max-w-[240px]">
+                  <Select id="setup-language" value={i18n.resolvedLanguage} onChange={e => i18n.changeLanguage(e.target.value)}>
+                    {SUPPORTED_LANGUAGES.map(language => (
+                      <option key={language.code} value={language.code}>{language.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('language.settingHint')}</p>
+              </div>
+            </Card.Body>
+          </Card>
+        </div>
+        <div className="border-t border-gray-200 dark:border-gray-600 p-4 flex justify-end">
+          <Button variant="secondary" onClick={onClose}>{t('settings.close')}</Button>
+        </div>
+      </div>
+    );
+  }
 
   // Full-screen reset progress so the user sees what's happening rather than
   // the window blanking. Covers the whole app while the reset runs.
@@ -152,13 +219,13 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
           {resetStage === 'done' ? (
             <div className="text-center">
               <div className="flex justify-center mb-6"><HiCheckCircle className="w-16 h-16 text-green-500" /></div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Reset complete</h2>
-              <p className="text-gray-600 dark:text-gray-400">Starting fresh setup…</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{t('settings.reset.completeTitle')}</h2>
+              <p className="text-gray-600 dark:text-gray-400">{t('settings.reset.completeSubtitle')}</p>
             </div>
           ) : (
             <>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">Resetting your setup</h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">Returning to a fresh install. Your media files are not affected.</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 text-center">{t('settings.reset.runningTitle')}</h2>
+              <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">{t('settings.reset.runningSubtitle')}</p>
               <div className="space-y-4">
                 {resetPhases.map((phase) => (
                   <div key={phase.key} className="flex items-center gap-3">
@@ -178,9 +245,9 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
               </div>
               {resetStage === 'error' && (
                 <div className="mt-6 text-center">
-                  <p className="text-sm text-red-500 mb-3">Something went wrong. You can close this and try again.</p>
+                  <p className="text-sm text-red-500 mb-3">{t('settings.reset.errorMessage')}</p>
                   <Button color="gray" outline onClick={() => { setResetStage('idle'); setResetPhases([]); }}>
-                    Close
+                    {t('settings.close')}
                   </Button>
                 </div>
               )}
@@ -195,12 +262,12 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
     return (
       <div className="h-full flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Settings</h3>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.title')}</h3>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
             <Spinner size="xl" />
-            <p className="text-lg">Loading settings...</p>
+            <p className="text-lg">{t('settings.loading')}</p>
           </div>
         </div>
       </div>
@@ -211,13 +278,13 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
     return (
       <div className="h-full flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Error</h3>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.errorTitle')}</h3>
         </div>
         <div className="flex-1 p-4">
-          <Alert color="red">Failed to load configuration. Please try again.</Alert>
+          <Alert color="red">{t('settings.loadError')}</Alert>
         </div>
         <div className="border-t border-gray-200 dark:border-gray-600 p-4">
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>{t('settings.close')}</Button>
         </div>
       </div>
     );
@@ -227,18 +294,18 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
     <>
       <div className="h-full flex flex-col">
         <div className="p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">Settings</h3>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.title')}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            Configure individual services from their cards on the dashboard. These are app-wide settings.
+            {t('settings.subtitle')}
           </p>
         </div>
 
         <div className="flex-1 overflow-auto p-4 space-y-6">
           <Card>
             <Card.Header>
-              <h4 className="text-lg font-medium">Appearance</h4>
+              <h4 className="text-lg font-medium">{t('settings.appearance.heading')}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Choose how the app looks. System follows your operating system.
+                {t('settings.appearance.description')}
               </p>
             </Card.Header>
             <Card.Body>
@@ -253,29 +320,43 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                     }`}
                   >
-                    {opt}
+                    {t(`settings.appearance.theme.${opt}`)}
                   </button>
                 ))}
+              </div>
+
+              <div className="mt-5">
+                <label htmlFor="app-language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  {t('language.label')}
+                </label>
+                <div className="max-w-[240px]">
+                  <Select id="app-language" value={i18n.resolvedLanguage} onChange={e => i18n.changeLanguage(e.target.value)}>
+                    {SUPPORTED_LANGUAGES.map(language => (
+                      <option key={language.code} value={language.code}>{language.label}</option>
+                    ))}
+                  </Select>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('language.settingHint')}</p>
               </div>
             </Card.Body>
           </Card>
 
           <Card>
             <Card.Header>
-              <h4 className="text-lg font-medium">General</h4>
+              <h4 className="text-lg font-medium">{t('settings.general.heading')}</h4>
             </Card.Header>
             <Card.Body>
               <div className="flex items-center justify-between gap-4">
                 <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">Keep running in the tray when I close the window</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.trayLabel')}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Ensembler stays in your menu bar / system tray for quick access. Your services keep running either way — quit fully from the tray menu.
+                    {t('settings.general.trayDescription')}
                   </p>
                 </div>
                 <Toggle
                   checked={config.minimizeToTray ?? true}
                   onChange={value => setConfig(prev => ({ ...prev!, minimizeToTray: value }))}
-                  aria-label="Keep running in the tray when the window is closed"
+                  aria-label={t('settings.general.trayAriaLabel')}
                   className="shrink-0"
                 />
               </div>
@@ -284,9 +365,9 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
           <Card>
             <Card.Header>
-              <h4 className="text-lg font-medium">Environment</h4>
+              <h4 className="text-lg font-medium">{t('settings.environment.heading')}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Global settings applied to all services.
+                {t('settings.environment.description')}
               </p>
             </Card.Header>
             <Card.Body>
@@ -301,23 +382,23 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
           <Card>
             <Card.Header>
-              <h4 className="text-lg font-medium">Updates</h4>
+              <h4 className="text-lg font-medium">{t('settings.updates.heading')}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Ensembler checks daily for new service versions and shows what's available on the dashboard.
+                {t('settings.updates.description')}
               </p>
             </Card.Header>
             <Card.Body>
               <div className="flex items-center justify-between gap-4">
                 <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">Install updates automatically</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.updates.autoLabel')}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.
+                    {t('settings.updates.autoDescription')}
                   </p>
                 </div>
                 <Toggle
                   checked={config.autoUpdate ?? false}
                   onChange={value => setConfig(prev => ({ ...prev!, autoUpdate: value }))}
-                  aria-label="Install updates automatically"
+                  aria-label={t('settings.updates.autoAriaLabel')}
                   className="shrink-0"
                 />
               </div>
@@ -326,18 +407,18 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
           <Card>
             <Card.Header>
-              <h4 className="text-lg font-medium text-red-600 dark:text-red-400">Danger Zone</h4>
+              <h4 className="text-lg font-medium text-red-600 dark:text-red-400">{t('settings.danger.heading')}</h4>
             </Card.Header>
             <Card.Body>
               <div className="flex items-center justify-between gap-4">
                 <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">Reset everything</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.danger.resetLabel')}</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Removes all services and their settings, returning to a fresh install. Media files are kept.
+                    {t('settings.danger.resetDescription')}
                   </p>
                 </div>
                 <Button variant="danger" onClick={handleCompleteReset} className="shrink-0">
-                  Reset Everything
+                  {t('settings.danger.resetButton')}
                 </Button>
               </div>
             </Card.Body>
@@ -346,9 +427,9 @@ export default function AdvancedSettings({ onClose, onResetComplete }: AdvancedS
 
         <div className="border-t border-gray-200 dark:border-gray-600 p-4">
           <div className="flex justify-end space-x-3">
-            <Button variant="secondary" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button variant="secondary" onClick={onClose} disabled={saving}>{t('settings.cancel')}</Button>
             <Button variant="primary" onClick={handleSave} loading={saving}>
-              {saving ? 'Applying…' : 'Save & Apply'}
+              {saving ? t('settings.saving') : t('settings.save')}
             </Button>
           </div>
         </div>

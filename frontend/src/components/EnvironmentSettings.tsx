@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { TextInput, Alert } from './index';
 
 interface EnvironmentConfig {
@@ -51,6 +53,8 @@ export default function EnvironmentSettings({
   layout = 'grid',
   className = ''
 }: EnvironmentSettingsProps) {
+  const { t } = useTranslation();
+
   return (
     <div className={`space-y-6 ${className}`}>
       
@@ -58,7 +62,7 @@ export default function EnvironmentSettings({
         {/* Timezone */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Timezone (TZ) <span className="text-red-500">*</span>
+            {t('environment.timezone.label')} <span className="text-red-500">*</span>
           </label>
           <select
             value={environment.tz}
@@ -71,12 +75,12 @@ export default function EnvironmentSettings({
           >
             {timezoneOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {option.value === '' ? t('environment.timezone.placeholder') : option.label}
               </option>
             ))}
           </select>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Used for log timestamps and scheduling
+            {t('environment.timezone.help')}
           </p>
           {errors.tz && (
             <Alert color="red" className="text-xs">{errors.tz}</Alert>
@@ -86,7 +90,7 @@ export default function EnvironmentSettings({
         {/* PUID */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            User ID (PUID) <span className="text-red-500">*</span>
+            {t('environment.puid.label')} <span className="text-red-500">*</span>
           </label>
           <TextInput
             type="number"
@@ -96,7 +100,7 @@ export default function EnvironmentSettings({
             min="0"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            User ID for file ownership (usually 1000)
+            {t('environment.puid.help')}
           </p>
           {errors.puid && (
             <Alert color="red" className="text-xs">{errors.puid}</Alert>
@@ -106,7 +110,7 @@ export default function EnvironmentSettings({
         {/* PGID */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Group ID (PGID) <span className="text-red-500">*</span>
+            {t('environment.pgid.label')} <span className="text-red-500">*</span>
           </label>
           <TextInput
             type="number"
@@ -116,7 +120,7 @@ export default function EnvironmentSettings({
             min="0"
           />
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Group ID for file ownership (usually 1000)
+            {t('environment.pgid.help')}
           </p>
           {errors.pgid && (
             <Alert color="red" className="text-xs">{errors.pgid}</Alert>

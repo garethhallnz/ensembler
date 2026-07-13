@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button, TextInput, Select, PathConfiguration } from './index';
 import { getDefaultPath } from '../utils/pathDefaults';
 
@@ -37,6 +38,7 @@ interface CurrentConfig {
 const API = 'http://localhost:3001';
 
 export default function ServiceConfigModal({ service, mode, onClose, onSaved, onToast }: ServiceConfigModalProps) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<CurrentConfig | null>(null);
   const [paths, setPaths] = useState<string[]>([]);
   const [port, setPort] = useState<number>(service.defaultPort);
@@ -64,7 +66,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
         );
       } catch (err) {
         console.error('Failed to load current configuration:', err);
-        onToast('Could not load current configuration.', 'error');
+        onToast(t('serviceConfig.loadError'), 'error');
         onClose();
       }
     })();
@@ -89,12 +91,14 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
 
   const validate = (): boolean => {
     const errs = service.pathRequirements.map((field, idx) =>
-      field.required && !paths[idx]?.trim() ? `${field.label} is required.` : ''
+      field.required && !paths[idx]?.trim()
+        ? t('serviceConfig.fieldRequired', { label: t(`services.${service.key}.paths.${idx}.label`) })
+        : ''
     );
     setPathErrors(errs);
     if (errs.some(Boolean)) return false;
     if (port < 1024 || port > 65535) {
-      setPortError('Port must be between 1024 and 65535.');
+      setPortError(t('setup.errors.portRange'));
       return false;
     }
     setPortError(null);
@@ -118,7 +122,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       if (conflict?.suggestion) {
         finalPort = conflict.suggestion;
         setPort(finalPort);
-        onToast(`Port ${conflict.port} was in use, so ${service.name} is on ${finalPort}.`, 'info');
+        onToast(t('serviceConfig.portRerouted', { port: conflict.port, name: service.name, finalPort }), 'info');
       }
 
       const pinnedTag = version.trim();
@@ -135,11 +139,13 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       };
 
       await saveAndApply(updated);
-      onToast(mode === 'add' ? `${service.name} added.` : `${service.name} updated.`, 'success');
+      onToast(mode === 'add' ? t('serviceConfig.serviceAdded', { name: service.name }) : t('serviceConfig.serviceUpdated', { name: service.name }), 'success');
       onSaved();
       onClose();
     } catch (err) {
-      onToast(`Could not ${mode === 'add' ? 'add' : 'update'} ${service.name}: ${(err as Error).message}`, 'error');
+      onToast(mode === 'add'
+        ? t('serviceConfig.addFailed', { name: service.name, message: (err as Error).message })
+        : t('serviceConfig.updateFailed', { name: service.name, message: (err as Error).message }), 'error');
       setBusy(false);
     }
   };
@@ -162,11 +168,11 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       if (!saveRes.ok) throw new Error('save failed');
       const composeRes = await fetch(`${API}/api/config/generate-compose`, { method: 'POST' });
       if (!composeRes.ok) throw new Error('compose generation failed');
-      onToast(`${service.name} removed. Its media files were not deleted.`, 'success');
+      onToast(t('serviceConfig.serviceRemoved', { name: service.name }), 'success');
       onSaved();
       onClose();
     } catch (err) {
-      onToast(`Could not remove ${service.name}: ${(err as Error).message}`, 'error');
+      onToast(t('serviceConfig.removeFailed', { name: service.name, message: (err as Error).message }), 'error');
       setBusy(false);
     }
   };
@@ -191,14 +197,14 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            {mode === 'add' ? `Add ${service.name}` : `Configure ${service.name}`}
+            {mode === 'add' ? t('serviceConfig.addTitle', { name: service.name }) : t('serviceConfig.configureTitle', { name: service.name })}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{service.description}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t(`services.${service.key}.description`)}</p>
         </div>
 
         <div className="p-6 space-y-6">
           {!config ? (
-            <p className="text-gray-500 dark:text-gray-400">Loading…</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('serviceConfig.loading')}</p>
           ) : confirmingRemove ? (
             // Removing turns the whole modal into a focused confirmation rather
             // than an inline widget competing with the config fields.
@@ -206,9 +212,9 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
               <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">Remove {service.name}?</h4>
+              <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('serviceConfig.removeConfirmTitle', { name: service.name })}</h4>
               <p className="text-sm text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
-                This stops {service.name} and deletes its settings. Your media files are kept. This can't be undone.
+                {t('serviceConfig.removeConfirmBody', { name: service.name })}
               </p>
             </div>
           ) : (
@@ -225,7 +231,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Port</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('serviceConfig.portLabel')}</label>
                 <div className="flex items-center gap-2">
                   <div className="max-w-[140px]">
                     <TextInput
@@ -237,13 +243,13 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
                       max={65535}
                     />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">Default: {service.defaultPort}</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">{t('serviceConfig.defaultPort', { port: service.defaultPort })}</span>
                 </div>
                 {portError && <p className="text-sm text-red-500 mt-1">{portError}</p>}
               </div>
 
               <div>
-                <label htmlFor={`${service.key}-version`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Version</label>
+                <label htmlFor={`${service.key}-version`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('serviceConfig.versionLabel')}</label>
                 <div className="max-w-[260px]">
                   <Select
                     id={`${service.key}-version`}
@@ -251,14 +257,14 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
                     onChange={e => setVersion(e.target.value)}
                     disabled={versionsLoading}
                   >
-                    <option value="">{versionsLoading ? 'Loading versions…' : 'Latest (recommended)'}</option>
+                    <option value="">{versionsLoading ? t('serviceConfig.loadingVersions') : t('serviceConfig.latestRecommended')}</option>
                     {/* Keep the current pin visible even if it's older than the fetched list. */}
                     {version && !availableVersions.includes(version) && <option value={version}>{version}</option>}
                     {availableVersions.map(v => <option key={v} value={v}>{v}</option>)}
                   </Select>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Keep <strong>Latest</strong> to always run the newest version. Pin a specific version to hold it there — pinned services won't offer updates.
+                  <Trans i18nKey="serviceConfig.versionHelp">Keep <strong>Latest</strong> to always run the newest version. Pin a specific version to hold it there — pinned services won't offer updates.</Trans>
                 </p>
               </div>
             </>
@@ -269,21 +275,21 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
           <div>
             {mode === 'edit' && !confirmingRemove && (
               <Button color="red" outline onClick={() => setConfirmingRemove(true)} disabled={busy}>
-                Remove service
+                {t('serviceConfig.removeService')}
               </Button>
             )}
           </div>
           <div className="flex gap-3">
             {confirmingRemove ? (
               <>
-                <Button color="gray" outline onClick={() => setConfirmingRemove(false)} disabled={busy}>Keep</Button>
-                <Button color="red" onClick={remove} loading={busy}>Remove {service.name}</Button>
+                <Button color="gray" outline onClick={() => setConfirmingRemove(false)} disabled={busy}>{t('serviceConfig.keep')}</Button>
+                <Button color="red" onClick={remove} loading={busy}>{t('serviceConfig.removeNamed', { name: service.name })}</Button>
               </>
             ) : (
               <>
-                <Button color="gray" outline onClick={onClose} disabled={busy}>Cancel</Button>
+                <Button color="gray" outline onClick={onClose} disabled={busy}>{t('serviceConfig.cancel')}</Button>
                 <Button color="blue" onClick={apply} loading={busy} disabled={!config}>
-                  {mode === 'add' ? 'Add Service' : 'Save Changes'}
+                  {mode === 'add' ? t('serviceConfig.addService') : t('serviceConfig.saveChanges')}
                 </Button>
               </>
             )}

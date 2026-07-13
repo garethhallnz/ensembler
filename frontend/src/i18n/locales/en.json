@@ -1,0 +1,677 @@
+{
+  "language": {
+    "chooseTitle": "Choose your language",
+    "chooseSubtitle": "You can change this anytime in Settings.",
+    "continue": "Continue",
+    "label": "Language",
+    "settingHint": "The language used throughout Ensembler."
+  },
+  "app": {
+    "checkingStatus": "Checking Docker and Docker Compose status…",
+    "dockerRequired": {
+      "title": "Docker Required",
+      "subtitle": "Ensembler needs Docker — or another container runtime — to run your services",
+      "toGetStarted": "To get started:",
+      "step1": "Download and install Docker Desktop",
+      "step2": "Launch Docker Desktop and wait for it to start",
+      "step3": "Look for the green “Docker Desktop is running” status",
+      "step4": "Return here and click “Check Again” below",
+      "downloadHeading": "Download Docker Desktop:",
+      "downloadButton": "Download Docker Desktop",
+      "otherRuntimes": "Already use OrbStack, Podman, or another container runtime? That works too — just make sure it's installed and running.",
+      "checkAgain": "Check Again",
+      "refreshPage": "Refresh Page",
+      "refreshConfirm": "This will refresh the page and check Docker status again.",
+      "havingTrouble": "Having trouble? Make sure your container runtime is fully started (not just installed) and try refreshing this page.",
+      "readDocs": "Read the docs"
+    },
+    "composeMissing": {
+      "title": "Docker Compose Not Available",
+      "heading": "Docker Compose is not available"
+    },
+    "install": {
+      "mac": {
+        "docker": "Install Docker Desktop from https://www.docker.com/products/docker-desktop/ and launch it from Applications.",
+        "compose": "Docker Compose is included with Docker Desktop on macOS."
+      },
+      "win": {
+        "docker": "Install Docker Desktop from https://www.docker.com/products/docker-desktop/ and launch it from the Start menu.",
+        "compose": "Docker Compose is included with Docker Desktop on Windows."
+      },
+      "linux": {
+        "docker": "Install Docker Engine: https://docs.docker.com/engine/install/ and start the service (e.g., sudo systemctl start docker).",
+        "compose": "Install Docker Compose: https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "Unsupported OS. Please refer to https://docs.docker.com/get-docker/",
+        "compose": "Unsupported OS. Please refer to https://docs.docker.com/compose/install/"
+      }
+    }
+  },
+  "setup": {
+    "loading": "Loading service configuration…",
+    "title": "Setup",
+    "steps": {
+      "selection": "Service Selection",
+      "configuration": "Configuration",
+      "apply": "Apply"
+    },
+    "selectAtLeastOne": "Select at least one service to continue.",
+    "selectAtLeastOneToast": "Please select at least one service to continue.",
+    "portsPrefilled": "Some default ports were already in use, so we've pre-selected free ones ({{list}}). You can change these below.",
+    "step0": {
+      "heading": "Select Services",
+      "subtitle": "Choose the services you want to run:",
+      "quickActions": "Quick Actions",
+      "recommendedOn": "Deselect recommended services",
+      "recommendedOff": "Select recommended services for a complete media center",
+      "toggleRecommended": "Toggle Recommended",
+      "required": "Required",
+      "recommended": "Recommended"
+    },
+    "categories": {
+      "media": {
+        "title": "Media Servers",
+        "description": "Media streaming servers (choose one)"
+      },
+      "management": {
+        "title": "Media Management",
+        "description": "Media collection managers (you can select multiple)"
+      },
+      "torrent": {
+        "title": "Download Clients",
+        "description": "BitTorrent download clients (choose one)"
+      },
+      "indexer": {
+        "title": "Indexers",
+        "description": "Torrent indexer management (choose one)"
+      },
+      "request": {
+        "title": "Request Management",
+        "description": "Media request and discovery tools (choose one)"
+      }
+    },
+    "step1": {
+      "heading": "Service Configuration",
+      "subtitle": "Configure file paths and ports for your services:",
+      "environmentSettings": "Environment Settings",
+      "jellyfinAccount": "Jellyfin Admin Account",
+      "jellyfinIntro": "Choose the admin login for Jellyfin. Ensembler uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.",
+      "adminUsername": "Admin username",
+      "adminPassword": "Admin password",
+      "readyToSetUp": "Ready to set up",
+      "port": "Port {{port}}"
+    },
+    "apply": {
+      "titleDone": "Your media center is ready",
+      "titleError": "Setup ran into a problem",
+      "titleRunning": "Setting things up",
+      "subtitleDone": "Everything is running. Here is how the automatic setup went.",
+      "subtitleError": "Your services may be partly set up. You can go back and try again.",
+      "subtitleRunning": "Applying your configuration and starting your media center.",
+      "phaseSave": "Saving your configuration",
+      "phaseCompose": "Generating Docker setup",
+      "phaseStart": "Starting services",
+      "phaseStartDetail": "Downloading images and starting containers. On the first run this can take a few minutes.",
+      "phaseConnect": "Connecting services together",
+      "phaseConnectDetail": "Waiting for each service to be ready, then linking them. This can take a minute.",
+      "backToConfig": "Back to configuration",
+      "goToDashboard": "Go to Dashboard"
+    },
+    "nav": {
+      "previous": "Previous",
+      "next": "Next",
+      "apply": "Apply Setup"
+    },
+    "errors": {
+      "save": "Could not save your configuration.",
+      "compose": "Could not generate the Docker setup.",
+      "start": "Could not start the services.",
+      "generic": "Something went wrong during setup.",
+      "tzRequired": "Timezone is required.",
+      "puid": "PUID must be a non-negative number.",
+      "pgid": "PGID must be a non-negative number.",
+      "jellyfinUsername": "Jellyfin admin username is required.",
+      "jellyfinPassword": "Jellyfin admin password must be at least 4 characters.",
+      "portRange": "Port must be between 1024 and 65535.",
+      "portConflictSelected": "Port conflicts with another selected service.",
+      "portInUseSwitched": "Port {{port}} is in use — switched to a free port, {{suggestion}}.",
+      "portInUseNoFree": "Port {{port}} is in use and no free port could be found. Please choose another.",
+      "pathMediaConflict": "Path conflicts with different media type in {{service}}",
+      "pathDownloadConflict": "Download path conflicts with non-download service {{service}}",
+      "pathUsedBy": "Path is already used by {{service}}"
+    }
+  },
+  "dashboard": {
+    "heading": {
+      "title": "Dashboard",
+      "subtitle": "Manage your media center services"
+    },
+    "settings": {
+      "tooltip": "Advanced Settings",
+      "button": "Settings"
+    },
+    "globalControls": {
+      "stopAll": "Stop All",
+      "startAll": "Start All",
+      "noServicesToStop": "No services to stop",
+      "allStopped": "All services are already stopped",
+      "stopAllTooltip": "Stop All Services",
+      "noServicesToStart": "No services to start",
+      "allRunning": "All services are already running",
+      "startAllTooltip": "Start All Services"
+    },
+    "roles": {
+      "tvShows": "Manages your TV shows",
+      "movies": "Manages your movies",
+      "subtitles": "Manages subtitles",
+      "streams": "Streams your media",
+      "downloads": "Downloads content",
+      "indexers": "Finds content sources",
+      "requests": "Requests & discovers media",
+      "library": "Manages your library"
+    },
+    "setupChecklist": {
+      "heading": "Finish setting up",
+      "stepsLeft_one": "· {{count}} step left",
+      "stepsLeft_other": "· {{count}} steps left"
+    },
+    "tasks": {
+      "prowlarr": "Add an indexer in <strong>Prowlarr</strong> so Sonarr and Radarr can search for content",
+      "plex": "Sign in to <strong>Plex</strong> to create your TV and Movies libraries",
+      "overseerr": "Finish <strong>Overseerr</strong> setup — sign in with Plex to discover your services"
+    },
+    "services": {
+      "heading": "Services",
+      "configured_one": "{{count}} service configured",
+      "configured_other": "{{count}} services configured",
+      "updatesAvailable_one": " · {{count}} update available",
+      "updatesAvailable_other": " · {{count}} updates available",
+      "updateAllTooltip_one": "Update the {{count}} service with a new version available",
+      "updateAllTooltip_other": "Update the {{count}} services with a new version available",
+      "updateAll": "Update all ({{count}})",
+      "checkAllTooltip": "Check every service for available updates",
+      "checkForUpdates": "Check for updates",
+      "addTooltip": "Add another service",
+      "addService": "Add Service"
+    },
+    "empty": {
+      "title": "No Services Configured",
+      "description": "Get started by adding and configuring your media center services. You can add services individually as needed."
+    },
+    "status": {
+      "starting": "Starting…",
+      "stopping": "Stopping…",
+      "restarting": "Restarting…",
+      "setupNeeded": "Setup needed",
+      "needsAttention": "Needs attention",
+      "running": "Running",
+      "stopped": "Stopped",
+      "unhealthyTooltip": "Service is running but not responding normally"
+    },
+    "card": {
+      "openDisabledTooltip": "Start the service to open it",
+      "checkingUpdates": "Checking for updates…",
+      "updateAvailable": "Update available — update now",
+      "upToDate": "Up to date",
+      "version": {
+        "pinned": "Locked to v{{version}}",
+        "updateAvailable": "On v{{version}} · update available",
+        "latest": "On the latest version (v{{version}})"
+      }
+    },
+    "common": {
+      "open": "Open",
+      "openNamed": "Open {{name}}",
+      "updating": "Updating…",
+      "checking": "Checking…",
+      "unknown": "unknown"
+    },
+    "menu": {
+      "openInBrowser": "Open in browser",
+      "start": "Start",
+      "stop": "Stop",
+      "restart": "Restart",
+      "viewLogs": "View logs",
+      "configure": "Configure"
+    },
+    "diagnostics": {
+      "heading": "Diagnostics",
+      "allOk": "All systems operational",
+      "attention": "Attention needed",
+      "running": "Running",
+      "notRunning": "Not running",
+      "app": "App",
+      "active": "Active",
+      "inactive": "Inactive",
+      "backendConnection": "Backend connection",
+      "connected": "Connected",
+      "disconnected": "Disconnected",
+      "servicesRunning": "Services running",
+      "lastChecked": "Last checked",
+      "note": "Docker services keep running independently, and continue even when the app is closed."
+    },
+    "logs": {
+      "title": "Logs",
+      "titleNamed": "{{name}} — logs",
+      "live": "Live",
+      "loading": "Loading logs…"
+    },
+    "toast": {
+      "checkFailed": "Could not check {{name}} for updates.",
+      "checkAllFailed": "Could not check for updates.",
+      "updatesFound_one": "{{count}} update available.",
+      "updatesFound_other": "{{count}} updates available.",
+      "allUpToDate": "All services are up to date.",
+      "actionSuccess_start": "{{name}} started successfully",
+      "actionSuccess_stop": "{{name}} stopped successfully",
+      "actionSuccess_restart": "{{name}} restarted successfully",
+      "globalItemFailed_start": "Failed to start {{service}}: {{message}}",
+      "globalItemFailed_stop": "Failed to stop {{service}}: {{message}}",
+      "globalItemError_start": "Error starting {{service}}: {{error}}",
+      "globalItemError_stop": "Error stopping {{service}}: {{error}}",
+      "globalDone_start": "All services started",
+      "globalDone_stop": "All services stopped",
+      "launchUrlFailed": "Failed to get launch URL for {{service}}: {{message}}",
+      "launchError": "Error launching {{service}}: {{error}}",
+      "updatedCount_one": "Updated {{count}} service",
+      "updatedCount_other": "Updated {{count}} services",
+      "updatedWithFailures": "Updated {{count}}; failed: {{names}}",
+      "updateAllError": "Error updating services: {{error}}",
+      "updateSuccess": "{{name}} updated successfully",
+      "updateFailed": "Failed to update {{name}}: {{message}}",
+      "updateError": "Error updating {{name}}: {{error}}"
+    },
+    "actionError": {
+      "title_start": "Couldn't start {{name}}",
+      "title_stop": "Couldn't stop {{name}}",
+      "title_restart": "Couldn't restart {{name}}"
+    },
+    "confirm": {
+      "globalAction_start": "Are you sure you want to start all services?",
+      "globalAction_stop": "Are you sure you want to stop all services?",
+      "updateAll_one": "Update {{count}} service? This downloads the latest images and restarts each one.",
+      "updateAll_other": "Update {{count}} services? This downloads the latest images and restarts each one.",
+      "updateService": "Are you sure you want to update {{name}}? This will download the latest version and restart the service."
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure individual services from their cards on the dashboard. These are app-wide settings.",
+    "loading": "Loading settings...",
+    "errorTitle": "Error",
+    "loadError": "Failed to load configuration. Please try again.",
+    "close": "Close",
+    "cancel": "Cancel",
+    "save": "Save & Apply",
+    "saving": "Applying…",
+    "toast": {
+      "savedPartial": "Settings saved. Some services may need to be started manually.",
+      "saved": "Settings saved and applied.",
+      "saveFailed": "Failed to save settings. Please try again.",
+      "resetFailed": "Failed to reset application: {{error}}"
+    },
+    "appearance": {
+      "heading": "Appearance",
+      "description": "Choose how the app looks. System follows your operating system.",
+      "theme": {
+        "light": "Light",
+        "dark": "Dark",
+        "system": "System"
+      }
+    },
+    "general": {
+      "heading": "General",
+      "trayLabel": "Keep running in the tray when I close the window",
+      "trayDescription": "Ensembler stays in your menu bar / system tray for quick access. Your services keep running either way — quit fully from the tray menu.",
+      "trayAriaLabel": "Keep running in the tray when the window is closed"
+    },
+    "environment": {
+      "heading": "Environment",
+      "description": "Global settings applied to all services."
+    },
+    "updates": {
+      "heading": "Updates",
+      "description": "Ensembler checks daily for new service versions and shows what's available on the dashboard.",
+      "autoLabel": "Install updates automatically",
+      "autoDescription": "When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.",
+      "autoAriaLabel": "Install updates automatically"
+    },
+    "danger": {
+      "heading": "Danger Zone",
+      "resetLabel": "Reset everything",
+      "resetDescription": "Removes all services and their settings, returning to a fresh install. Media files are kept.",
+      "resetButton": "Reset Everything",
+      "confirm": "⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?"
+    },
+    "reset": {
+      "phaseStop": "Stopping and removing services",
+      "phaseClean": "Removing configuration and data",
+      "completeTitle": "Reset complete",
+      "completeSubtitle": "Starting fresh setup…",
+      "runningTitle": "Resetting your setup",
+      "runningSubtitle": "Returning to a fresh install. Your media files are not affected.",
+      "errorMessage": "Something went wrong. You can close this and try again."
+    }
+  },
+  "serviceConfig": {
+    "loadError": "Could not load current configuration.",
+    "fieldRequired": "{{label}} is required.",
+    "portRerouted": "Port {{port}} was in use, so {{name}} is on {{finalPort}}.",
+    "serviceAdded": "{{name}} added.",
+    "serviceUpdated": "{{name}} updated.",
+    "addFailed": "Could not add {{name}}: {{message}}",
+    "updateFailed": "Could not update {{name}}: {{message}}",
+    "serviceRemoved": "{{name}} removed. Its media files were not deleted.",
+    "removeFailed": "Could not remove {{name}}: {{message}}",
+    "addTitle": "Add {{name}}",
+    "configureTitle": "Configure {{name}}",
+    "loading": "Loading…",
+    "removeConfirmTitle": "Remove {{name}}?",
+    "removeConfirmBody": "This stops {{name}} and deletes its settings. Your media files are kept. This can't be undone.",
+    "portLabel": "Port",
+    "defaultPort": "Default: {{port}}",
+    "versionLabel": "Version",
+    "loadingVersions": "Loading versions…",
+    "latestRecommended": "Latest (recommended)",
+    "versionHelp": "Keep <1>Latest</1> to always run the newest version. Pin a specific version to hold it there — pinned services won't offer updates.",
+    "removeService": "Remove service",
+    "keep": "Keep",
+    "removeNamed": "Remove {{name}}",
+    "cancel": "Cancel",
+    "addService": "Add Service",
+    "saveChanges": "Save Changes"
+  },
+  "addService": {
+    "title": "Add a service",
+    "subtitle": "Choose a service to add to your media center. You'll set its paths and port next.",
+    "allAdded": "All available services are already added.",
+    "recommended": "Recommended",
+    "add": "Add",
+    "cancel": "Cancel"
+  },
+  "actionsMenu": {
+    "moreActions": "More actions"
+  },
+  "systemChecks": {
+    "heading": "Check your setup",
+    "dismiss": "Dismiss",
+    "dockerMemoryWarning": "Docker has only {{allocated}} GB of memory. Media services (especially Plex) run better with {{recommended}} GB or more — raise it in your container runtime's settings (Docker Desktop → Settings → Resources).",
+    "diskWarning": "Only {{free}} GB free where media is stored. Downloads can fail when space runs out — free up space or point services at a larger drive."
+  },
+  "actionError": {
+    "description": "Something went wrong. Check the logs for details, or try again.",
+    "dismiss": "Dismiss",
+    "viewLogs": "View logs",
+    "retry": "Retry"
+  },
+  "confirm": {
+    "title": "Confirm Action",
+    "destructiveTitle": "Destructive Action",
+    "confirm": "Yes, I'm sure",
+    "cancel": "No, cancel"
+  },
+  "environment": {
+    "timezone": {
+      "label": "Timezone (TZ)",
+      "placeholder": "Select timezone...",
+      "help": "Used for log timestamps and scheduling"
+    },
+    "puid": {
+      "label": "User ID (PUID)",
+      "help": "User ID for file ownership (usually 1000)"
+    },
+    "pgid": {
+      "label": "Group ID (PGID)",
+      "help": "Group ID for file ownership (usually 1000)"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "Port",
+    "portConfiguration": "Port Configuration",
+    "servicePort": "{{name}} Port:",
+    "portDefault": "Default: {{port}}",
+    "infoBadge": "Info",
+    "serviceInformation": "Service Information",
+    "noPathsRequired": "No file paths required",
+    "noPathsDescription": "This service doesn't require any file path configuration."
+  },
+  "pathConfig": {
+    "badge": "Paths",
+    "heading": "File Paths",
+    "placeholder": "{{description}} (default: {{default}})",
+    "useDefaultTitle": "Use default path",
+    "default": "Default",
+    "browseTitle": "Browse for a folder",
+    "browse": "Browse"
+  },
+  "docsButton": {
+    "label": "Docs",
+    "tooltip": "Documentation"
+  },
+  "docsViewer": {
+    "heading": "Documentation",
+    "pages": {
+      "overview": "Overview",
+      "gettingStarted": "Getting started",
+      "managing": "Managing services",
+      "troubleshooting": "Troubleshooting"
+    }
+  },
+  "tabs": {
+    "dashboard": "Dashboard",
+    "closeService": "Close {{name}}",
+    "reload": "Reload",
+    "reloadService": "Reload {{name}}",
+    "openInBrowser": "Open in browser",
+    "openServiceInBrowser": "Open {{name}} in browser"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "Indexer manager/proxy built on the popular arr stack"
+    },
+    "sonarr": {
+      "description": "PVR for Usenet and BitTorrent users",
+      "paths": [
+        {
+          "label": "TV Shows Path",
+          "description": "Directory where TV shows will be stored"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "Movie collection manager for Usenet and BitTorrent users",
+      "paths": [
+        {
+          "label": "Movies Path",
+          "description": "Directory where movies will be stored"
+        }
+      ]
+    },
+    "plex": {
+      "description": "Media server for streaming your content",
+      "paths": [
+        {
+          "label": "TV Shows Path",
+          "description": "Directory containing your TV shows"
+        },
+        {
+          "label": "Movies Path",
+          "description": "Directory containing your movies"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "BitTorrent client",
+      "paths": [
+        {
+          "label": "Downloads Path",
+          "description": "Directory where downloads will be stored"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "Request management and media discovery tool"
+    },
+    "jellyfin": {
+      "description": "Open-source media server with no licensing fees",
+      "paths": [
+        {
+          "label": "TV Shows Path",
+          "description": "Directory containing your TV shows"
+        },
+        {
+          "label": "Movies Path",
+          "description": "Directory containing your movies"
+        }
+      ]
+    },
+    "emby": {
+      "description": "Feature-rich media server with mobile apps",
+      "paths": [
+        {
+          "label": "TV Shows Path",
+          "description": "Directory containing your TV shows"
+        },
+        {
+          "label": "Movies Path",
+          "description": "Directory containing your movies"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "Companion app for Sonarr and Radarr to manage subtitles",
+      "paths": [
+        {
+          "label": "TV Shows Path",
+          "description": "Directory containing your TV shows (same as Sonarr)"
+        },
+        {
+          "label": "Movies Path",
+          "description": "Directory containing your movies (same as Radarr)"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "BitTorrent client with web interface",
+      "paths": [
+        {
+          "label": "Downloads Path",
+          "description": "Directory where downloads will be stored"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "API Support for your favorite torrent trackers"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "Invalid input"
+    },
+    "ports": {
+      "validateFailed": "Failed to validate ports."
+    },
+    "docker": {
+      "composeNotFound": "Docker Compose not found or not working.",
+      "notRunning": "Docker not running or not installed.",
+      "autostartUnsupportedOs": "Unsupported OS for auto-start.",
+      "autostartFailed": "Failed to start Docker automatically.",
+      "started": "Docker started successfully.",
+      "startCheckFailed": "Docker did not start successfully.",
+      "startError": "Error attempting to start Docker."
+    },
+    "config": {
+      "saved": "Configuration saved successfully.",
+      "saveFailed": "Failed to save configuration.",
+      "notFound": "config.json not found.",
+      "currentFailed": "Failed to get current configuration."
+    },
+    "compose": {
+      "generated": "Docker Compose files generated successfully.",
+      "generateFailed": "Failed to generate Docker Compose files."
+    },
+    "service": {
+      "statusFailed": "Failed to get service status.",
+      "started": "{{name}} started successfully.",
+      "startFailed": "Failed to start {{name}}.",
+      "stopped": "{{name}} stopped successfully.",
+      "stopFailed": "Failed to stop {{name}}.",
+      "restarted": "{{name}} restarted successfully.",
+      "restartFailed": "Failed to restart {{name}}.",
+      "logsFailed": "Failed to get logs for {{name}}.",
+      "notFound": "Service not found.",
+      "versionFailed": "Failed to get version for {{name}}.",
+      "startAllSucceeded": "All enabled services started successfully.",
+      "startAllFailed": "Failed to start services.",
+      "stopAllSucceeded": "All services stopped successfully.",
+      "stopAllFailed": "Failed to stop all services.",
+      "launchUrlFailed": "Failed to get launch URL.",
+      "configFailed": "Failed to get service configuration.",
+      "invalidSelectionFormat": "Invalid selectedServices format.",
+      "selectionRequiresArr": "You must select at least Sonarr or Radarr.",
+      "selectionValid": "Service selection is valid.",
+      "selectionValidateFailed": "Failed to validate service selection.",
+      "checkUpdatesFailed": "Failed to check updates for {{name}}.",
+      "checkUpdatesAllFailed": "Failed to check for updates.",
+      "updated": "{{name}} updated successfully.",
+      "updateFailed": "Failed to update {{name}}.",
+      "updateAllFailed": "Failed to update services.",
+      "monitorFailed": "Failed to monitor services."
+    },
+    "setup": {
+      "bazarrRestartFailed": "Seeded config but failed to restart Bazarr: {{error}}",
+      "connectionsFailed": "Failed to set up service connections.",
+      "plexFailed": "Failed to set up Plex.",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission is running",
+      "transmissionUnreachable": "Transmission is not reachable: {{error}}",
+      "plexSignInRequired": "Plex needs a one-time sign-in — open Plex from the Dashboard and log in; libraries are then created automatically",
+      "rootFolderAdded": "Added root folder {{path}}",
+      "rootFolderExists": "Root folder {{path}} already configured",
+      "transmissionConnected": "Connected to Transmission",
+      "transmissionExists": "Transmission already configured",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "Connected {{app}} — indexers will sync automatically",
+      "prowlarrAppAlreadyConnected": "{{app}} already connected",
+      "prowlarrTransmissionConnected": "Connected to Transmission",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission already configured"
+    },
+    "reset": {
+      "servicesStopped": "Services stopped and removed.",
+      "stopServicesFailed": "Failed to stop services.",
+      "cleaned": "Configuration and data removed.",
+      "cleanFailed": "Failed to remove configuration and data.",
+      "completed": "All settings reset successfully.",
+      "failed": "Failed to reset settings."
+    },
+    "bazarr": {
+      "configNotFound": "Bazarr config.yaml not found yet — is Bazarr running?",
+      "connected": "Connected Bazarr to {{services}}",
+      "alreadyConnected": "Bazarr already connected to {{services}}"
+    },
+    "jellyfin": {
+      "notReady": "{{error}}",
+      "setUpOpenToAddLibraries": "Jellyfin is set up — open it to add your libraries",
+      "needsAdminAccount": "Jellyfin needs its admin account — re-run setup or finish it in Jellyfin",
+      "accountCreated": "Created admin account and completed setup",
+      "accountFailed": "{{error}}",
+      "authenticateFailed": "{{error}}",
+      "libraryCreated": "Created \"{{name}}\" library at {{path}}",
+      "libraryAlreadyConfigured": "\"{{name}}\" already configured",
+      "libraryFailed": "{{error}}",
+      "notifyConfigured": "{{service}} will refresh Jellyfin on import",
+      "notifyAlreadyConfigured": "{{service}} already notifies Jellyfin",
+      "notifyFailed": "{{error}}",
+      "apiKeyFailed": "{{error}}"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "Created \"{{name}}\" library at {{location}}",
+      "libraryExists": "A {{type}} library already covers {{location}}",
+      "notifyConfigured": "{{service}} will refresh Plex on import",
+      "notifyExists": "{{service}} already notifies Plex"
+    }
+  }
+}
