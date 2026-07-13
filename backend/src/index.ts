@@ -2,10 +2,24 @@ import express, { Request, Response } from 'express';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
-import { exec, execFile } from 'child_process';
-import { promisify } from 'util';
-import { dump as dumpYaml } from 'js-yaml';
-import { SUPPORTED_SERVICES, getServiceConfig, getServiceImages, getDefaultPorts } from './services/serviceConfig';
+import { exec } from 'child_process';
+import { SUPPORTED_SERVICES, getServiceConfig } from './services/serviceConfig';
+import { configDir, configFile, composeFile, writeFileAtomic } from './services/paths';
+import { execAsync, execFileAsync, dockerCompose } from './services/exec';
+import { isDockerRunning, composeUp, composeStop, composeRestart, composeLogs, getContainerStatus } from './services/docker';
+import { getEffectiveImage, writeComposeFile } from './services/compose';
+import {
+  checkServiceUpdate,
+  fetchAvailableVersions,
+  refreshUpdateCache,
+  applyAvailableUpdates,
+  getAvailableUpdates,
+  recordServiceUpdate,
+  startUpdateScheduler,
+} from './services/updates';
+import { runSystemChecks } from './services/systemChecks';
+import { resetStopServices, resetCleanFilesAndData } from './services/reset';
+import { getServiceVersion } from './services/versions';
 import { setupConnections, setupPlexConnections } from './services/setup/orchestrator';
 import { tryReadArrApiKey } from './services/setup/apiKeyReader';
 import { readPlexToken, getPlexLibraries, plexLibrariesConfigured, DEFAULT_PLEX_LIBRARIES } from './services/setup/plexSetup';
@@ -42,198 +56,6 @@ app.param('serviceName', (req, res, next, name) => {
   }
   next();
 });
-
-// Configuration directory. The Electron main process passes the OS-native
-// per-user data directory (app.getPath('userData')) via ENSEMBLER_DATA_DIR when
-// it launches the backend, so packaged installs store data where each platform
-// expects it:
-//   macOS   ~/Library/Application Support/Ensembler
-//   Windows %APPDATA%\Ensembler
-//   Linux   ~/.config/Ensembler
-// When the backend runs standalone for local dev (`npm run backend`), nothing
-// sets that variable, so it falls back to a simple ~/.ensembler. The backend
-// never imports Electron — this keeps the separate-process dev flow working.
-const getConfigDir = () => {
-  if (process.env.ENSEMBLER_DATA_DIR) {
-    return process.env.ENSEMBLER_DATA_DIR;
-  }
-  return path.join(os.homedir(), '.ensembler');
-};
-
-const configDir = getConfigDir();
-const configFile = path.join(configDir, 'config.json');
-const execAsync = promisify(exec);
-const execFileAsync = promisify(execFile);
-
-// Docker liveness via the CLI, not a hardcoded socket. The docker CLI knows the
-// right socket / named pipe for the current OS, whereas /var/run/docker.sock
-// never exists on Windows — so a socket probe there always reports Docker down.
-async function isDockerRunning(): Promise<boolean> {
-  try {
-    await execFileAsync('docker', ['ps']);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// Write a file atomically: write to a temp sibling then rename over the target.
-// rename is atomic on the same filesystem, so a crash mid-write can never leave
-// a truncated config that would wipe the user's setup.
-function writeFileAtomic(file: string, data: string): void {
-  const tmp = `${file}.tmp`;
-  fs.writeFileSync(tmp, data);
-  fs.renameSync(tmp, file);
-}
-
-// Bring one service (or all, when service is omitted) up, self-healing against
-// a stale container that already holds the fixed container_name — left over
-// from an interrupted run, a crash, or an older install. Without this, `up`
-// hard-fails with "container name is already in use" and a non-technical user
-// has no way to recover. On that specific conflict we remove the offending
-// container(s) — their data lives in mounted volumes, so recreation is lossless
-// — and retry once.
-async function composeUp(service?: string, forceRecreate = false): Promise<void> {
-  const composeFile = path.join(configDir, 'docker-compose.yml');
-  const args = ['compose', '-f', composeFile, 'up', '-d'];
-  if (service) args.push(service);
-  if (forceRecreate) args.push('--force-recreate');
-  args.push('--remove-orphans');
-  try {
-    await execFileAsync('docker', args);
-  } catch (err) {
-    const e = err as { message?: string; stderr?: string };
-    const text = `${e.message ?? ''}\n${e.stderr ?? ''}`;
-    const conflicts = [...text.matchAll(/container name "\/?([^"]+)" is already in use/gi)].map(m => m[1]);
-    if (conflicts.length === 0) throw err; // a different failure — surface it
-    await Promise.all(conflicts.map(name => execFileAsync('docker', ['rm', '-f', name]).catch(() => undefined)));
-    await execFileAsync('docker', args); // retry once with the names freed
-  }
-}
-
-// Cache of update status per service. hasUpdate is null when it can't be
-// determined (image not pulled, registry unreachable). Populated by a cheap
-// background digest comparison — never by pulling images.
-const updateCheckStore = {
-  lastServiceCheck: new Date(),
-  availableUpdates: {} as { [key: string]: { hasUpdate: boolean | null } }
-};
-
-// Digest of the locally-pulled image for a tag (the manifest the tag resolved
-// to when pulled). Null if the image isn't present or has no repo digest.
-async function getLocalImageDigest(image: string): Promise<string | null> {
-  try {
-    const { stdout } = await execAsync(`docker image inspect ${image} --format "{{index .RepoDigests 0}}"`);
-    const match = stdout.trim().match(/@(sha256:[a-f0-9]+)/);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
-
-// Digest the tag currently points at in the registry — read from metadata only
-// (no layer download), unlike `docker pull`.
-async function getRemoteImageDigest(image: string): Promise<string | null> {
-  try {
-    const { stdout } = await execAsync(`docker buildx imagetools inspect ${image}`);
-    const match = stdout.match(/Digest:\s*(sha256:[a-f0-9]+)/i);
-    return match ? match[1] : null;
-  } catch {
-    return null;
-  }
-}
-
-// True/false when both digests are known, null when the comparison can't be made.
-async function checkServiceUpdate(image: string): Promise<boolean | null> {
-  const [local, remote] = await Promise.all([getLocalImageDigest(image), getRemoteImageDigest(image)]);
-  if (!local || !remote) {
-    return null;
-  }
-  return local !== remote;
-}
-
-// Refresh the cached update status for all enabled services (cheap digest
-// The image a service should run, honouring an optional pinned tag
-// (config.versions[key]). Falls back to the service's default (:latest) image.
-// Pinning to a specific tag also means update checks compare against that tag,
-// so a pinned service stops reporting "update available".
-function getEffectiveImage(serviceKey: string, config: { versions?: { [key: string]: string } }): string {
-  const serviceConfig = getServiceConfig(serviceKey);
-  if (!serviceConfig) return '';
-  const pinnedTag = config?.versions?.[serviceKey];
-  if (!pinnedTag) return serviceConfig.image;
-  return `${serviceConfig.image.replace(/:[^:/]+$/, '')}:${pinnedTag}`;
-}
-
-// Recent release versions published for a service's image, for the version
-// picker. LinuxServer tags the same release several ways (4.0.19,
-// 4.0.19.2979-ls319, version-…, plus per-arch copies), so we keep only numeric
-// release tags and collapse them to one clean entry per release. Best-effort:
-// returns [] if the registry can't be reached.
-const MAX_VERSIONS = 12;
-
-// Choose the friendliest real tag for a release: a plain numeric tag (e.g.
-// "4.0.19") when one exists, else the newest tag in the group. Always a real,
-// pullable tag — never a synthesised string.
-function pickReleaseTag(tags: string[]): string {
-  const pureNumeric = tags.filter(t => /^\d+(?:\.\d+){1,3}$/.test(t));
-  if (pureNumeric.length) return pureNumeric.sort((a, b) => a.length - b.length)[0];
-  return tags[0];
-}
-
-async function fetchAvailableVersions(image: string): Promise<string[]> {
-  const withoutTag = image.replace(/:[^:/]+$/, '');
-  const parts = withoutTag.split('/');
-  // Drop a registry host (has a dot or port) so lscr.io/linuxserver/sonarr →
-  // linuxserver/sonarr, the Docker Hub repo these images mirror to.
-  const repo = parts[0].includes('.') || parts[0].includes(':') ? parts.slice(1).join('/') : withoutTag;
-
-  // Group tags by release. The newest 100 tags are dominated by per-arch and
-  // dev variants of the current release, so page a little to surface enough
-  // history for a rollback.
-  const releaseTags = new Map<string, string[]>();
-  const releaseOrder: string[] = [];
-  let url: string | null = `https://hub.docker.com/v2/repositories/${repo}/tags/?page_size=100&ordering=last_updated`;
-
-  for (let page = 0; page < 5 && url && releaseOrder.length < MAX_VERSIONS; page++) {
-    const resp = await fetch(url);
-    if (!resp.ok) break;
-    const data = await resp.json() as { results?: { name: string }[]; next?: string | null };
-    for (const { name } of data.results ?? []) {
-      if (!/^\d/.test(name)) continue; // skips latest, develop, version-*, arch-* (non-numeric-leading)
-      if (/develop|nightly|beta|alpha|edge|unstable|-rc/i.test(name)) continue;
-      const numeric = name.match(/^\d+(?:\.\d+)*/)?.[0] ?? name;
-      const releaseKey = numeric.split('.').slice(0, 3).join('.'); // 4.0.19.2979 / 4.1.3-r0 → 4.0.19 / 4.1.3
-      if (!releaseTags.has(releaseKey)) {
-        releaseTags.set(releaseKey, []);
-        releaseOrder.push(releaseKey);
-      }
-      releaseTags.get(releaseKey)!.push(name);
-    }
-    url = data.next ?? null;
-  }
-
-  return releaseOrder.slice(0, MAX_VERSIONS).map(key => pickReleaseTag(releaseTags.get(key)!));
-}
-
-// checks). Shared by the manual endpoint and the background scheduler.
-async function refreshUpdateCache(): Promise<void> {
-  if (!fs.existsSync(configFile)) {
-    return;
-  }
-  const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-  const enabled = Object.keys(config.selectedServices || {}).filter((k: string) => config.selectedServices[k]);
-  // Check services concurrently — each registry query is independent, so this
-  // is bounded by the slowest single check rather than their sum.
-  await Promise.all(enabled.map(async (key) => {
-    const serviceConfig = getServiceConfig(key);
-    if (!serviceConfig) {
-      return;
-    }
-    updateCheckStore.availableUpdates[key] = { hasUpdate: await checkServiceUpdate(getEffectiveImage(key, config)) };
-  }));
-  updateCheckStore.lastServiceCheck = new Date();
-}
 
 app.get('/', (req: Request, res: Response) => res.send('Backend running'));
 
@@ -318,64 +140,9 @@ app.get('/api/docker/status', async (req: Request, res: Response) => {
   }
 });
 
-// First-run / ongoing environment sanity checks. These warn about the common,
-// invisible causes of services misbehaving that baffle non-technical users:
-// Docker starved of memory, or the media disk nearly full. Advisory only —
-// unknown values never produce a warning.
-const BYTES_PER_GIB = 1024 ** 3;
-const DOCKER_MEMORY_RECOMMENDED_GIB = 4;
-const DISK_FREE_RECOMMENDED_GIB = 10;
-
-async function getDockerMemoryGiB(): Promise<number | null> {
-  try {
-    const { stdout } = await execAsync(`docker info --format '{{.MemTotal}}'`);
-    const bytes = parseInt(stdout.trim(), 10);
-    return Number.isFinite(bytes) && bytes > 0 ? bytes / BYTES_PER_GIB : null;
-  } catch {
-    return null;
-  }
-}
-
-async function getFreeDiskGiB(targetPath: string): Promise<number | null> {
-  try {
-    const stats = await fs.promises.statfs(targetPath);
-    return (stats.bavail * stats.bsize) / BYTES_PER_GIB;
-  } catch {
-    return null;
-  }
-}
-
 app.get('/api/system/checks', async (req: Request, res: Response) => {
-  // Prefer the disk where downloads land (the space hog); fall back to the data dir.
-  let diskPath = configDir;
-  try {
-    if (fs.existsSync(configFile)) {
-      const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-      const downloadPath = config.paths?.transmission?.[0] || config.paths?.deluge?.[0];
-      if (downloadPath && fs.existsSync(downloadPath)) diskPath = downloadPath;
-    }
-  } catch {
-    /* fall back to the data dir */
-  }
-
-  const [memoryGiB, freeGiB] = await Promise.all([getDockerMemoryGiB(), getFreeDiskGiB(diskPath)]);
-  const round = (n: number) => Math.round(n * 10) / 10;
-
-  res.json({
-    success: true,
-    checks: {
-      dockerMemory: {
-        ok: memoryGiB === null || memoryGiB >= DOCKER_MEMORY_RECOMMENDED_GIB,
-        allocatedGiB: memoryGiB === null ? null : round(memoryGiB),
-        recommendedGiB: DOCKER_MEMORY_RECOMMENDED_GIB,
-      },
-      disk: {
-        ok: freeGiB === null || freeGiB >= DISK_FREE_RECOMMENDED_GIB,
-        freeGiB: freeGiB === null ? null : round(freeGiB),
-        recommendedGiB: DISK_FREE_RECOMMENDED_GIB,
-      },
-    },
-  });
+  const checks = await runSystemChecks();
+  res.json({ success: true, checks });
 });
 
 app.post('/api/config/save', async (req: Request, res: Response) => {
@@ -468,121 +235,14 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
 });
 
 app.post('/api/config/generate-compose', (req: Request, res: Response) => {
-  const configFile = path.join(configDir, 'config.json');
-  const composeFile = path.join(configDir, 'docker-compose.yml');
-
   try {
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-
-    const services: Record<string, unknown> = {};
-    const environmentConfig = config.environment ?? {};
-    // Respect a legitimate 0 (root) for PUID/PGID — `??`, not `||`.
-    const puid = environmentConfig.puid ?? 1000;
-    const pgid = environmentConfig.pgid ?? 1000;
-    const tz = environmentConfig.tz ?? 'UTC';
-
-    Object.keys(config.selectedServices).forEach((serviceKey: string) => {
-      if (!config.selectedServices[serviceKey]) return;
-      const serviceConfig = getServiceConfig(serviceKey);
-      if (!serviceConfig) return;
-
-      const environment = [`PUID=${puid}`, `PGID=${pgid}`, `TZ=${tz}`];
-      if (serviceConfig.environmentVars) {
-        Object.entries(serviceConfig.environmentVars).forEach(([key, value]) => {
-          environment.push(`${key}=${value}`);
-        });
-      }
-
-      const volumes = serviceConfig.volumes.map((volume) => {
-        let hostPath = volume.hostPath;
-        const containerPath = volume.containerPath;
-
-        // Replace placeholders
-        if (hostPath.includes('{configDir}')) {
-          hostPath = hostPath.replace('{configDir}', configDir);
-        }
-        if (hostPath.includes('{paths.tv}') && config.paths.sonarr?.[0]) {
-          hostPath = hostPath.replace('{paths.tv}', config.paths.sonarr[0]);
-        } else if (hostPath.includes('{paths.movies}') && config.paths.radarr?.[0]) {
-          hostPath = hostPath.replace('{paths.movies}', config.paths.radarr[0]);
-        } else if (hostPath.includes('{paths.downloads}') && config.paths.transmission?.[0]) {
-          hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
-        }
-
-        // Handle service-specific paths
-        if (serviceKey === 'plex') {
-          if (containerPath === '/tv' && config.paths.plex?.[0]) {
-            hostPath = config.paths.plex[0];
-          } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
-            hostPath = config.paths.plex[1];
-          }
-        } else if (serviceKey === 'emby') {
-          if (containerPath === '/tv' && config.paths.emby?.[0]) {
-            hostPath = config.paths.emby[0];
-          } else if (containerPath === '/movies' && config.paths.emby?.[1]) {
-            hostPath = config.paths.emby[1];
-          }
-        } else if (serviceKey === 'jellyfin') {
-          if (containerPath === '/tv' && config.paths.jellyfin?.[0]) {
-            hostPath = config.paths.jellyfin[0];
-          } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
-            hostPath = config.paths.jellyfin[1];
-          }
-        } else if (serviceKey === 'deluge') {
-          if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
-            hostPath = config.paths.deluge[0];
-          }
-        } else if (serviceKey === 'bazarr') {
-          if (containerPath === '/tv' && config.paths.bazarr?.[0]) {
-            hostPath = config.paths.bazarr[0];
-          } else if (containerPath === '/movies' && config.paths.bazarr?.[1]) {
-            hostPath = config.paths.bazarr[1];
-          }
-        }
-
-        // Never emit an empty or still-templated host path: fall back to a folder
-        // under the config dir so the container always has a valid mount source.
-        if (!hostPath || hostPath.includes('{')) {
-          hostPath = path.join(configDir, serviceKey, (containerPath.replace(/[^a-zA-Z0-9]/g, '') || 'data'));
-        }
-
-        return `${hostPath}:${containerPath}`;
-      });
-
-      const ports = [`${config.ports?.[serviceKey] ?? serviceConfig.defaultPort}:${serviceConfig.internalPort}`];
-      if (serviceConfig.additionalPorts) {
-        serviceConfig.additionalPorts.forEach((additionalPort) => {
-          ports.push(`${additionalPort}:${additionalPort}`);
-          ports.push(`${additionalPort}:${additionalPort}/udp`);
-        });
-      }
-
-      services[serviceKey] = {
-        image: getEffectiveImage(serviceKey, config),
-        container_name: serviceKey,
-        environment,
-        volumes,
-        ports,
-        restart: 'unless-stopped',
-      };
-    });
-
-    // Serialise via a real YAML writer so every config value (paths, TZ, env)
-    // is emitted as an escaped scalar and can never inject compose directives.
-    // `name` pins the Compose project so it doesn't depend on the config dir
-    // path (otherwise Compose derives it from the directory name, orphaning
-    // containers when the dir is moved/renamed). lineWidth: -1 disables line
-    // wrapping so long host paths stay on one line.
-    const composeContent = dumpYaml({ name: 'ensembler', services }, { lineWidth: -1 });
-    fs.writeFileSync(composeFile, composeContent);
-
+    writeComposeFile(config);
     res.json({ success: true, code: 'messages.compose.generated', message: 'Docker Compose files generated successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.compose.generateFailed', message: 'Failed to generate Docker Compose files.', error: (err as Error).message });
   }
 });
-
-const composeFile = path.join(configDir, 'docker-compose.yml');
 
 app.get('/api/services/status', async (req: Request, res: Response) => {
   try {
@@ -597,18 +257,7 @@ app.get('/api/services/status', async (req: Request, res: Response) => {
 
     const serviceStatus: { [key: string]: string } = {};
     for (const serviceName of selectedServices) {
-      try {
-        const { stdout } = await execFileAsync('docker', ['ps', '--filter', `name=${serviceName}`, '--format', '{{.Status}}']);
-        if (stdout.trim() === '') {
-          serviceStatus[serviceName] = 'Stopped';
-        } else if (stdout.includes('Up')) {
-          serviceStatus[serviceName] = 'Running';
-        } else {
-          serviceStatus[serviceName] = 'Starting';
-        }
-      } catch (err) {
-        serviceStatus[serviceName] = 'Unknown';
-      }
+      serviceStatus[serviceName] = await getContainerStatus(serviceName);
     }
 
     res.json({ success: true, serviceStatus });
@@ -631,7 +280,7 @@ app.post('/api/services/:serviceName/start', async (req: Request, res: Response)
 app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'stop', serviceName]);
+    await composeStop(serviceName);
     res.json({ success: true, code: 'messages.service.stopped', params: { name: serviceName }, message: `${serviceName} stopped successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.stopFailed', params: { name: serviceName }, message: `Failed to stop ${serviceName}.`, error: (err as Error).message });
@@ -641,7 +290,7 @@ app.post('/api/services/:serviceName/stop', async (req: Request, res: Response) 
 app.post('/api/services/:serviceName/restart', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    await execFileAsync('docker', ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'restart', serviceName]);
+    await composeRestart(serviceName);
     res.json({ success: true, code: 'messages.service.restarted', params: { name: serviceName }, message: `${serviceName} restarted successfully.` });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.restartFailed', params: { name: serviceName }, message: `Failed to restart ${serviceName}.`, error: (err as Error).message });
@@ -651,14 +300,7 @@ app.post('/api/services/:serviceName/restart', async (req: Request, res: Respons
 app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    // --no-color strips ANSI escapes (which render as garbage in the viewer),
-    // --no-log-prefix drops the redundant "service | " prefix for a single
-    // service, and a larger tail + buffer avoids truncating the output.
-    const { stdout } = await execFileAsync(
-      'docker',
-      ['compose', '-f', path.join(configDir, 'docker-compose.yml'), 'logs', '--no-color', '--no-log-prefix', '--tail=1000', serviceName],
-      { maxBuffer: 20 * 1024 * 1024 }
-    );
+    const { stdout } = await composeLogs(serviceName);
     res.json({ success: true, logs: stdout });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.logsFailed', params: { name: serviceName }, message: `Failed to get logs for ${serviceName}.`, error: (err as Error).message });
@@ -668,141 +310,8 @@ app.get('/api/services/:serviceName/logs', async (req: Request, res: Response) =
 app.get('/api/services/:serviceName/version', async (req: Request, res: Response) => {
   const { serviceName } = req.params;
   try {
-    const serviceConfig = getServiceConfig(serviceName);
-    if (!serviceConfig) {
-      return res.status(404).json({ success: false, code: 'messages.service.notFound', message: 'Service not found.' });
-    }
-
-    // Helper to exec inside container
-    async function execInContainer(container: string, cmd: string) {
-      try {
-        const { stdout } = await execAsync(`docker exec ${container} sh -c "${cmd}"`);
-        return stdout.trim();
-      } catch (e) {
-        return null;
-      }
-    }
-
-    // Helper to get image label
-    async function getImageLabel(container: string, label: string) {
-      try {
-        const { stdout: imageNameOut } = await execAsync(
-          `docker inspect --format='{{.Config.Image}}' ${container}`
-        );
-        const imageName = imageNameOut.trim();
-        if (!imageName) return null;
-        const { stdout: labelOut } = await execAsync(
-          `docker image inspect ${imageName} --format='{{ index .Config.Labels "${label}" }}'`
-        );
-        return labelOut.trim() || null;
-      } catch {
-        return null;
-      }
-    }
-
-    let version: string | null = null;
-    // Try to get version from image label for LinuxServer.io images
-    switch (serviceName) {
-      case 'sonarr':
-      case 'radarr':
-      case 'prowlarr':
-      case 'overseerr':
-      case 'plex':
-      case 'transmission': {
-        version = await getImageLabel(serviceName, 'org.opencontainers.image.version');
-        break;
-      }
-      default:
-        break;
-    }
-
-    // If not found in label, try API/exec as before
-    if (!version) {
-      switch (serviceName) {
-        case 'sonarr': {
-          const output = await execInContainer('sonarr', 'curl -s http://localhost:8989/api/v3/system/status');
-          if (output) {
-            try {
-              const json = JSON.parse(output);
-              version = json.version || null;
-            } catch {}
-          }
-          break;
-        }
-        case 'radarr': {
-          const output = await execInContainer('radarr', 'curl -s http://localhost:7878/api/v3/system/status');
-          if (output) {
-            try {
-              const json = JSON.parse(output);
-              version = json.version || null;
-            } catch {}
-          }
-          break;
-        }
-        case 'prowlarr': {
-          const output = await execInContainer('prowlarr', 'curl -s http://localhost:9696/api/v1/system/status');
-          if (output) {
-            try {
-              const json = JSON.parse(output);
-              version = json.version || null;
-            } catch {}
-          }
-          break;
-        }
-        case 'overseerr': {
-          const output = await execInContainer('overseerr', 'curl -s http://localhost:5055/api/v1/status');
-          if (output) {
-            try {
-              const json = JSON.parse(output);
-              version = json.version || null;
-            } catch {}
-          }
-          break;
-        }
-        case 'plex': {
-          version = await execInContainer('plex', 'cat /version.txt');
-          if (!version) {
-            version = await execInContainer('plex', 'dpkg-query -W plexmediaserver');
-            if (version) {
-              version = version.split('\t')[1] || version;
-            }
-          }
-          break;
-        }
-        case 'transmission': {
-          version = await execInContainer('transmission', 'transmission-daemon --version');
-          if (version) {
-            const match = version.match(/(\d+\.\d+(?:\.\d+)?)/);
-            version = match ? match[1] : version;
-          }
-          break;
-        }
-        default:
-          break;
-      }
-    }
-
-    if (version) {
-      return res.json({ success: true, version });
-    }
-
-    // Fallback: use image creation date
-    try {
-      const { stdout: containerImage } = await execAsync(
-        `docker inspect --format='{{.Config.Image}}' ${serviceName}`
-      );
-      const imageName = containerImage.trim();
-      if (!imageName) {
-        return res.json({ success: true, version: 'Not installed' });
-      }
-      const { stdout } = await execAsync(
-        `docker image inspect ${imageName} --format "{{.Created}}"`
-      );
-      const dateVersion = stdout.trim().split('T')[0];
-      return res.json({ success: true, version: dateVersion });
-    } catch (err) {
-      return res.json({ success: true, version: 'Not installed' });
-    }
+    const version = await getServiceVersion(serviceName);
+    res.json({ success: true, version });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.versionFailed', params: { name: serviceName }, message: `Failed to get version for ${serviceName}.`, error: (err as Error).message });
   }
@@ -961,7 +470,7 @@ app.post('/api/services/plex/setup', async (req: Request, res: Response) => {
 
 app.post('/api/services/stop-all', async (req: Request, res: Response) => {
   try {
-    await execAsync(`docker compose -f "${path.join(configDir, 'docker-compose.yml')}" stop`);
+    await composeStop();
     res.json({ success: true, code: 'messages.service.stopAllSucceeded', message: 'All services stopped successfully.' });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.stopAllFailed', message: 'Failed to stop all services.', error: (err as Error).message });
@@ -1055,44 +564,6 @@ app.post('/api/services/validate-selection', (req: Request, res: Response) => {
   }
 });
 
-// Stop and remove all service containers. Tolerant of `down` failing (e.g.
-// nothing is running) — that must not block the rest of a reset.
-async function resetStopServices(): Promise<void> {
-  if (fs.existsSync(composeFile)) {
-    try {
-      await execAsync(`docker compose -f "${composeFile}" down`);
-    } catch (err) {
-      console.warn('Failed to stop services during reset:', err);
-    }
-  }
-}
-
-// Delete Ensembler's config files and every service data directory present in
-// configDir (settings, databases, API keys) so services start completely
-// fresh. Enumerating the directory rather than the current service catalog
-// means data for services since removed from Ensembler is also cleared. Media
-// files live outside configDir and are never touched.
-function resetCleanFilesAndData(): void {
-  if (fs.existsSync(configFile)) {
-    fs.unlinkSync(configFile);
-  }
-  if (fs.existsSync(composeFile)) {
-    fs.unlinkSync(composeFile);
-  }
-  if (fs.existsSync(configDir)) {
-    for (const entry of fs.readdirSync(configDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) {
-        continue;
-      }
-      try {
-        fs.rmSync(path.join(configDir, entry.name), { recursive: true, force: true });
-      } catch (err) {
-        console.warn(`Failed to remove service data for ${entry.name}:`, err);
-      }
-    }
-  }
-}
-
 // Stepped reset endpoints so the UI can show progress one phase at a time,
 // matching the setup flow. The combined endpoint below runs both.
 app.post('/api/config/reset/stop-services', async (req: Request, res: Response) => {
@@ -1157,7 +628,7 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
 
     // Cheap digest comparison — no image pull.
     const hasUpdate = await checkServiceUpdate(imageName);
-    updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
+    recordServiceUpdate(serviceName, hasUpdate);
 
     // Best-effort current version (local image build date) for display.
     let currentVersion = 'unknown';
@@ -1176,11 +647,8 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
 
 // Instant read of cached update status for all services (no docker calls).
 app.get('/api/services/updates', (req: Request, res: Response) => {
-  res.json({
-    success: true,
-    updates: updateCheckStore.availableUpdates,
-    lastChecked: updateCheckStore.lastServiceCheck
-  });
+  const { updates, lastChecked } = getAvailableUpdates();
+  res.json({ success: true, updates, lastChecked });
 });
 
 // Refresh the update cache on demand (cheap digest checks). Backs the
@@ -1191,11 +659,8 @@ app.post('/api/services/updates/check', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     await refreshUpdateCache();
-    res.json({
-      success: true,
-      updates: updateCheckStore.availableUpdates,
-      lastChecked: updateCheckStore.lastServiceCheck
-    });
+    const { updates, lastChecked } = getAvailableUpdates();
+    res.json({ success: true, updates, lastChecked });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.checkUpdatesAllFailed', message: 'Failed to check for updates.', error: (err as Error).message });
   }
@@ -1208,11 +673,9 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
       return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     
-    const composeFile = path.join(configDir, 'docker-compose.yml');
-    
     // Pull latest image and restart service
-    await execFileAsync('docker', ['compose', '-f', composeFile, 'pull', serviceName]);
-    await execFileAsync('docker', ['compose', '-f', composeFile, 'up', '-d', serviceName]);
+    await dockerCompose(['pull', serviceName]);
+    await dockerCompose(['up', '-d', serviceName]);
 
     // Refresh the cached update status now that the image is current. Without
     // this the dashboard keeps reading a stale "update available" from the
@@ -1223,7 +686,7 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     if (svc) {
       const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
       hasUpdate = await checkServiceUpdate(getEffectiveImage(serviceName, config));
-      updateCheckStore.availableUpdates[serviceName] = { hasUpdate };
+      recordServiceUpdate(serviceName, hasUpdate);
     }
 
     res.json({ success: true, code: 'messages.service.updated', params: { name: serviceName }, message: `${serviceName} updated successfully.`, hasUpdate });
@@ -1231,33 +694,6 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
     res.status(500).json({ success: false, code: 'messages.service.updateFailed', params: { name: serviceName }, message: `Failed to update ${serviceName}.`, error: (err as Error).message });
   }
 });
-
-// Pull + recreate every enabled service with a pending update. Each runs on its
-// own so one failure doesn't abort the rest. Relies on the cached update status,
-// so callers should refresh it first if they need current results.
-async function applyAvailableUpdates(): Promise<{ updated: string[]; failed: { service: string; error?: string }[] }> {
-  const composeFile = path.join(configDir, 'docker-compose.yml');
-  const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-  const enabled = Object.keys(config.selectedServices || {}).filter((k: string) => config.selectedServices[k]);
-  const targets = enabled.filter(key => updateCheckStore.availableUpdates[key]?.hasUpdate === true);
-
-  const results: { service: string; success: boolean; error?: string }[] = [];
-  for (const key of targets) {
-    try {
-      await execAsync(`docker compose -f "${composeFile}" pull ${key}`);
-      await execAsync(`docker compose -f "${composeFile}" up -d ${key}`);
-      const svc = getServiceConfig(key);
-      updateCheckStore.availableUpdates[key] = { hasUpdate: svc ? await checkServiceUpdate(getEffectiveImage(key, config)) : false };
-      results.push({ service: key, success: true });
-    } catch (err) {
-      results.push({ service: key, success: false, error: (err as Error).message });
-    }
-  }
-  return {
-    updated: results.filter(r => r.success).map(r => r.service),
-    failed: results.filter(r => !r.success).map(r => ({ service: r.service, error: r.error })),
-  };
-}
 
 // Update every service that currently has a pending update; reports per-service
 // outcomes. Also runs unattended from the daily scheduler when the user has
@@ -1314,34 +750,9 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
   }
 });
 
-// Daily update-check scheduler (runs shortly after startup, then every 24h).
-// When the user has opted into auto-update, it also applies any updates found.
-const scheduleUpdateChecks = () => {
-  const checkInterval = 24 * 60 * 60 * 1000; // daily
-
-  const run = async () => {
-    try {
-      await refreshUpdateCache();
-      const autoUpdateEnabled = fs.existsSync(configFile)
-        && JSON.parse(fs.readFileSync(configFile, 'utf-8')).autoUpdate === true;
-      if (autoUpdateEnabled) {
-        const { updated, failed } = await applyAvailableUpdates();
-        if (updated.length) console.log(`Auto-update applied: ${updated.join(', ')}`);
-        if (failed.length) console.error(`Auto-update failed: ${failed.map(f => f.service).join(', ')}`);
-      }
-    } catch (err) {
-      console.error('Error during scheduled update check:', err);
-    }
-  };
-
-  // Prime the cache shortly after startup, then daily.
-  setTimeout(run, 10000);
-  setInterval(run, checkInterval);
-};
-
 if (process.env.NODE_ENV !== 'test') {
   // Start the background update-check scheduler
-  scheduleUpdateChecks();
+  startUpdateScheduler();
 
   app.listen(port, () => console.log(`Backend listening on port ${port}`));
 }
