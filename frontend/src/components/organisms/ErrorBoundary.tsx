@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import Button from './Button';
-import Card from './Card';
+import Button from '../atoms/Button';
+import Card from '../atoms/Card';
 
 // A render throw in a feature subtree must not take down the whole app shell.
 // React only supports error boundaries as class components, so this stays a

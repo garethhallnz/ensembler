@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { HiChevronUp, HiChevronDown } from 'react-icons/hi';
-import Card from './Card';
-import Badge from './Badge';
-import type { RuntimeStatus } from '../services/runtimeManager';
+import Card from '../atoms/Card';
+import Badge from '../atoms/Badge';
+import type { RuntimeStatus } from '../../services/runtimeManager';
 
 interface DiagnosticsPanelProps {
   dockerStatus: { running: boolean };

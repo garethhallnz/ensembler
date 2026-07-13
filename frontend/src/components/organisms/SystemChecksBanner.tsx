@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HiExclamation, HiX } from 'react-icons/hi';
-import { apiFetch } from '../requests/client';
+import { apiFetch } from '../../requests/client';
 import { useTranslation } from 'react-i18next';
 
 interface DockerMemoryCheck {

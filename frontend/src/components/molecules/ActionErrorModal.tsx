@@ -1,6 +1,6 @@
 import { HiExclamationCircle } from 'react-icons/hi';
 import { useTranslation } from 'react-i18next';
-import Button from './Button';
+import Button from '../atoms/Button';
 
 interface ActionErrorModalProps {
   show: boolean;

@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from './requests/client';
-import Button from './components/Button';
-import Spinner from './components/Spinner';
-import Alert from './components/Alert';
-import Card from './components/Card';
-import EnvironmentSettings from './components/EnvironmentSettings';
-import Toggle from './components/Toggle';
-import Select from './components/Select';
+import Button from './components/atoms/Button';
+import Spinner from './components/atoms/Spinner';
+import Alert from './components/atoms/Alert';
+import Card from './components/atoms/Card';
+import EnvironmentSettings from './components/molecules/EnvironmentSettings';
+import Toggle from './components/atoms/Toggle';
+import Select from './components/atoms/Select';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import { useTheme, type ThemePreference } from './contexts/ThemeContext';
 import { SUPPORTED_LANGUAGES } from './i18n/config';
-import ConfirmationModal from './components/ConfirmationModal';
+import ConfirmationModal from './components/molecules/ConfirmationModal';
 
 interface AdvancedSettingsProps {
   onClose: () => void;

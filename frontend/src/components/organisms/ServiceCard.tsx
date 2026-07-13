@@ -3,10 +3,10 @@ import {
   HiExternalLink, HiStop, HiPlay, HiRefresh, HiDocumentText,
   HiArrowCircleUp, HiCog, HiCheckCircle, HiLockClosed,
 } from 'react-icons/hi';
-import Button from './Button';
-import Spinner from './Spinner';
-import ServiceActionsMenu from './ServiceActionsMenu';
-import { isDesktopApp } from '../utils/selectDirectory';
+import Button from '../atoms/Button';
+import Spinner from '../atoms/Spinner';
+import ServiceActionsMenu from '../molecules/ServiceActionsMenu';
+import { isDesktopApp } from '../../utils/selectDirectory';
 
 // Reduce a messy image version to a recognizable major.minor.patch, e.g.
 // "4.0.19.2979-ls319" or "1.43.2.10687-563d026ea" → "4.0.19" / "1.43.2".

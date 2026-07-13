@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import TextInput from './TextInput';
-import Alert from './Alert';
-import Card from './Card';
-import PathConfiguration from './PathConfiguration';
+import TextInput from '../atoms/TextInput';
+import Alert from '../atoms/Alert';
+import Card from '../atoms/Card';
+import PathConfiguration from '../molecules/PathConfiguration';
 
 interface ServiceConfig {
   key: string;

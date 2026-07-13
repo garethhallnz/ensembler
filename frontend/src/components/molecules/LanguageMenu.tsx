@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { HiGlobeAlt } from 'react-icons/hi';
-import { SUPPORTED_LANGUAGES } from '../i18n/config';
+import { SUPPORTED_LANGUAGES } from '../../i18n/config';
 
 // Compact language switcher for surfaces that don't have the full Settings panel
 // (first-launch, setup wizard, Docker screens), so language is changeable anywhere.

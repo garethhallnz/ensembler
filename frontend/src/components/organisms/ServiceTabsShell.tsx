@@ -1,7 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HiHome, HiX, HiRefresh, HiExternalLink } from 'react-icons/hi';
-import { useServiceTabs } from '../contexts/ServiceTabsContext';
+import { useServiceTabs } from '../../contexts/ServiceTabsContext';
 
 // React types <webview> as a plain HTMLWebViewElement; Electron's runtime element
 // adds control methods. We only reach for reload() here.

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Drawer } from 'flowbite-react';
 import { HiBookOpen } from 'react-icons/hi';
 import { useTranslation } from 'react-i18next';
-import Button from './Button';
+import Button from '../atoms/Button';
 import Docs from './Docs';
 
 interface DocsButtonProps {

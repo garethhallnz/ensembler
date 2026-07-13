@@ -8,40 +8,40 @@ import type { Components } from 'react-markdown';
 // bundled at build time, so the in-app help works offline and stays in sync
 // with the shipped version. English lives at docs/*.md; each translation lives
 // under docs/<lang>/*.md. All imports are static so Vite can resolve them.
-import overviewEn from '../../../docs/overview.md?raw';
-import gettingStartedEn from '../../../docs/getting-started.md?raw';
-import managingEn from '../../../docs/managing-services.md?raw';
-import troubleshootingEn from '../../../docs/troubleshooting.md?raw';
+import overviewEn from '../../../../docs/overview.md?raw';
+import gettingStartedEn from '../../../../docs/getting-started.md?raw';
+import managingEn from '../../../../docs/managing-services.md?raw';
+import troubleshootingEn from '../../../../docs/troubleshooting.md?raw';
 
-import overviewEs from '../../../docs/es/overview.md?raw';
-import gettingStartedEs from '../../../docs/es/getting-started.md?raw';
-import managingEs from '../../../docs/es/managing-services.md?raw';
-import troubleshootingEs from '../../../docs/es/troubleshooting.md?raw';
+import overviewEs from '../../../../docs/es/overview.md?raw';
+import gettingStartedEs from '../../../../docs/es/getting-started.md?raw';
+import managingEs from '../../../../docs/es/managing-services.md?raw';
+import troubleshootingEs from '../../../../docs/es/troubleshooting.md?raw';
 
-import overviewDe from '../../../docs/de/overview.md?raw';
-import gettingStartedDe from '../../../docs/de/getting-started.md?raw';
-import managingDe from '../../../docs/de/managing-services.md?raw';
-import troubleshootingDe from '../../../docs/de/troubleshooting.md?raw';
+import overviewDe from '../../../../docs/de/overview.md?raw';
+import gettingStartedDe from '../../../../docs/de/getting-started.md?raw';
+import managingDe from '../../../../docs/de/managing-services.md?raw';
+import troubleshootingDe from '../../../../docs/de/troubleshooting.md?raw';
 
-import overviewFr from '../../../docs/fr/overview.md?raw';
-import gettingStartedFr from '../../../docs/fr/getting-started.md?raw';
-import managingFr from '../../../docs/fr/managing-services.md?raw';
-import troubleshootingFr from '../../../docs/fr/troubleshooting.md?raw';
+import overviewFr from '../../../../docs/fr/overview.md?raw';
+import gettingStartedFr from '../../../../docs/fr/getting-started.md?raw';
+import managingFr from '../../../../docs/fr/managing-services.md?raw';
+import troubleshootingFr from '../../../../docs/fr/troubleshooting.md?raw';
 
-import overviewZhHans from '../../../docs/zh-Hans/overview.md?raw';
-import gettingStartedZhHans from '../../../docs/zh-Hans/getting-started.md?raw';
-import managingZhHans from '../../../docs/zh-Hans/managing-services.md?raw';
-import troubleshootingZhHans from '../../../docs/zh-Hans/troubleshooting.md?raw';
+import overviewZhHans from '../../../../docs/zh-Hans/overview.md?raw';
+import gettingStartedZhHans from '../../../../docs/zh-Hans/getting-started.md?raw';
+import managingZhHans from '../../../../docs/zh-Hans/managing-services.md?raw';
+import troubleshootingZhHans from '../../../../docs/zh-Hans/troubleshooting.md?raw';
 
-import overviewPtBR from '../../../docs/pt-BR/overview.md?raw';
-import gettingStartedPtBR from '../../../docs/pt-BR/getting-started.md?raw';
-import managingPtBR from '../../../docs/pt-BR/managing-services.md?raw';
-import troubleshootingPtBR from '../../../docs/pt-BR/troubleshooting.md?raw';
+import overviewPtBR from '../../../../docs/pt-BR/overview.md?raw';
+import gettingStartedPtBR from '../../../../docs/pt-BR/getting-started.md?raw';
+import managingPtBR from '../../../../docs/pt-BR/managing-services.md?raw';
+import troubleshootingPtBR from '../../../../docs/pt-BR/troubleshooting.md?raw';
 
-import overviewRu from '../../../docs/ru/overview.md?raw';
-import gettingStartedRu from '../../../docs/ru/getting-started.md?raw';
-import managingRu from '../../../docs/ru/managing-services.md?raw';
-import troubleshootingRu from '../../../docs/ru/troubleshooting.md?raw';
+import overviewRu from '../../../../docs/ru/overview.md?raw';
+import gettingStartedRu from '../../../../docs/ru/getting-started.md?raw';
+import managingRu from '../../../../docs/ru/managing-services.md?raw';
+import troubleshootingRu from '../../../../docs/ru/troubleshooting.md?raw';
 
 type DocName = 'overview' | 'getting-started' | 'managing' | 'troubleshooting';
 

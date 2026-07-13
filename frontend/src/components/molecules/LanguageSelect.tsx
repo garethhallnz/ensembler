@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import Logo from './Logo';
-import { SUPPORTED_LANGUAGES } from '../i18n/config';
+import Logo from '../atoms/Logo';
+import { SUPPORTED_LANGUAGES } from '../../i18n/config';
 
 // First-launch language chooser. English is the default; the currently detected
 // language is preselected when it's one we support.

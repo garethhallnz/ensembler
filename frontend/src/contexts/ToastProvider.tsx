@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
-import Toast from '../components/Toast';
+import Toast from '../components/atoms/Toast';
 import { ToastContext } from './ToastContext';
 
 const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

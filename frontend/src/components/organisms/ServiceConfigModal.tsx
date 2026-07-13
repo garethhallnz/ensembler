@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { apiFetch } from '../requests/client';
-import Button from './Button';
-import TextInput from './TextInput';
-import Select from './Select';
-import PathConfiguration from './PathConfiguration';
-import { getDefaultPath } from '../utils/pathDefaults';
+import { apiFetch } from '../../requests/client';
+import Button from '../atoms/Button';
+import TextInput from '../atoms/TextInput';
+import Select from '../atoms/Select';
+import PathConfiguration from '../molecules/PathConfiguration';
+import { getDefaultPath } from '../../utils/pathDefaults';
 
 interface PathField {
   label: string;
