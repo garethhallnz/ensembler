@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
+import { playwright } from '@vitest/browser-playwright'
 import react from '@vitejs/plugin-react'
 import flowbiteReact from "flowbite-react/plugin/vite";
 
@@ -16,5 +17,29 @@ export default defineConfig({
     strictPort: true,
     // Allow importing the repo-root docs/ markdown into the app (?raw).
     fs: { allow: ['..'] },
+  },
+  test: {
+    // Pure-function utils run fast in node; component (*.test.tsx) tests run in a
+    // real headless browser (Vitest Browser Mode) for fidelity RTL+jsdom can't give.
+    projects: [
+      {
+        extends: true,
+        test: { name: 'unit', environment: 'jsdom', include: ['src/**/*.test.ts'] },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'browser',
+          include: ['src/**/*.test.tsx'],
+          setupFiles: ['src/test/setup.ts'],
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            headless: true,
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+    ],
   },
 });

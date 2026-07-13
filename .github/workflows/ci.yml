@@ -46,6 +46,9 @@ jobs:
       - name: Lint
         working-directory: ./frontend
         run: npm run lint
+      - name: Install Playwright browser
+        working-directory: ./frontend
+        run: npx playwright install --with-deps chromium
       - name: Test
         working-directory: ./frontend
         run: npm test

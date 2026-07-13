@@ -1,16 +1,17 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { apiFetch } from './requests/client';
-import { useTranslation, Trans } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import Card from './components/Card';
 import Button from './components/Button';
-import Badge from './components/Badge';
 import ServiceConfigModal from './components/ServiceConfigModal';
 import AddServiceModal from './components/AddServiceModal';
-import ServiceActionsMenu from './components/ServiceActionsMenu';
+import ServiceCard from './components/ServiceCard';
+import SetupChecklist from './components/SetupChecklist';
+import DiagnosticsPanel from './components/DiagnosticsPanel';
+import LogsDrawer from './components/LogsDrawer';
 import Logo from './components/Logo';
-import Spinner from './components/Spinner';
 import DocsButton from './components/DocsButton';
 import ActionErrorModal from './components/ActionErrorModal';
 import SystemChecksBanner from './components/SystemChecksBanner';
@@ -18,9 +19,10 @@ import { useToast } from './contexts/ToastContext';
 import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
+import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
-import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle, HiLockClosed } from 'react-icons/hi';
+import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
 
 interface ServiceConfig {
   key: string;
@@ -88,10 +90,6 @@ const CATEGORY_ROLES: { [key: string]: string } = {
 const serviceRoleKey = (key: string, category: string): string =>
   SERVICE_ROLES[key] || CATEGORY_ROLES[category] || '';
 
-// Reduce a messy image version to a recognizable major.minor.patch, e.g.
-// "4.0.19.2979-ls319" or "1.43.2.10687-563d026ea" → "4.0.19" / "1.43.2".
-const cleanVersion = (version: string): string => version.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? version;
-
 export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
@@ -100,10 +98,32 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [prowlarrNeedsIndexers, setProwlarrNeedsIndexers] = useState(false);
-  const [plexNeedsSignIn, setPlexNeedsSignIn] = useState(false);
-  const [overseerrNeedsSetup, setOverseerrNeedsSetup] = useState(false);
   const plexWiringInFlight = useRef(false);
+  const prowlarrNeedsIndexers = usePolledSetupStatus<{ enabled: boolean; hasIndexers: boolean }>({
+    endpoint: '/api/services/prowlarr/indexer-status',
+    dep: serviceStatus.prowlarr,
+    map: d => d.enabled === true && d.hasIndexers === false,
+  });
+  const plexNeedsSignIn = usePolledSetupStatus<{ enabled: boolean; signedIn: boolean; librariesConfigured: boolean }>({
+    endpoint: '/api/services/plex/setup-status',
+    dep: serviceStatus.plex,
+    map: d => d.enabled === true && d.signedIn === false,
+    // Once signed in but libraries aren't created yet, run just the Plex setup
+    // step. The in-flight guard prevents overlapping runs on successive polls.
+    onData: d => {
+      if (d.enabled === true && d.signedIn === true && d.librariesConfigured === false && !plexWiringInFlight.current) {
+        plexWiringInFlight.current = true;
+        apiFetch('/api/services/plex/setup', { method: 'POST' }).finally(() => {
+          plexWiringInFlight.current = false;
+        });
+      }
+    },
+  });
+  const overseerrNeedsSetup = usePolledSetupStatus<{ enabled: boolean; initialized: boolean }>({
+    endpoint: '/api/services/overseerr/setup-status',
+    dep: serviceStatus.overseerr,
+    map: d => d.enabled === true && d.initialized === false,
+  });
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [actionError, setActionError] = useState<{ title: string; detail?: string; serviceKey: string; retry: () => void } | null>(null);
   const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
@@ -364,98 +384,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
     return () => clearInterval(interval);
   }, [selectedServices, fetchServiceAlerts]);
-
-  // Check whether the user still needs to add an indexer in Prowlarr — the
-  // one setup step Ensembler deliberately leaves to the user
-  useEffect(() => {
-    let cancelled = false;
-    const checkIndexers = async () => {
-      try {
-        const res = await apiFetch('/api/services/prowlarr/indexer-status');
-        const data = await res.json();
-        if (!cancelled) {
-          setProwlarrNeedsIndexers(data.enabled === true && data.hasIndexers === false);
-        }
-      } catch {
-        if (!cancelled) {
-          setProwlarrNeedsIndexers(false);
-        }
-      }
-    };
-    checkIndexers();
-    const interval = setInterval(checkIndexers, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [serviceStatus.prowlarr]);
-
-  // Plex needs a one-time plex.tv sign-in that only the user can do. Poll its
-  // status: show the banner until they sign in, then automatically run the
-  // connection setup to create the default libraries.
-  useEffect(() => {
-    let cancelled = false;
-    const checkPlex = async () => {
-      try {
-        const res = await apiFetch('/api/services/plex/setup-status');
-        const data = await res.json();
-        if (cancelled) return;
-        setPlexNeedsSignIn(data.enabled === true && data.signedIn === false);
-
-        // Sign-in just detected but libraries not yet created: run only the
-        // Plex step (not the whole multi-service orchestration). The in-flight
-        // guard prevents overlapping runs on successive polls.
-        if (
-          data.enabled === true &&
-          data.signedIn === true &&
-          data.librariesConfigured === false &&
-          !plexWiringInFlight.current
-        ) {
-          plexWiringInFlight.current = true;
-          try {
-            await apiFetch('/api/services/plex/setup', { method: 'POST' });
-          } finally {
-            plexWiringInFlight.current = false;
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setPlexNeedsSignIn(false);
-        }
-      }
-    };
-    checkPlex();
-    const interval = setInterval(checkPlex, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [serviceStatus.plex]);
-
-  // Overseerr finishes its own setup (Plex sign-in + auto-discovery); prompt
-  // the user until it reports initialized.
-  useEffect(() => {
-    let cancelled = false;
-    const checkOverseerr = async () => {
-      try {
-        const res = await apiFetch('/api/services/overseerr/setup-status');
-        const data = await res.json();
-        if (!cancelled) {
-          setOverseerrNeedsSetup(data.enabled === true && data.initialized === false);
-        }
-      } catch {
-        if (!cancelled) {
-          setOverseerrNeedsSetup(false);
-        }
-      }
-    };
-    checkOverseerr();
-    const interval = setInterval(checkOverseerr, 15000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [serviceStatus.overseerr]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -784,53 +712,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
       <SystemChecksBanner />
 
-      {/* Remaining manual setup steps, grouped into one calm checklist rather
-          than a stack of separate banners. Each service card also shows its own
-          "Setup needed" nudge, so the guidance lives in both places. */}
-      {(() => {
-        const tasks = [
-          prowlarrNeedsIndexers && {
-            key: 'prowlarr',
-            label: <Trans i18nKey="dashboard.tasks.prowlarr" components={{ strong: <strong className="font-semibold" /> }} />,
-          },
-          plexNeedsSignIn && {
-            key: 'plex',
-            label: <Trans i18nKey="dashboard.tasks.plex" components={{ strong: <strong className="font-semibold" /> }} />,
-          },
-          overseerrNeedsSetup && {
-            key: 'overseerr',
-            label: <Trans i18nKey="dashboard.tasks.overseerr" components={{ strong: <strong className="font-semibold" /> }} />,
-          },
-        ].filter(Boolean) as { key: string; label: React.ReactNode }[];
-
-        if (tasks.length === 0) return null;
-
-        return (
-          <div className="mb-6 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/20 px-5 py-4">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{t('dashboard.setupChecklist.heading')}</h3>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {t('dashboard.setupChecklist.stepsLeft', { count: tasks.length })}
-              </span>
-            </div>
-            <ul className="divide-y divide-amber-200/70 dark:divide-amber-900/40">
-              {tasks.map(task => (
-                <li key={task.key} className="flex items-center gap-3 py-2.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                  <span className="flex-1 text-left text-sm text-gray-700 dark:text-gray-200">{task.label}</span>
-                  <button
-                    onClick={() => handleLaunchService(task.key)}
-                    className="shrink-0 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {t('dashboard.common.open')} <HiExternalLink className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      })()}
+      <SetupChecklist
+        prowlarrNeedsIndexers={prowlarrNeedsIndexers}
+        plexNeedsSignIn={plexNeedsSignIn}
+        overseerrNeedsSetup={overseerrNeedsSetup}
+        onLaunch={handleLaunchService}
+      />
 
       {/* Progress bar for global actions (above service list, no container/title) */}
       {globalActionProgress !== null && (
@@ -902,12 +789,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             {selectedServices.map(serviceKey => {
               const service = serviceConfig.find(s => s.key === serviceKey);
               if (!service) return null;
-              
+
               const status = serviceStatus[serviceKey] || 'Unknown';
               const updateInfo = serviceUpdates[serviceKey];
               const alertInfo = serviceAlerts[serviceKey];
-              const isUpdating = updateLoading[serviceKey];
-              
               const isRunning = status === 'Running';
               const needsSetup =
                 (serviceKey === 'prowlarr' && prowlarrNeedsIndexers) ||
@@ -924,8 +809,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 : pendingAction === 'stop' ? t('dashboard.status.stopping')
                 : pendingAction === 'restart' ? t('dashboard.status.restarting') : null;
 
-              const roleKey = serviceRoleKey(serviceKey, service.category);
-
               const statusLabel = pendingLabel
                 ? pendingLabel
                 : needsSetup ? t('dashboard.status.setupNeeded')
@@ -934,190 +817,43 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                 : needsSetup || unhealthy ? 'bg-amber-500' : isRunning ? 'bg-green-500' : 'bg-gray-400';
 
               return (
-                <div
+                <ServiceCard
                   key={serviceKey}
-                  className="relative flex flex-col rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-200 p-6"
-                >
-                  {/* Header: identity + at-a-glance status */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="text-left text-xl font-bold text-gray-900 dark:text-white">{service.name}</h3>
-                      <p className="text-left text-sm text-gray-600 dark:text-gray-400">{roleKey ? t(`dashboard.roles.${roleKey}`) : ''}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0" title={unhealthy ? t('dashboard.status.unhealthyTooltip') : statusLabel}>
-                      <span className={`w-2.5 h-2.5 rounded-full ${statusDotClass}`} />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{statusLabel}</span>
-                    </div>
-                  </div>
-
-                  {/* Primary action + maintenance menu */}
-                  <div className="mt-6 flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="primary"
-                      onClick={() => handleLaunchService(serviceKey, service.name)}
-                      disabled={!isRunning}
-                      aria-label={t('dashboard.common.openNamed', { name: service.name })}
-                      tooltip={!isRunning ? t('dashboard.card.openDisabledTooltip') : t('dashboard.common.openNamed', { name: service.name })}
-                    >
-                      <HiExternalLink className="inline-block mr-1" /> {t('dashboard.common.open')}
-                    </Button>
-                    <div className="ml-auto">
-                      <ServiceActionsMenu
-                        items={[
-                          // Lifecycle controls live in the menu so "Open" is the
-                          // single clear action on every card.
-                          ...(isDesktopApp() && isRunning ? [{
-                            label: t('dashboard.menu.openInBrowser'),
-                            icon: <HiExternalLink className="w-4 h-4" />,
-                            onClick: () => openServiceInBrowser(serviceKey),
-                          }] : []),
-                          {
-                            label: isRunning ? t('dashboard.menu.stop') : t('dashboard.menu.start'),
-                            icon: isRunning ? <HiStop className="w-4 h-4" /> : <HiPlay className="w-4 h-4" />,
-                            onClick: () => handleServiceAction(serviceKey, isRunning ? 'stop' : 'start'),
-                          },
-                          ...(isRunning ? [{
-                            label: t('dashboard.menu.restart'),
-                            icon: <HiRefresh className="w-4 h-4" />,
-                            onClick: () => handleServiceAction(serviceKey, 'restart'),
-                          }] : []),
-                          {
-                            label: t('dashboard.menu.viewLogs'),
-                            icon: <HiDocumentText className="w-4 h-4" />,
-                            onClick: () => openLogsDrawer(serviceKey),
-                          },
-                          {
-                            label: t('dashboard.services.checkForUpdates'),
-                            icon: <HiArrowCircleUp className="w-4 h-4" />,
-                            onClick: () => checkServiceForUpdate(serviceKey),
-                          },
-                          {
-                            label: t('dashboard.menu.configure'),
-                            icon: <HiCog className="w-4 h-4" />,
-                            onClick: () => setConfigModal({ service, mode: 'edit' }),
-                          },
-                        ]}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Update state (left) + running version (muted, right) */}
-                  <div className="mt-4 flex items-center justify-between gap-2 min-h-[1.25rem]">
-                    <div className="min-w-0">
-                      {updateChecking[serviceKey] ? (
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                          <Spinner size="sm" /> {t('dashboard.card.checkingUpdates')}
-                        </div>
-                      ) : updateInfo?.hasUpdate ? (
-                        <button
-                          onClick={() => handleServiceUpdate(serviceKey)}
-                          disabled={isUpdating}
-                          className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
-                        >
-                          <HiArrowCircleUp className="w-4 h-4" />
-                          {isUpdating ? t('dashboard.common.updating') : t('dashboard.card.updateAvailable')}
-                        </button>
-                      ) : recentlyChecked[serviceKey] ? (
-                        <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-                          <HiCheckCircle className="w-4 h-4" /> {t('dashboard.card.upToDate')}
-                        </div>
-                      ) : null}
-                    </div>
-
-                    {isRunning && serviceVersions[serviceKey] && (() => {
-                      const shown = cleanVersion(serviceVersions[serviceKey]);
-                      const isPinned = !!pinnedVersions[serviceKey];
-                      const title = isPinned
-                        ? t('dashboard.card.version.pinned', { version: shown })
-                        : updateInfo?.hasUpdate
-                          ? t('dashboard.card.version.updateAvailable', { version: shown })
-                          : t('dashboard.card.version.latest', { version: shown });
-                      return (
-                        <span
-                          title={title}
-                          className={`shrink-0 inline-flex items-center gap-1 text-xs tabular-nums ${updateInfo?.hasUpdate ? 'text-amber-600/80 dark:text-amber-400/80' : 'text-gray-400 dark:text-gray-500'}`}
-                        >
-                          {isPinned
-                            ? <HiLockClosed className="w-3 h-3" aria-hidden />
-                            : <HiRefresh className="w-3 h-3" aria-hidden />}
-                          v{shown}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
+                  model={{
+                    serviceKey,
+                    name: service.name,
+                    roleKey: serviceRoleKey(serviceKey, service.category),
+                    statusLabel,
+                    statusDotClass,
+                    unhealthy,
+                    isRunning,
+                    isUpdating: !!updateLoading[serviceKey],
+                    isChecking: !!updateChecking[serviceKey],
+                    hasUpdate: updateInfo?.hasUpdate,
+                    recentlyChecked: !!recentlyChecked[serviceKey],
+                    runningVersion: serviceVersions[serviceKey],
+                    isPinned: !!pinnedVersions[serviceKey],
+                  }}
+                  onLaunch={() => handleLaunchService(serviceKey, service.name)}
+                  onOpenInBrowser={() => openServiceInBrowser(serviceKey)}
+                  onAction={(action) => handleServiceAction(serviceKey, action)}
+                  onOpenLogs={() => openLogsDrawer(serviceKey)}
+                  onCheckUpdate={() => checkServiceForUpdate(serviceKey)}
+                  onConfigure={() => setConfigModal({ service, mode: 'edit' })}
+                  onUpdate={() => handleServiceUpdate(serviceKey)}
+                />
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Diagnostics — technical status, collapsed by default. Not needed for
-          normal use, so it's a quiet disclosure rather than a prominent panel. */}
-      {(dockerStatus || runtimeStatus) && (() => {
-        const allOk = dockerStatus.running && (!runtimeStatus || runtimeStatus.appRunning);
-        return (
-          <Card className="mt-6">
-            <Card.Header
-              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              onClick={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className={`w-2.5 h-2.5 rounded-full ${allOk ? 'bg-green-500' : 'bg-amber-500'}`} />
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('dashboard.diagnostics.heading')}</h2>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {allOk ? t('dashboard.diagnostics.allOk') : t('dashboard.diagnostics.attention')}
-                  </span>
-                  {isSystemStatusExpanded
-                    ? <HiChevronUp className="w-5 h-5 text-gray-500" />
-                    : <HiChevronDown className="w-5 h-5 text-gray-500" />}
-                </div>
-              </div>
-            </Card.Header>
-            {isSystemStatusExpanded && (
-              <Card.Body>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <dt className="text-gray-600 dark:text-gray-400">Docker</dt>
-                    <dd>{dockerStatus.running ? <Badge variant="success">{t('dashboard.diagnostics.running')}</Badge> : <Badge variant="error">{t('dashboard.diagnostics.notRunning')}</Badge>}</dd>
-                  </div>
-                  {runtimeStatus && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.app')}</dt>
-                      <dd>{runtimeStatus.appRunning ? <Badge variant="success">{t('dashboard.diagnostics.active')}</Badge> : <Badge variant="neutral">{t('dashboard.diagnostics.inactive')}</Badge>}</dd>
-                    </div>
-                  )}
-                  {runtimeStatus && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.backendConnection')}</dt>
-                      <dd>{runtimeStatus.backendConnected ? <Badge variant="success">{t('dashboard.diagnostics.connected')}</Badge> : <Badge variant="error">{t('dashboard.diagnostics.disconnected')}</Badge>}</dd>
-                    </div>
-                  )}
-                  {runtimeStatus && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.servicesRunning')}</dt>
-                      <dd className="font-medium text-gray-900 dark:text-white">{runtimeStatus.servicesRunning.length}</dd>
-                    </div>
-                  )}
-                  {runtimeStatus && (
-                    <div className="flex items-center justify-between gap-2">
-                      <dt className="text-gray-600 dark:text-gray-400">{t('dashboard.diagnostics.lastChecked')}</dt>
-                      <dd className="text-gray-900 dark:text-white">{runtimeStatus.lastCheck.toLocaleTimeString()}</dd>
-                    </div>
-                  )}
-                </dl>
-                <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
-                  {t('dashboard.diagnostics.note')}
-                </p>
-              </Card.Body>
-            )}
-          </Card>
-        );
-      })()}
+      <DiagnosticsPanel
+        dockerStatus={dockerStatus}
+        runtimeStatus={runtimeStatus}
+        expanded={isSystemStatusExpanded}
+        onToggleExpanded={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
+      />
 
       {/* Advanced Settings Drawer */}
       <Drawer
@@ -1187,23 +923,14 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       )}
 
       {/* Logs Drawer */}
-      <Drawer open={drawerOpen} onClose={closeLogsDrawer} position="right" className="!w-[900px] max-w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700">
-        <div className="h-full flex flex-col bg-white dark:bg-gray-800">
-          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-lg font-semibold text-gray-900 dark:text-white">
-              {drawerService ? t('dashboard.logs.titleNamed', { name: drawerService }) : t('dashboard.logs.title')}
-            </span>
-            <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> {t('dashboard.logs.live')}
-            </span>
-          </div>
-          <div ref={logScrollRef} onScroll={handleLogScroll} className="flex-1 overflow-auto bg-gray-900 px-4 py-3">
-            <pre className="text-left text-gray-100 text-xs font-mono whitespace-pre-wrap break-words leading-relaxed">
-              {drawerService ? (serviceLogs[drawerService] ?? t('dashboard.logs.loading')) : ''}
-            </pre>
-          </div>
-        </div>
-      </Drawer>
+      <LogsDrawer
+        open={drawerOpen}
+        serviceName={drawerService}
+        logs={drawerService ? serviceLogs[drawerService] : undefined}
+        scrollRef={logScrollRef}
+        onClose={closeLogsDrawer}
+        onScroll={handleLogScroll}
+      />
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { describe, it, expect, afterEach } from 'vitest';
 import { isDesktopApp, selectDirectory } from './selectDirectory';
 
 // jsdom has no Electron bridge by default; individual tests stub window.electronAPI.
