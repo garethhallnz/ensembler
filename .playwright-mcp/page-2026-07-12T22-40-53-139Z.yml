@@ -1,7 +1,0 @@
-- generic [ref=f1e5]:
-  - generic [ref=f1e6]:
-    - img "Ensembler" [ref=f1e7]
-    - generic [ref=f1e14]: Ensembler
-  - generic [ref=f1e15]:
-    - status [ref=f1e16]
-    - paragraph [ref=f1e20]: Docker- und Docker-Compose-Status wird geprüft…

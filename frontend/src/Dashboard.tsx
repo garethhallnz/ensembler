@@ -6,6 +6,7 @@ import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceAction
 import { useToast } from './contexts/ToastContext';
 import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
+import { apiMessage } from './utils/apiMessage';
 import ConfirmationModal from './components/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiExternalLink, HiRefresh, HiPlay, HiStop, HiDocumentText, HiArrowCircleUp, HiCog, HiPlus, HiChevronDown, HiChevronUp, HiCheckCircle, HiLockClosed } from 'react-icons/hi';
@@ -449,7 +450,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         const newStatus = await runtimeManager.checkStatus();
         setRuntimeStatus(newStatus); // Ensure up-to-date status
       } else {
-        showActionFailure(serviceName, action, data.message);
+        showActionFailure(serviceName, action, apiMessage(t, data));
       }
     } catch (error) {
       showActionFailure(serviceName, action, String(error));
@@ -487,7 +488,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             });
             const data = await res.json();
             if (!data.success) {
-              showToast(t(`dashboard.toast.globalItemFailed_${verb}`, { service, message: data.message }), 'error');
+              showToast(t(`dashboard.toast.globalItemFailed_${verb}`, { service, message: apiMessage(t, data) }), 'error');
             }
           } catch (error) {
             showToast(t(`dashboard.toast.globalItemError_${verb}`, { service, error: String(error) }), 'error');
@@ -511,7 +512,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/launch-url`);
       const data = await res.json();
       if (data.success) return data.url;
-      showToast(t('dashboard.toast.launchUrlFailed', { service: serviceKey, message: data.message }), 'error');
+      showToast(t('dashboard.toast.launchUrlFailed', { service: serviceKey, message: apiMessage(t, data) }), 'error');
       return null;
     } catch (error) {
       showToast(t('dashboard.toast.launchError', { service: serviceKey, error: String(error) }), 'error');
@@ -636,7 +637,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: data.hasUpdate ?? false } }));
             await fetchServiceVersions([serviceName]);
           } else {
-            showToast(t('dashboard.toast.updateFailed', { name: serviceName, message: data.message }), 'error');
+            showToast(t('dashboard.toast.updateFailed', { name: serviceName, message: apiMessage(t, data) }), 'error');
           }
         } catch (error) {
           showToast(t('dashboard.toast.updateError', { name: serviceName, error: String(error) }), 'error');

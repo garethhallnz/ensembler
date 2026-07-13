@@ -85,3 +85,6 @@ docker-compose.override.yml
 .DS_Store
 # Local-only working notes (not shared / not user-facing)
 *.local.md
+
+# Playwright MCP test artifacts
+.playwright-mcp/

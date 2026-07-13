@@ -7,6 +7,7 @@ import { ToggleSwitch, Drawer } from 'flowbite-react';
 import { HiCheckCircle, HiXCircle, HiExclamationCircle, HiCog } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 import { toggleService } from './utils/serviceSelection';
+import { apiMessage } from './utils/apiMessage';
 
 declare global {
   interface Window {
@@ -43,7 +44,7 @@ interface ApplyPhase {
   detail?: string;
   status: PhaseStatus;
 }
-interface ConnectResult { service: string; step: string; success: boolean; message: string }
+interface ConnectResult { service: string; step: string; success: boolean; message: string; code?: string; params?: Record<string, unknown> }
 
 
 interface SetupWizardProps {
@@ -954,7 +955,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                           {r.success
                             ? <HiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                             : <HiExclamationCircle className="w-4 h-4 text-yellow-500 shrink-0" />}
-                          <span className="text-gray-700 dark:text-gray-300">{r.message}</span>
+                          <span className="text-gray-700 dark:text-gray-300">{apiMessage(t, r)}</span>
                         </div>
                       ))}
                     </div>

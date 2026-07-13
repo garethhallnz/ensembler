@@ -130,7 +130,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/config/status')
           .expect(200);
 
-        expect(response.body).toEqual({ setupComplete: true });
+        expect(response.body).toMatchObject({ setupComplete: true });
       });
 
       it('should return setup incomplete when config does not exist', async () => {
@@ -140,7 +140,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/config/status')
           .expect(200);
 
-        expect(response.body).toEqual({ setupComplete: false });
+        expect(response.body).toMatchObject({ setupComplete: false });
       });
     });
 
@@ -151,7 +151,7 @@ describe('Comprehensive Integration Tests', () => {
           .send(mockConfig)
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'Configuration saved successfully.'
         });
@@ -168,7 +168,7 @@ describe('Comprehensive Integration Tests', () => {
           .send(mockConfig)
           .expect(500);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'Failed to save configuration.',
           error: 'Write error'
@@ -182,7 +182,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/config/current')
           .expect(200);
 
-        expect(response.body).toEqual(mockConfig);
+        expect(response.body).toMatchObject(mockConfig);
       });
 
       it('should handle missing config file', async () => {
@@ -192,7 +192,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/config/current')
           .expect(404);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'config.json not found.'
         });
@@ -205,7 +205,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/config/generate-compose')
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'Docker Compose files generated successfully.'
         });
@@ -222,7 +222,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/config/generate-compose')
           .expect(500);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'Failed to generate Docker Compose files.',
           error: 'Read error'
@@ -247,7 +247,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/config/reset')
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'All settings reset successfully.'
         });
@@ -279,7 +279,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/config/reset')
           .expect(500);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'Failed to reset settings.',
           error: 'Delete error'
@@ -373,7 +373,7 @@ describe('Comprehensive Integration Tests', () => {
           .send({ paths: 'invalid' })
           .expect(400);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'Invalid input'
         });
@@ -407,7 +407,7 @@ describe('Comprehensive Integration Tests', () => {
           .send({ selectedServices: ['sonarr', 'radarr'] })
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'Service selection is valid.'
         });
@@ -419,7 +419,7 @@ describe('Comprehensive Integration Tests', () => {
           .send({ selectedServices: ['prowlarr', 'overseerr'] })
           .expect(400);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'You must select at least Sonarr or Radarr.'
         });
@@ -433,7 +433,7 @@ describe('Comprehensive Integration Tests', () => {
           })
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'Service selection is valid.'
         });
@@ -462,7 +462,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/services/status')
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           serviceStatus: {}
         });
@@ -479,7 +479,7 @@ describe('Comprehensive Integration Tests', () => {
               .post(`/api/services/${service}/start`)
               .expect(200);
 
-            expect(response.body).toEqual({
+            expect(response.body).toMatchObject({
               success: true,
               message: `${service} started successfully.`
             });
@@ -490,7 +490,7 @@ describe('Comprehensive Integration Tests', () => {
               .post(`/api/services/${service}/stop`)
               .expect(200);
 
-            expect(response.body).toEqual({
+            expect(response.body).toMatchObject({
               success: true,
               message: `${service} stopped successfully.`
             });
@@ -501,7 +501,7 @@ describe('Comprehensive Integration Tests', () => {
               .post(`/api/services/${service}/restart`)
               .expect(200);
 
-            expect(response.body).toEqual({
+            expect(response.body).toMatchObject({
               success: true,
               message: `${service} restarted successfully.`
             });
@@ -551,7 +551,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/services/invalid-service/version')
           .expect(404);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'Service not found.'
         });
@@ -564,7 +564,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/services/start-all')
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'All enabled services started successfully.'
         });
@@ -575,7 +575,7 @@ describe('Comprehensive Integration Tests', () => {
           .post('/api/services/stop-all')
           .expect(200);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: true,
           message: 'All services stopped successfully.'
         });
@@ -611,7 +611,7 @@ describe('Comprehensive Integration Tests', () => {
           .get('/api/services/monitor')
           .expect(404);
 
-        expect(response.body).toEqual({
+        expect(response.body).toMatchObject({
           success: false,
           message: 'config.json not found.'
         });
