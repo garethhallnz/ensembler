@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { apiFetch } from './requests/client'
 import './App.css'
 import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
-import { Card, Alert, Spinner, Logo, DocsButton, ServiceTabsShell, LanguageSelect } from './components'
+import Card from './components/Card'
+import Alert from './components/Alert'
+import Spinner from './components/Spinner'
+import Logo from './components/Logo'
+import DocsButton from './components/DocsButton'
+import ServiceTabsShell from './components/ServiceTabsShell'
+import LanguageSelect from './components/LanguageSelect'
 import ErrorBoundary from './components/ErrorBoundary'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
@@ -33,8 +40,8 @@ function App() {
         await runtimeManager.initialize();
 
         const [dockerStatus, configStatus] = await Promise.all([
-          fetch('http://localhost:3001/api/docker/status').then(res => res.json()),
-          fetch('http://localhost:3001/api/config/status').then(res => res.json())
+          apiFetch('/api/docker/status').then(res => res.json()),
+          apiFetch('/api/config/status').then(res => res.json())
         ]);
 
         if (!dockerStatus.docker) setStatus('docker-missing')

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Button, TextInput, Select, PathConfiguration } from './index';
+import { apiFetch } from '../requests/client';
+import Button from './Button';
+import TextInput from './TextInput';
+import Select from './Select';
+import PathConfiguration from './PathConfiguration';
 import { getDefaultPath } from '../utils/pathDefaults';
 
 interface PathField {
@@ -35,7 +39,6 @@ interface CurrentConfig {
   versions?: { [key: string]: string };
 }
 
-const API = 'http://localhost:3001';
 
 export default function ServiceConfigModal({ service, mode, onClose, onSaved, onToast }: ServiceConfigModalProps) {
   const { t } = useTranslation();
@@ -53,7 +56,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API}/api/config/current`);
+        const res = await apiFetch(`/api/config/current`);
         const current: CurrentConfig = res.ok ? await res.json() : { selectedServices: {}, paths: {}, ports: {}, environment: { tz: 'UTC', puid: 1000, pgid: 1000 } };
         setConfig(current);
         setPort(current.ports?.[service.key] || service.defaultPort);
@@ -77,7 +80,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
     setVersionsLoading(true);
     (async () => {
       try {
-        const res = await fetch(`${API}/api/services/${service.key}/versions`);
+        const res = await apiFetch(`/api/services/${service.key}/versions`);
         const data = res.ok ? await res.json() : { versions: [] };
         if (active) setAvailableVersions(data.versions ?? []);
       } catch {
@@ -111,7 +114,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
     try {
       // Reroute the port if something else on the host holds it (the check
       // excludes this service's own container, so an unchanged port is fine).
-      const portRes = await fetch(`${API}/api/ports/validate`, {
+      const portRes = await apiFetch(`/api/ports/validate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ports: { [service.key]: port } })
@@ -160,13 +163,13 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       };
       // Saving with the service disabled makes the backend stop and remove its
       // container; regenerate compose so it's gone from the stack.
-      const saveRes = await fetch(`${API}/api/config/save`, {
+      const saveRes = await apiFetch(`/api/config/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated)
       });
       if (!saveRes.ok) throw new Error('save failed');
-      const composeRes = await fetch(`${API}/api/config/generate-compose`, { method: 'POST' });
+      const composeRes = await apiFetch(`/api/config/generate-compose`, { method: 'POST' });
       if (!composeRes.ok) throw new Error('compose generation failed');
       onToast(t('serviceConfig.serviceRemoved', { name: service.name }), 'success');
       onSaved();
@@ -180,15 +183,15 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
   // save config → regenerate compose → bring the stack up (recreates the
   // changed/added container with its new settings).
   const saveAndApply = async (updated: CurrentConfig) => {
-    const saveRes = await fetch(`${API}/api/config/save`, {
+    const saveRes = await apiFetch(`/api/config/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updated)
     });
     if (!saveRes.ok) throw new Error('save failed');
-    const composeRes = await fetch(`${API}/api/config/generate-compose`, { method: 'POST' });
+    const composeRes = await apiFetch(`/api/config/generate-compose`, { method: 'POST' });
     if (!composeRes.ok) throw new Error('compose generation failed');
-    const startRes = await fetch(`${API}/api/services/start-all`, { method: 'POST' });
+    const startRes = await apiFetch(`/api/services/start-all`, { method: 'POST' });
     if (!startRes.ok) throw new Error('failed to start services');
   };
 

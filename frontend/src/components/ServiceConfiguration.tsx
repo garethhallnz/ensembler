@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { TextInput, Alert, Card } from './index';
+import TextInput from './TextInput';
+import Alert from './Alert';
+import Card from './Card';
 import PathConfiguration from './PathConfiguration';
 
 interface ServiceConfig {

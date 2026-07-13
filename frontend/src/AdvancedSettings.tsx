@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Spinner, Alert, Card, EnvironmentSettings, Toggle, Select } from './components';
+import { apiFetch } from './requests/client';
+import Button from './components/Button';
+import Spinner from './components/Spinner';
+import Alert from './components/Alert';
+import Card from './components/Card';
+import EnvironmentSettings from './components/EnvironmentSettings';
+import Toggle from './components/Toggle';
+import Select from './components/Select';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import { useTheme, type ThemePreference } from './contexts/ThemeContext';
@@ -58,7 +65,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
     }
     (async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/config/current');
+        const res = await apiFetch('/api/config/current');
         if (res.ok) {
           setConfig(await res.json());
         }
@@ -89,17 +96,17 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
     if (!validateEnvironment()) return;
     setSaving(true);
     try {
-      const saveRes = await fetch('http://localhost:3001/api/config/save', {
+      const saveRes = await apiFetch('/api/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
       if (!saveRes.ok) throw new Error('Failed to save configuration');
 
-      const composeRes = await fetch('http://localhost:3001/api/config/generate-compose', { method: 'POST' });
+      const composeRes = await apiFetch('/api/config/generate-compose', { method: 'POST' });
       if (!composeRes.ok) throw new Error('Failed to regenerate docker-compose files');
 
-      const startRes = await fetch('http://localhost:3001/api/services/start-all', { method: 'POST' });
+      const startRes = await apiFetch('/api/services/start-all', { method: 'POST' });
       if (!startRes.ok) {
         showToast(t('settings.toast.savedPartial'), 'warning');
       } else {
@@ -131,7 +138,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
 
         const step = async (key: string, url: string) => {
           setPhase(key, 'active');
-          const res = await fetch(url, { method: 'POST' });
+          const res = await apiFetch(url, { method: 'POST' });
           if (!res.ok) {
             setPhase(key, 'error');
             throw new Error(`Reset step failed (${key})`);
@@ -140,8 +147,8 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
         };
 
         try {
-          await step('stop', 'http://localhost:3001/api/config/reset/stop-services');
-          await step('clean', 'http://localhost:3001/api/config/reset/clean');
+          await step('stop', '/api/config/reset/stop-services');
+          await step('clean', '/api/config/reset/clean');
           // Brief "done" state, then hand back to the app to return to the
           // wizard in place (no window reload).
           setResetStage('done');

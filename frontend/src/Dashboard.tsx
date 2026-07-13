@@ -1,8 +1,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { apiFetch } from './requests/client';
 import { useTranslation, Trans } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
 import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
-import { Card, Button, Badge, ServiceConfigModal, AddServiceModal, ServiceActionsMenu, Logo, Spinner, DocsButton, ActionErrorModal, SystemChecksBanner } from './components';
+import Card from './components/Card';
+import Button from './components/Button';
+import Badge from './components/Badge';
+import ServiceConfigModal from './components/ServiceConfigModal';
+import AddServiceModal from './components/AddServiceModal';
+import ServiceActionsMenu from './components/ServiceActionsMenu';
+import Logo from './components/Logo';
+import Spinner from './components/Spinner';
+import DocsButton from './components/DocsButton';
+import ActionErrorModal from './components/ActionErrorModal';
+import SystemChecksBanner from './components/SystemChecksBanner';
 import { useToast } from './contexts/ToastContext';
 import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
@@ -133,7 +144,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceStatus = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/services/status');
+      const res = await apiFetch('/api/services/status');
       const data = await res.json();
       if (data.success) {
         setServiceStatus(data.serviceStatus);
@@ -148,7 +159,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchDockerStatus = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/docker/status');
+      const res = await apiFetch('/api/docker/status');
       const data = await res.json();
       setDockerStatus({
         running: data.docker && data.compose,
@@ -163,7 +174,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // card badge can show a lock rather than the "tracks latest" marker.
   const fetchPinnedVersions = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/config/current');
+      const res = await apiFetch('/api/config/current');
       if (!res.ok) return;
       const config = await res.json();
       setPinnedVersions(config.versions ?? {});
@@ -176,7 +187,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const fetchServiceVersions = useCallback(async (keys: string[]) => {
     const entries = await Promise.all(keys.map(async key => {
       try {
-        const res = await fetch(`http://localhost:3001/api/services/${key}/version`);
+        const res = await apiFetch(`/api/services/${key}/version`);
         const data = await res.json();
         const version = data.success && data.version ? String(data.version) : '';
         return [key, version] as const;
@@ -191,7 +202,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // Read the cached update status (instant — no image pulls).
   const fetchServiceUpdates = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/services/updates');
+      const res = await apiFetch('/api/services/updates');
       const data = await res.json();
       if (data.success) {
         setServiceUpdates(data.updates || {});
@@ -204,7 +215,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
           const last = data.lastChecked ? new Date(data.lastChecked).getTime() : 0;
           if (Date.now() - last > TTL_MS) {
-            fetch('http://localhost:3001/api/services/updates/check', { method: 'POST' })
+            apiFetch('/api/services/updates/check', { method: 'POST' })
               .then(r => r.json())
               .then(d => { if (d.success) setServiceUpdates(d.updates || {}); })
               .catch(() => { /* silent: availability just won't refresh this time */ });
@@ -230,7 +241,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
     setUpdateChecking(prev => ({ ...prev, [serviceKey]: true }));
     try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/check-updates`);
+      const res = await apiFetch(`/api/services/${serviceKey}/check-updates`);
       const data = await res.json();
       if (data.success) {
         setServiceUpdates(prev => ({ ...prev, [serviceKey]: { hasUpdate: data.hasUpdate } }));
@@ -255,7 +266,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const checkAllUpdates = async () => {
     setCheckingAllUpdates(true);
     try {
-      const res = await fetch('http://localhost:3001/api/services/updates/check', { method: 'POST' });
+      const res = await apiFetch('/api/services/updates/check', { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         setServiceUpdates(data.updates || {});
@@ -273,7 +284,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceAlerts = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/services/monitor');
+      const res = await apiFetch('/api/services/monitor');
       const data = await res.json();
       if (data.success) {
         setServiceAlerts(data.services);
@@ -285,7 +296,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceConfig = useCallback(async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/services/config');
+      const res = await apiFetch('/api/services/config');
       if (res.ok) {
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
@@ -360,7 +371,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     let cancelled = false;
     const checkIndexers = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/services/prowlarr/indexer-status');
+        const res = await apiFetch('/api/services/prowlarr/indexer-status');
         const data = await res.json();
         if (!cancelled) {
           setProwlarrNeedsIndexers(data.enabled === true && data.hasIndexers === false);
@@ -386,7 +397,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     let cancelled = false;
     const checkPlex = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/services/plex/setup-status');
+        const res = await apiFetch('/api/services/plex/setup-status');
         const data = await res.json();
         if (cancelled) return;
         setPlexNeedsSignIn(data.enabled === true && data.signedIn === false);
@@ -402,7 +413,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         ) {
           plexWiringInFlight.current = true;
           try {
-            await fetch('http://localhost:3001/api/services/plex/setup', { method: 'POST' });
+            await apiFetch('/api/services/plex/setup', { method: 'POST' });
           } finally {
             plexWiringInFlight.current = false;
           }
@@ -427,7 +438,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     let cancelled = false;
     const checkOverseerr = async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/services/overseerr/setup-status');
+        const res = await apiFetch('/api/services/overseerr/setup-status');
         const data = await res.json();
         if (!cancelled) {
           setOverseerrNeedsSetup(data.enabled === true && data.initialized === false);
@@ -450,7 +461,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     const key = `${serviceName}:${action}`;
     setActionLoading(prev => ({ ...prev, [key]: true }));
     try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/${action}`, {
+      const res = await apiFetch(`/api/services/${serviceName}/${action}`, {
         method: 'POST'
       });
       const data = await res.json();
@@ -493,7 +504,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         let completed = 0;
         for (const service of selectedServices) {
           try {
-            const res = await fetch(`http://localhost:3001/api/services/${service}/${action === 'start-all' ? 'start' : 'stop'}`, {
+            const res = await apiFetch(`/api/services/${service}/${action === 'start-all' ? 'start' : 'stop'}`, {
               method: 'POST'
             });
             const data = await res.json();
@@ -519,7 +530,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchLaunchUrl = async (serviceKey: string): Promise<string | null> => {
     try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceKey}/launch-url`);
+      const res = await apiFetch(`/api/services/${serviceKey}/launch-url`);
       const data = await res.json();
       if (data.success) return data.url;
       showToast(t('dashboard.toast.launchUrlFailed', { service: serviceKey, message: apiMessage(t, data) }), 'error');
@@ -551,7 +562,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchLogs = useCallback(async (serviceName: string) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/services/${serviceName}/logs`);
+      const res = await apiFetch(`/api/services/${serviceName}/logs`);
       const data = await res.json();
       if (data.success) {
         setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
@@ -602,7 +613,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         setOpenModal(false);
         setUpdatingAll(true);
         try {
-          const res = await fetch('http://localhost:3001/api/services/updates/apply-all', { method: 'POST' });
+          const res = await apiFetch('/api/services/updates/apply-all', { method: 'POST' });
           const data = await res.json();
           const updatedCount = data.updated?.length ?? 0;
           if (data.success) {
@@ -633,7 +644,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         setOpenModal(false);
         setUpdateLoading(prev => ({ ...prev, [serviceName]: true }));
         try {
-          const res = await fetch(`http://localhost:3001/api/services/${serviceName}/update`, {
+          const res = await apiFetch(`/api/services/${serviceName}/update`, {
             method: 'POST'
           });
           const data = await res.json();

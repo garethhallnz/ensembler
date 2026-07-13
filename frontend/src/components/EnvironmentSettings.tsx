@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 
-import { TextInput, Alert } from './index';
+import TextInput from './TextInput';
+import Alert from './Alert';
 
 interface EnvironmentConfig {
   tz: string;

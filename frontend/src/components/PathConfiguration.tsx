@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { TextInput, Button, Alert } from './index';
+import TextInput from './TextInput';
+import Button from './Button';
+import Alert from './Alert';
 import { getDefaultPath } from '../utils/pathDefaults';
 import { selectDirectory, isDesktopApp } from '../utils/selectDirectory';
 

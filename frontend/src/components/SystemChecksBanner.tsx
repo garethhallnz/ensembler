@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { HiExclamation, HiX } from 'react-icons/hi';
+import { apiFetch } from '../requests/client';
 import { useTranslation } from 'react-i18next';
 
 interface DockerMemoryCheck {
@@ -30,7 +31,7 @@ export default function SystemChecksBanner() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('http://localhost:3001/api/system/checks');
+        const res = await apiFetch('/api/system/checks');
         if (!res.ok) return;
         const data = await res.json();
         if (data.success) setChecks(data.checks);

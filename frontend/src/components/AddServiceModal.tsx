@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Button, Badge } from './index';
+import Button from './Button';
+import Badge from './Badge';
 import type { ServiceCatalogEntry } from './ServiceConfigModal';
 
 interface AddServiceModalProps {

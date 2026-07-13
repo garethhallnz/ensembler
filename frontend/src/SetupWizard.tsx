@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { apiFetch } from './requests/client';
 import AdvancedSettings from './AdvancedSettings';
-import { Card, Button, Progress, Badge, Spinner, ServiceConfiguration, EnvironmentSettings, TextInput, Logo, DocsButton } from './components';
+import Card from './components/Card';
+import Button from './components/Button';
+import Progress from './components/Progress';
+import Badge from './components/Badge';
+import Spinner from './components/Spinner';
+import ServiceConfiguration from './components/ServiceConfiguration';
+import EnvironmentSettings from './components/EnvironmentSettings';
+import TextInput from './components/TextInput';
+import Logo from './components/Logo';
+import DocsButton from './components/DocsButton';
 import { useToast } from './contexts/ToastContext';
 import { ToggleSwitch, Drawer } from 'flowbite-react';
 import { HiCheckCircle, HiXCircle, HiExclamationCircle, HiCog } from 'react-icons/hi';
@@ -97,7 +107,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   const loadServiceConfiguration = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/services/config');
+      const res = await apiFetch('/api/services/config');
       if (res.ok) {
         const data: ServiceConfigResponse = await res.json();
         if (data.success) {
@@ -136,7 +146,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   const loadExistingConfiguration = async () => {
     try {
-      const res = await fetch('http://localhost:3001/api/config/current');
+      const res = await apiFetch('/api/config/current');
       if (res.ok) {
         const config = await res.json();
         setSelected(config.selectedServices || {});
@@ -342,7 +352,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     // the caller — surface it and treat the paths as not-yet-valid.
     let res: Response;
     try {
-        res = await fetch('http://localhost:3001/api/paths/validate', {
+        res = await apiFetch('/api/paths/validate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ paths: allValidPaths }),
@@ -431,7 +441,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   // never blocks setup.
   const fetchPortConflicts = async (portsMap: { [key: string]: number }): Promise<PortConflict[]> => {
     try {
-      const res = await fetch('http://localhost:3001/api/ports/validate', {
+      const res = await apiFetch('/api/ports/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ports: portsMap }),
@@ -594,7 +604,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
     try {
       setPhase('save', 'active');
-      const saveRes = await fetch('http://localhost:3001/api/config/save', {
+      const saveRes = await apiFetch('/api/config/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -608,12 +618,12 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       setPhase('save', 'done');
 
       setPhase('compose', 'active');
-      const composeRes = await fetch('http://localhost:3001/api/config/generate-compose', { method: 'POST' });
+      const composeRes = await apiFetch('/api/config/generate-compose', { method: 'POST' });
       if (!composeRes.ok) throw new Error(t('setup.errors.compose'));
       setPhase('compose', 'done');
 
       setPhase('start', 'active');
-      const startRes = await fetch('http://localhost:3001/api/services/start-all', { method: 'POST' });
+      const startRes = await apiFetch('/api/services/start-all', { method: 'POST' });
       if (!startRes.ok) throw new Error(t('setup.errors.start'));
       setPhase('start', 'done');
 
@@ -624,7 +634,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         ? { jellyfin: { username: jellyfinUsername, password: jellyfinPassword } }
         : {};
       try {
-        const connectRes = await fetch('http://localhost:3001/api/services/setup-connections', {
+        const connectRes = await apiFetch('/api/services/setup-connections', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)

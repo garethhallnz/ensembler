@@ -1,3 +1,5 @@
+import { apiFetch } from '../requests/client';
+
 export interface RuntimeConfig {
   autoStartServices: boolean;
   autoStopServices: boolean;
@@ -99,14 +101,14 @@ class RuntimeManager {
   private async runCheck(): Promise<RuntimeStatus> {
     try {
       // Check backend connection
-      const backendResponse = await fetch('http://localhost:3001/', {
+      const backendResponse = await apiFetch('/', {
         signal: AbortSignal.timeout(5000)
       });
       this.status.backendConnected = backendResponse.ok;
 
       if (this.status.backendConnected) {
         // Check Docker status
-        const dockerResponse = await fetch('http://localhost:3001/api/docker/status', {
+        const dockerResponse = await apiFetch('/api/docker/status', {
           signal: AbortSignal.timeout(5000)
         });
         const dockerData = await dockerResponse.json();
@@ -114,7 +116,7 @@ class RuntimeManager {
 
         if (this.status.dockerAvailable) {
           // Check service status
-          const serviceResponse = await fetch('http://localhost:3001/api/services/status', {
+          const serviceResponse = await apiFetch('/api/services/status', {
             signal: AbortSignal.timeout(5000)
           });
           const serviceData = await serviceResponse.json();
