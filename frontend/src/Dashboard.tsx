@@ -220,6 +220,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // the service it affects. Feedback is shown inline on the card (spinner, then
   // the update prompt or a brief "up to date"), not via a distant toast; toasts
   // are reserved for failures. Cheap digest check, no image pull.
+  // Track "up to date" fade-out timers so they can't fire setState after unmount.
+  const updateCheckTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  useEffect(() => () => {
+    updateCheckTimers.current.forEach(clearTimeout);
+  }, []);
+
   const checkServiceForUpdate = async (serviceKey: string) => {
     const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
     setUpdateChecking(prev => ({ ...prev, [serviceKey]: true }));
@@ -231,7 +237,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         if (!data.hasUpdate) {
           // Briefly confirm "up to date" on the card, then fade back to normal.
           setRecentlyChecked(prev => ({ ...prev, [serviceKey]: true }));
-          setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
+          const timer = setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
+          updateCheckTimers.current.push(timer);
         }
       } else {
         showToast(t('dashboard.toast.checkFailed', { name }), 'error');
@@ -314,9 +321,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     };
     loadData();
 
-    // Setup runtime status monitoring
+    // Refresh runtime status and re-poll service/docker status so cards reflect
+    // containers that changed state out-of-band (e.g. a crash or a manual stop).
     const runtimeInterval = setInterval(() => {
       setRuntimeStatus(runtimeManager.getStatus());
+      fetchServiceStatus();
+      fetchDockerStatus();
     }, 30000); // Update every 30 seconds
 
     return () => {

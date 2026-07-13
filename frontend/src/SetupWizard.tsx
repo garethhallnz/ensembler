@@ -227,7 +227,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     return true;
   };
 
-  const validatePaths = async () => {
+  const validatePaths = async (): Promise<boolean> => {
     const pathToServices: { [path: string]: Array<{ service: string, field: string }> } = {};
     const allValidPaths: string[] = [];
 
@@ -329,47 +329,54 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
     if (hasConflicts) {
         setPathErrors(pathConflicts);
-        return;
+        return false;
     }
 
-    // If no conflicts and no paths to validate, proceed
+    // No conflicts and nothing to validate against the backend.
     if (allValidPaths.length === 0) {
         setPathErrors({});
-        setStep((s) => Math.min(steps.length - 1, s + 1));
-        return;
+        return true;
     }
 
-    // Validate paths with backend
-    const res = await fetch('http://localhost:3001/api/paths/validate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paths: allValidPaths }),
-    });
+    // Validate paths with the backend. A network failure must not throw out of
+    // the caller — surface it and treat the paths as not-yet-valid.
+    let res: Response;
+    try {
+        res = await fetch('http://localhost:3001/api/paths/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paths: allValidPaths }),
+        });
+    } catch {
+        showToast(t('setup.errors.pathValidateUnreachable'), 'error');
+        return false;
+    }
 
     if (res.ok) {
         setPathErrors({});
-        setStep((s) => Math.min(steps.length - 1, s + 1));
-    } else {
-        interface PathValidateResult {
-            path: string;
-            valid: boolean;
-            error?: string;
-        }
-        const data: { success: boolean; results: PathValidateResult[] } = await res.json();
-        const errors: { [service: string]: string[] } = {};
-        data.results.forEach((result) => {
-            if (!result.valid) {
-                Object.keys(paths).forEach(svc => {
-                    const pathIndex = paths[svc].indexOf(result.path);
-                    if (pathIndex !== -1) {
-                        if (!errors[svc]) errors[svc] = [];
-                        errors[svc][pathIndex] = result.error || '';
-                    }
-                });
-            }
-        });
-        setPathErrors(errors);
+        return true;
     }
+
+    interface PathValidateResult {
+        path: string;
+        valid: boolean;
+        error?: string;
+    }
+    const data: { success: boolean; results: PathValidateResult[] } = await res.json();
+    const errors: { [service: string]: string[] } = {};
+    data.results.forEach((result) => {
+        if (!result.valid) {
+            Object.keys(paths).forEach(svc => {
+                const pathIndex = paths[svc].indexOf(result.path);
+                if (pathIndex !== -1) {
+                    if (!errors[svc]) errors[svc] = [];
+                    errors[svc][pathIndex] = result.error || '';
+                }
+            });
+        }
+    });
+    setPathErrors(errors);
+    return false;
   };
 
   // Helper function to determine if two field types represent the same media type
@@ -551,7 +558,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   // Validate the configuration step, then move to the Apply step and run it.
   const handleApply = async () => {
-    await validatePaths();
+    if (!(await validatePaths())) return;
     if (!validatePorts()) return;
     if (!validateEnvironment()) return;
     if (!(await validateHostPorts())) return;

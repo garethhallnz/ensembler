@@ -139,7 +139,8 @@
       "portInUseNoFree": "Port {{port}} is in use and no free port could be found. Please choose another.",
       "pathMediaConflict": "Path conflicts with different media type in {{service}}",
       "pathDownloadConflict": "Download path conflicts with non-download service {{service}}",
-      "pathUsedBy": "Path is already used by {{service}}"
+      "pathUsedBy": "Path is already used by {{service}}",
+      "pathValidateUnreachable": "Could not reach the backend to validate paths. Please try again."
     }
   },
   "dashboard": {
@@ -673,5 +674,10 @@
       "notifyConfigured": "{{service}} will refresh Plex on import",
       "notifyExists": "{{service}} already notifies Plex"
     }
+  },
+  "errorBoundary": {
+    "heading": "Something went wrong",
+    "message": "This part of the app ran into an unexpected error. Reloading usually fixes it.",
+    "reload": "Reload"
   }
 }

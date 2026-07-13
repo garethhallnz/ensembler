@@ -1,13 +1,22 @@
-import React, { useState, useCallback, type ReactNode } from 'react';
+import React, { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import { Toast } from '../components';
 import { ToastContext } from './ToastContext';
 
 const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info') => {
+    // Clear any prior timer so a new toast gets its own full 5s and an earlier
+    // toast's timer can't dismiss it early.
+    if (timerRef.current) clearTimeout(timerRef.current);
     setToast({ show: true, message, type });
-    setTimeout(() => setToast(null), 5000); // Hide after 5 seconds
+    timerRef.current = setTimeout(() => setToast(null), 5000);
+  }, []);
+
+  // Clear a pending timer on unmount so it can't setState afterward.
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
   return (

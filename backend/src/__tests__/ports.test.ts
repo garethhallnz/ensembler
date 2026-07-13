@@ -96,6 +96,21 @@ describe('findPortConflicts', () => {
     const aConflict = conflicts.find(c => c.service === 'a');
     expect(aConflict?.suggestion).not.toBe(taken + 1);
   });
+
+  it('gives two conflicts on the same port distinct suggestions', async () => {
+    const taken = await freePort();
+    await occupy(taken);
+    // Both services requested the same occupied port; each must get its own
+    // free suggestion, not the same one.
+    const conflicts = await findPortConflicts([
+      { service: 'a', port: taken },
+      { service: 'b', port: taken }
+    ]);
+    expect(conflicts).toHaveLength(2);
+    expect(conflicts[0].suggestion).not.toBeNull();
+    expect(conflicts[1].suggestion).not.toBeNull();
+    expect(conflicts[0].suggestion).not.toBe(conflicts[1].suggestion);
+  });
 });
 
 describe('parseContainerPorts', () => {

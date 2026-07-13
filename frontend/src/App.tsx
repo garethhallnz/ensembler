@@ -5,6 +5,7 @@ import SetupWizard from './SetupWizard'
 import Dashboard from './Dashboard'
 import { runtimeManager } from './services/runtimeManager'
 import { Card, Alert, Spinner, Logo, DocsButton, ServiceTabsShell, LanguageSelect } from './components'
+import ErrorBoundary from './components/ErrorBoundary'
 import ToastProvider from './contexts/ToastProvider'
 import { CustomThemeProvider } from './contexts/ThemeContext'
 import { ServiceTabsProvider } from './contexts/ServiceTabsContext'
@@ -187,24 +188,28 @@ function App() {
       )}
 
       {status === 'ok' && (!setupComplete || showSetupWizard) && (
-        <SetupWizard
-          onComplete={() => {
-            setSetupComplete(true);
-            setShowSetupWizard(false);
-          }}
-          isRerun={showSetupWizard && setupComplete}
-        />
+        <ErrorBoundary>
+          <SetupWizard
+            onComplete={() => {
+              setSetupComplete(true);
+              setShowSetupWizard(false);
+            }}
+            isRerun={showSetupWizard && setupComplete}
+          />
+        </ErrorBoundary>
       )}
 
       {status === 'ok' && setupComplete && !showSetupWizard && (
-        <ServiceTabsProvider>
-          <ServiceTabsShell>
-            <Dashboard onResetComplete={() => {
-              setSetupComplete(false);
-              setShowSetupWizard(false);
-            }} />
-          </ServiceTabsShell>
-        </ServiceTabsProvider>
+        <ErrorBoundary>
+          <ServiceTabsProvider>
+            <ServiceTabsShell>
+              <Dashboard onResetComplete={() => {
+                setSetupComplete(false);
+                setShowSetupWizard(false);
+              }} />
+            </ServiceTabsShell>
+          </ServiceTabsProvider>
+        </ErrorBoundary>
       )}
         </div>
       </ToastProvider>

@@ -637,7 +637,7 @@ describe('Service connection setup', () => {
     it('updates a key only within the named section', () => {
       const lines = sample();
       const changed = setYamlValue(lines, 'sonarr', 'apikey', "'abc'");
-      expect(changed).toBe(true);
+      expect(changed).toBe('changed');
       // plex apikey (same key name, earlier section) is untouched
       expect(lines[4]).toBe("  apikey: ''");
       expect(lines[7]).toBe("  apikey: 'abc'");
@@ -649,9 +649,14 @@ describe('Service connection setup', () => {
       expect(lines[1]).toBe('  use_sonarr: true');
     });
 
-    it('returns false when the value is already set', () => {
+    it("returns 'unchanged' when the value is already set", () => {
       const lines = sample();
-      expect(setYamlValue(lines, 'sonarr', 'ip', '127.0.0.1')).toBe(false);
+      expect(setYamlValue(lines, 'sonarr', 'ip', '127.0.0.1')).toBe('unchanged');
+    });
+
+    it("returns 'missing' when the section/key is absent", () => {
+      const lines = sample();
+      expect(setYamlValue(lines, 'lidarr', 'ip', '127.0.0.1')).toBe('missing');
     });
   });
 
@@ -710,6 +715,14 @@ describe('Service connection setup', () => {
       const result = seedBazarrConfig(tempDir, [{ service: 'sonarr', host: 'sonarr', port: 8989, apiKey: 'sk' }]);
       expect(result.success).toBe(false);
       expect(result.message).toContain('not found');
+    });
+
+    it('reports failure when the config exists but lacks the expected sections', () => {
+      // config.yaml present but not yet in the shape Bazarr writes once started.
+      writeBazarrConfig(['general:', '  some_other_flag: false', ''].join('\n'));
+      const result = seedBazarrConfig(tempDir, [{ service: 'sonarr', host: 'sonarr', port: 8989, apiKey: 'sk' }]);
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('not seedable');
     });
   });
 

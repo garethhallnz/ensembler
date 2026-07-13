@@ -79,7 +79,24 @@ class RuntimeManager {
   /**
    * Check the current runtime status
    */
+  // Guards against overlapping checks: concurrent callers (monitor loop,
+  // visibilitychange, dashboard refresh) share one in-flight run rather than
+  // interleaving writes to this.status.
+  private inFlight: Promise<RuntimeStatus> | null = null;
+
   async checkStatus(): Promise<RuntimeStatus> {
+    if (this.inFlight) {
+      return this.inFlight;
+    }
+    this.inFlight = this.runCheck();
+    try {
+      return await this.inFlight;
+    } finally {
+      this.inFlight = null;
+    }
+  }
+
+  private async runCheck(): Promise<RuntimeStatus> {
     try {
       // Check backend connection
       const backendResponse = await fetch('http://localhost:3001/', {
@@ -89,13 +106,17 @@ class RuntimeManager {
 
       if (this.status.backendConnected) {
         // Check Docker status
-        const dockerResponse = await fetch('http://localhost:3001/api/docker/status');
+        const dockerResponse = await fetch('http://localhost:3001/api/docker/status', {
+          signal: AbortSignal.timeout(5000)
+        });
         const dockerData = await dockerResponse.json();
         this.status.dockerAvailable = dockerData.docker && dockerData.compose;
 
         if (this.status.dockerAvailable) {
           // Check service status
-          const serviceResponse = await fetch('http://localhost:3001/api/services/status');
+          const serviceResponse = await fetch('http://localhost:3001/api/services/status', {
+            signal: AbortSignal.timeout(5000)
+          });
           const serviceData = await serviceResponse.json();
           if (serviceData.success) {
             this.status.servicesRunning = Object.keys(serviceData.serviceStatus).filter(

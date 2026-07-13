@@ -1,5 +1,4 @@
 import express, { Request, Response } from 'express';
-import { Docker } from 'node-docker-api';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
@@ -65,6 +64,27 @@ const configDir = getConfigDir();
 const configFile = path.join(configDir, 'config.json');
 const execAsync = promisify(exec);
 const execFileAsync = promisify(execFile);
+
+// Docker liveness via the CLI, not a hardcoded socket. The docker CLI knows the
+// right socket / named pipe for the current OS, whereas /var/run/docker.sock
+// never exists on Windows — so a socket probe there always reports Docker down.
+async function isDockerRunning(): Promise<boolean> {
+  try {
+    await execFileAsync('docker', ['ps']);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Write a file atomically: write to a temp sibling then rename over the target.
+// rename is atomic on the same filesystem, so a crash mid-write can never leave
+// a truncated config that would wipe the user's setup.
+function writeFileAtomic(file: string, data: string): void {
+  const tmp = `${file}.tmp`;
+  fs.writeFileSync(tmp, data);
+  fs.renameSync(tmp, file);
+}
 
 // Bring one service (or all, when service is omitted) up, self-healing against
 // a stale container that already holds the fixed container_name — left over
@@ -282,9 +302,10 @@ app.post('/api/ports/validate', async (req: Request, res: Response) => {
 
 app.get('/api/docker/status', async (req: Request, res: Response) => {
   try {
-    const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-    // Try to list containers to check if Docker is running
-    await docker.container.list();
+    // Liveness via the CLI so it works on every OS (see isDockerRunning).
+    if (!(await isDockerRunning())) {
+      return res.json({ docker: false, compose: false, code: 'messages.docker.notRunning', message: 'Docker not running or not installed.' });
+    }
     // Docker Compose check: try to run 'docker compose version' via child_process
     exec('docker compose version', (err, stdout) => {
       if (err) {
@@ -374,7 +395,7 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
     if (!fs.existsSync(configDir)) {
       fs.mkdirSync(configDir, { recursive: true });
     }
-    fs.writeFileSync(configFile, JSON.stringify(newConfig, null, 2));
+    writeFileAtomic(configFile, JSON.stringify(newConfig, null, 2));
 
     // Handle service cleanup if there's a previous config
     if (previousConfig && previousConfig.selectedServices) {
@@ -434,11 +455,9 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
       }
       // Wait and re-check Docker status
       setTimeout(async () => {
-        try {
-          const docker = new Docker({ socketPath: '/var/run/docker.sock' });
-          await docker.container.list();
+        if (await isDockerRunning()) {
           res.json({ success: true, code: 'messages.docker.started', message: 'Docker started successfully.' });
-        } catch {
+        } else {
           res.status(500).json({ success: false, code: 'messages.docker.startCheckFailed', message: 'Docker did not start successfully.' });
         }
       }, 5000);

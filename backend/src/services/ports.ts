@@ -55,7 +55,10 @@ export async function findPortConflicts(
   requested: { service: string; port: number }[],
   ownPorts: Map<number, string> = new Map()
 ): Promise<PortConflict[]> {
-  const requestedPorts = new Set(requested.map(r => r.port));
+  // Seed with every requested port so a suggestion never lands on another
+  // selected service's port; then add each suggestion as it is handed out, so
+  // two conflicts can't be handed the same free port.
+  const taken = new Set(requested.map(r => r.port));
   const conflicts: PortConflict[] = [];
 
   for (const { service, port } of requested) {
@@ -65,7 +68,10 @@ export async function findPortConflicts(
     if (await isPortFree(port)) {
       continue;
     }
-    const suggestion = await suggestPort(port + 1, requestedPorts);
+    const suggestion = await suggestPort(port + 1, taken);
+    if (suggestion !== null) {
+      taken.add(suggestion);
+    }
     conflicts.push({ service, port, suggestion });
   }
 

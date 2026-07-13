@@ -10,6 +10,7 @@ jest.mock('fs', () => ({
   existsSync: jest.fn(),
   readFileSync: jest.fn(),
   writeFileSync: jest.fn(),
+  renameSync: jest.fn(),
   mkdirSync: jest.fn(),
   unlinkSync: jest.fn(),
   accessSync: jest.fn(),
@@ -43,10 +44,16 @@ jest.mock('child_process', () => ({
 
 jest.mock('util', () => ({
   ...jest.requireActual('util'),
-  promisify: jest.fn((fn) => {
-    return jest.fn((cmd: string) => {
-      return new Promise((resolve) => {
-        if (cmd.includes('docker ps')) {
+  promisify: jest.fn(() => {
+    return jest.fn((...callArgs: unknown[]) => {
+      // exec is called as (cmd); execFile as (file, argsArray) — flatten both.
+      const cmd = Array.isArray(callArgs[1])
+        ? `${callArgs[0]} ${(callArgs[1] as string[]).join(' ')}`
+        : String(callArgs[0]);
+      return new Promise((resolve, reject) => {
+        if (cmd.includes('docker ps') && mockState.dockerDown) {
+          reject(new Error('Docker not running'));
+        } else if (cmd.includes('docker ps')) {
           resolve({ stdout: 'Up 5 minutes', stderr: '' });
         } else if (cmd.includes('docker compose') && cmd.includes('logs')) {
           resolve({ stdout: 'Mock log output for service', stderr: '' });
@@ -78,6 +85,10 @@ jest.mock('node-docker-api', () => ({
     },
   })),
 }));
+
+// Mutable switches the tests flip to simulate environment states (e.g. Docker
+// down). Referenced lazily inside the mock, so it's defined before any request.
+const mockState = { dockerDown: false };
 
 // Import the app after mocking
 import app from '../index';
@@ -155,7 +166,9 @@ describe('Comprehensive Integration Tests', () => {
           success: true,
           message: 'Configuration saved successfully.'
         });
-        expect(fs.writeFileSync).toHaveBeenCalledWith(configFile, JSON.stringify(mockConfig, null, 2));
+        // Atomic write: content goes to a temp sibling, then rename over target.
+        expect(fs.writeFileSync).toHaveBeenCalledWith(`${configFile}.tmp`, JSON.stringify(mockConfig, null, 2));
+        expect(fs.renameSync).toHaveBeenCalledWith(`${configFile}.tmp`, configFile);
       });
 
       it('should handle save errors', async () => {
@@ -645,17 +658,17 @@ describe('Comprehensive Integration Tests', () => {
     });
 
     it('should handle Docker connection errors', async () => {
-      const { Docker } = require('node-docker-api');
-      Docker.mockImplementation(() => {
-        throw new Error('Docker connection failed');
-      });
+      mockState.dockerDown = true;
+      try {
+        const response = await request(app)
+          .get('/api/docker/status')
+          .expect(200);
 
-      const response = await request(app)
-        .get('/api/docker/status')
-        .expect(200);
-
-      expect(response.body.docker).toBe(false);
-      expect(response.body.compose).toBe(false);
+        expect(response.body.docker).toBe(false);
+        expect(response.body.compose).toBe(false);
+      } finally {
+        mockState.dockerDown = false;
+      }
     });
   });
 
