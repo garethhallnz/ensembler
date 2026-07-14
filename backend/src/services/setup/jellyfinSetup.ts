@@ -20,7 +20,7 @@ export interface JellyfinLibrary {
   path: string;
 }
 
-export const DEFAULT_JELLYFIN_LIBRARIES: JellyfinLibrary[] = [
+const DEFAULT_JELLYFIN_LIBRARIES: JellyfinLibrary[] = [
   { name: 'TV Shows', collectionType: 'tvshows', path: '/tv' },
   { name: 'Movies', collectionType: 'movies', path: '/movies' }
 ];
@@ -31,7 +31,7 @@ interface PublicInfo {
 
 // /System/Info/Public answers without authentication and reports whether the
 // first-run wizard has been completed — the whole basis for idempotency here.
-export async function getPublicInfo(baseUrl: string): Promise<PublicInfo> {
+async function getPublicInfo(baseUrl: string): Promise<PublicInfo> {
   const response = await fetch(`${baseUrl}/System/Info/Public`);
   if (!response.ok) {
     throw new Error(`GET /System/Info/Public returned ${response.status}`);
@@ -39,12 +39,12 @@ export async function getPublicInfo(baseUrl: string): Promise<PublicInfo> {
   return response.json() as Promise<PublicInfo>;
 }
 
-export async function isJellyfinConfigured(baseUrl: string): Promise<boolean> {
+async function isJellyfinConfigured(baseUrl: string): Promise<boolean> {
   const info = await getPublicInfo(baseUrl);
   return info.StartupWizardCompleted === true;
 }
 
-export async function waitForJellyfinReady(
+async function waitForJellyfinReady(
   baseUrl: string,
   timeoutMs = 60000,
   pollIntervalMs = 2000
@@ -106,7 +106,7 @@ async function startupPost(baseUrl: string, apiPath: string, body: unknown): Pro
 
 // Drive the first-run wizard end to end. These endpoints accept unauthenticated
 // requests only while the wizard is still open (StartupWizardCompleted false).
-export async function completeStartup(
+async function completeStartup(
   baseUrl: string,
   credentials: JellyfinCredentials,
   readyTimeoutMs = 60000
@@ -128,7 +128,7 @@ export async function completeStartup(
   await startupPost(baseUrl, '/Startup/Complete', {});
 }
 
-export async function authenticate(baseUrl: string, credentials: JellyfinCredentials): Promise<string> {
+async function authenticate(baseUrl: string, credentials: JellyfinCredentials): Promise<string> {
   const response = await fetch(`${baseUrl}/Users/AuthenticateByName`, {
     method: 'POST',
     headers: {
@@ -152,7 +152,7 @@ interface VirtualFolder {
   Locations?: string[];
 }
 
-export async function getLibraries(baseUrl: string, token: string): Promise<VirtualFolder[]> {
+async function getLibraries(baseUrl: string, token: string): Promise<VirtualFolder[]> {
   const response = await fetch(`${baseUrl}/Library/VirtualFolders`, {
     headers: { 'X-Emby-Token': token }
   });
@@ -171,11 +171,7 @@ export function isLibraryCovered(folders: VirtualFolder[], library: JellyfinLibr
   );
 }
 
-export function jellyfinLibrariesConfigured(folders: VirtualFolder[], libraries: JellyfinLibrary[]): boolean {
-  return libraries.every(library => isLibraryCovered(folders, library));
-}
-
-export async function ensureLibrary(
+async function ensureLibrary(
   baseUrl: string,
   token: string,
   library: JellyfinLibrary
