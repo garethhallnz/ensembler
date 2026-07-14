@@ -18,7 +18,6 @@ interface EnvironmentSettingsProps {
 }
 
 const timezoneOptions = [
-  { value: '', label: 'Select timezone...' },
   { value: 'UTC', label: 'UTC' },
   { value: 'America/New_York', label: 'America/New_York (EST/EDT)' },
   { value: 'America/Chicago', label: 'America/Chicago (CST/CDT)' },
@@ -74,9 +73,10 @@ export default function EnvironmentSettings({
                 : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700'
             } text-gray-900 dark:text-white`}
           >
+            <option value="">{t('environment.timezone.placeholder')}</option>
             {timezoneOptions.map(option => (
               <option key={option.value} value={option.value}>
-                {option.value === '' ? t('environment.timezone.placeholder') : option.label}
+                {option.label}
               </option>
             ))}
           </select>
