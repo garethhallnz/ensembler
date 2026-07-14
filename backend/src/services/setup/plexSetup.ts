@@ -35,7 +35,7 @@ export function readPlexToken(configDir: string): string | null {
 }
 
 // /identity answers without authentication as soon as the server is up
-export async function waitForPlexReady(
+async function waitForPlexReady(
   baseUrl: string,
   timeoutMs = 60000,
   pollIntervalMs = 2000
@@ -107,7 +107,7 @@ export async function getPlexLibraries(baseUrl: string, token: string): Promise<
 // at the location, regardless of what the user named it. Single source of
 // truth for both the creation idempotency check and the dashboard status
 // endpoint — if these two disagree the dashboard would re-trigger setup forever.
-export function isLibraryCovered(sections: PlexSection[], library: PlexLibrary): boolean {
+function isLibraryCovered(sections: PlexSection[], library: PlexLibrary): boolean {
   return sections.some(
     section => section.type === library.type &&
       (section.Location ?? []).some(loc => loc.path === library.location)
