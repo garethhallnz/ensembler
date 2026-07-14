@@ -22,20 +22,19 @@ export default function ConfirmationModal({
 }: ConfirmationModalProps) {
   const { t } = useTranslation();
 
-  const isDestructive = destructive || message.includes('DESTRUCTIVE');
-  const title = isDestructive ? t('confirm.destructiveTitle') : t('confirm.title');
+  const title = destructive ? t('confirm.destructiveTitle') : t('confirm.title');
 
   return (
     <Dialog show={show} onClose={onClose} ariaLabel={title} size="md">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-auto border border-gray-200 dark:border-gray-700">
         <div className="text-center">
-          {isDestructive && (
+          {destructive && (
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
               <span className="text-red-600 dark:text-red-400 text-2xl">⚠️</span>
             </div>
           )}
           <h3 className={`mb-5 text-lg font-medium ${
-            isDestructive
+            destructive
               ? 'text-red-600 dark:text-red-400'
               : 'text-gray-700 dark:text-gray-300'
           }`}>
@@ -57,7 +56,7 @@ export default function ConfirmationModal({
             <button
               onClick={onConfirm}
               className={`px-6 py-2 text-white text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                isDestructive
+                destructive
                   ? 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
                   : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
               }`}
