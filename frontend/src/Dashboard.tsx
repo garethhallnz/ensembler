@@ -113,12 +113,14 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     map: d => d.enabled === true && d.signedIn === false,
     // Once signed in but libraries aren't created yet, run just the Plex setup
     // step. The in-flight guard prevents overlapping runs on successive polls.
-    onData: d => {
+    onData: async d => {
       if (d.enabled === true && d.signedIn === true && d.librariesConfigured === false && !plexWiringInFlight.current) {
         plexWiringInFlight.current = true;
-        apiFetch('/api/services/plex/setup', { method: 'POST' }).finally(() => {
+        try {
+          await apiFetch('/api/services/plex/setup', { method: 'POST' });
+        } finally {
           plexWiringInFlight.current = false;
-        });
+        }
       }
     },
   });
@@ -237,10 +239,17 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
           const last = data.lastChecked ? new Date(data.lastChecked).getTime() : 0;
           if (Date.now() - last > TTL_MS) {
-            apiFetch('/api/services/updates/check', { method: 'POST' })
-              .then(r => r.json())
-              .then(d => { if (d.success) setServiceUpdates(d.updates || {}); })
-              .catch(() => { /* silent: availability just won't refresh this time */ });
+            // Fire-and-forget: refresh availability in the background without
+            // blocking this fetch (void marks the deliberate non-await).
+            void (async () => {
+              try {
+                const checkRes = await apiFetch('/api/services/updates/check', { method: 'POST' });
+                const checkData = await checkRes.json();
+                if (checkData.success) setServiceUpdates(checkData.updates || {});
+              } catch {
+                /* silent: availability just won't refresh this time */
+              }
+            })();
           }
         }
       }

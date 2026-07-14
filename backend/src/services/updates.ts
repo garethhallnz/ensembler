@@ -127,6 +127,19 @@ export async function refreshUpdateCache(): Promise<void> {
   updateCheckStore.lastServiceCheck = new Date();
 }
 
+// Pull + recreate one service, then refresh its cached update status so the
+// dashboard's "update available" prompt clears. Returns the post-update status.
+export async function updateService(
+  key: string,
+  config: { versions?: { [key: string]: string } },
+): Promise<boolean | null> {
+  await dockerCompose(['pull', key]);
+  await dockerCompose(['up', '-d', key]);
+  const hasUpdate = getServiceConfig(key) ? await checkServiceUpdate(getEffectiveImage(key, config)) : false;
+  recordServiceUpdate(key, hasUpdate);
+  return hasUpdate;
+}
+
 // Pull + recreate every enabled service with a pending update. Each runs on its
 // own so one failure doesn't abort the rest. Relies on the cached update status,
 // so callers should refresh it first if they need current results.
@@ -138,10 +151,7 @@ export async function applyAvailableUpdates(): Promise<{ updated: string[]; fail
   const results: { service: string; success: boolean; error?: string }[] = [];
   for (const key of targets) {
     try {
-      await dockerCompose(['pull', key]);
-      await dockerCompose(['up', '-d', key]);
-      const svc = getServiceConfig(key);
-      updateCheckStore.availableUpdates[key] = { hasUpdate: svc ? await checkServiceUpdate(getEffectiveImage(key, config)) : false };
+      await updateService(key, config);
       results.push({ service: key, success: true });
     } catch (err) {
       results.push({ service: key, success: false, error: (err as Error).message });

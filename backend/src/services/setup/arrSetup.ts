@@ -1,14 +1,5 @@
 import { SetupStepResult } from './types';
 
-// Stable i18n code + interpolation params travel alongside the English
-// fallback in `message`, so the frontend can localise setup-result strings.
-declare module './types' {
-  interface SetupStepResult {
-    code?: string;
-    params?: Record<string, string>;
-  }
-}
-
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface ArrRequestOptions {

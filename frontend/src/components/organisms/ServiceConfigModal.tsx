@@ -164,14 +164,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
       };
       // Saving with the service disabled makes the backend stop and remove its
       // container; regenerate compose so it's gone from the stack.
-      const saveRes = await apiFetch(`/api/config/save`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updated)
-      });
-      if (!saveRes.ok) throw new Error('save failed');
-      const composeRes = await apiFetch(`/api/config/generate-compose`, { method: 'POST' });
-      if (!composeRes.ok) throw new Error('compose generation failed');
+      await saveConfigAndRegenerateCompose(updated);
       onToast(t('serviceConfig.serviceRemoved', { name: service.name }), 'success');
       onSaved();
       onClose();
@@ -181,9 +174,9 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
     }
   };
 
-  // save config → regenerate compose → bring the stack up (recreates the
-  // changed/added container with its new settings).
-  const saveAndApply = async (updated: CurrentConfig) => {
+  // save config → regenerate compose. Shared by add/edit (which then starts the
+  // stack) and remove (which just needs the container gone).
+  const saveConfigAndRegenerateCompose = async (updated: CurrentConfig) => {
     const saveRes = await apiFetch(`/api/config/save`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -192,6 +185,11 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
     if (!saveRes.ok) throw new Error('save failed');
     const composeRes = await apiFetch(`/api/config/generate-compose`, { method: 'POST' });
     if (!composeRes.ok) throw new Error('compose generation failed');
+  };
+
+  // ...then bring the stack up (recreates the changed/added container).
+  const saveAndApply = async (updated: CurrentConfig) => {
+    await saveConfigAndRegenerateCompose(updated);
     const startRes = await apiFetch(`/api/services/start-all`, { method: 'POST' });
     if (!startRes.ok) throw new Error('failed to start services');
   };

@@ -13,6 +13,7 @@ import {
   fetchAvailableVersions,
   refreshUpdateCache,
   applyAvailableUpdates,
+  updateService,
   getAvailableUpdates,
   recordServiceUpdate,
   startUpdateScheduler,
@@ -673,21 +674,10 @@ app.post('/api/services/:serviceName/update', async (req: Request, res: Response
       return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     
-    // Pull latest image and restart service
-    await dockerCompose(['pull', serviceName]);
-    await dockerCompose(['up', '-d', serviceName]);
-
-    // Refresh the cached update status now that the image is current. Without
-    // this the dashboard keeps reading a stale "update available" from the
-    // cache (GET /api/services/updates) and the prompt reappears after a
-    // successful update.
-    let hasUpdate: boolean | null = false;
-    const svc = getServiceConfig(serviceName);
-    if (svc) {
-      const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-      hasUpdate = await checkServiceUpdate(getEffectiveImage(serviceName, config));
-      recordServiceUpdate(serviceName, hasUpdate);
-    }
+    // Pull + recreate the service, then refresh the cached update status so the
+    // dashboard's stale "update available" prompt clears after a successful run.
+    const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
+    const hasUpdate = await updateService(serviceName, config);
 
     res.json({ success: true, code: 'messages.service.updated', params: { name: serviceName }, message: `${serviceName} updated successfully.`, hasUpdate });
   } catch (err) {

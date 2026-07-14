@@ -6,12 +6,10 @@ import Spinner from './components/atoms/Spinner';
 import Alert from './components/atoms/Alert';
 import Card from './components/atoms/Card';
 import EnvironmentSettings from './components/molecules/EnvironmentSettings';
+import AppearanceSettings from './components/molecules/AppearanceSettings';
 import Toggle from './components/atoms/Toggle';
-import Select from './components/atoms/Select';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
-import { useTheme, type ThemePreference } from './contexts/ThemeContext';
-import { SUPPORTED_LANGUAGES } from './i18n/config';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 
 interface AdvancedSettingsProps {
@@ -41,9 +39,8 @@ type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 // on the dashboard now, so this is limited to global environment settings and
 // a clearly separated danger zone (full reset).
 export default function AdvancedSettings({ onClose, onResetComplete, appearanceOnly = false }: AdvancedSettingsProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { showToast } = useToast();
-  const { preference, setPreference } = useTheme();
   const [config, setConfig] = useState<ConfigType | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -172,43 +169,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.subtitle')}</p>
         </div>
         <div className="flex-1 overflow-auto p-4 space-y-6">
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium">{t('settings.appearance.heading')}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.appearance.description')}</p>
-            </Card.Header>
-            <Card.Body>
-              <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1">
-                {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
-                  <button
-                    key={opt}
-                    onClick={() => setPreference(opt)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
-                      preference === opt
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {t(`settings.appearance.theme.${opt}`)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5">
-                <label htmlFor="setup-language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('language.label')}
-                </label>
-                <div className="max-w-[240px]">
-                  <Select id="setup-language" value={i18n.resolvedLanguage} onChange={e => i18n.changeLanguage(e.target.value)}>
-                    {SUPPORTED_LANGUAGES.map(language => (
-                      <option key={language.code} value={language.code}>{language.label}</option>
-                    ))}
-                  </Select>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('language.settingHint')}</p>
-              </div>
-            </Card.Body>
-          </Card>
+          <AppearanceSettings selectId="setup-language" />
         </div>
         <div className="border-t border-gray-200 dark:border-gray-600 p-4 flex justify-end">
           <Button variant="secondary" onClick={onClose}>{t('settings.close')}</Button>
@@ -308,45 +269,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
         </div>
 
         <div className="flex-1 overflow-auto p-4 space-y-6">
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium">{t('settings.appearance.heading')}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t('settings.appearance.description')}
-              </p>
-            </Card.Header>
-            <Card.Body>
-              <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1">
-                {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
-                  <button
-                    key={opt}
-                    onClick={() => setPreference(opt)}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
-                      preference === opt
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {t(`settings.appearance.theme.${opt}`)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5">
-                <label htmlFor="app-language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {t('language.label')}
-                </label>
-                <div className="max-w-[240px]">
-                  <Select id="app-language" value={i18n.resolvedLanguage} onChange={e => i18n.changeLanguage(e.target.value)}>
-                    {SUPPORTED_LANGUAGES.map(language => (
-                      <option key={language.code} value={language.code}>{language.label}</option>
-                    ))}
-                  </Select>
-                </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('language.settingHint')}</p>
-              </div>
-            </Card.Body>
-          </Card>
+          <AppearanceSettings selectId="app-language" />
 
           <Card>
             <Card.Header>

@@ -6,13 +6,6 @@ import {
 } from './arrSetup';
 import { SetupStepResult } from './types';
 
-// SetupStepResult plus stable i18n metadata: `code` identifies the message and
-// `params` carries any interpolated values. Assignable to SetupStepResult[].
-type LocalizedSetupStepResult = SetupStepResult & {
-  code: string;
-  params?: Record<string, string>;
-};
-
 export interface ProwlarrApplication {
   // 'Sonarr' | 'Radarr' — Prowlarr's implementation name for the app
   implementation: string;
@@ -63,12 +56,12 @@ export async function setupProwlarr(setup: ProwlarrSetupOptions): Promise<SetupS
     apiKey: setup.apiKey,
     apiBase: '/api/v1'
   };
-  const results: LocalizedSetupStepResult[] = [];
+  const results: SetupStepResult[] = [];
 
   try {
     await waitForArrReady(options, setup.readyTimeoutMs);
   } catch (err) {
-    const readyFailure: LocalizedSetupStepResult = {
+    const readyFailure: SetupStepResult = {
       service: 'prowlarr',
       step: 'ready',
       success: false,

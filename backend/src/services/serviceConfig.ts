@@ -437,38 +437,6 @@ export const SUPPORTED_SERVICES: ServiceConfig[] = [
   }
 ];
 
-// Future services that can be easily added
-export const FUTURE_SERVICES: ServiceConfig[] = [];
-
 export function getServiceConfig(serviceKey: string): ServiceConfig | undefined {
   return SUPPORTED_SERVICES.find(service => service.key === serviceKey);
 }
-
-export function getServicesByCategory(category: string): ServiceConfig[] {
-  return SUPPORTED_SERVICES.filter(service => service.category === category);
-}
-
-export function getDefaultPorts(): { [key: string]: number } {
-  const ports: { [key: string]: number } = {};
-  SUPPORTED_SERVICES.forEach(service => {
-    ports[service.key] = service.defaultPort;
-  });
-  return ports;
-}
-
-export function getServiceImages(): { [key: string]: string } {
-  const images: { [key: string]: string } = {};
-  SUPPORTED_SERVICES.forEach(service => {
-    images[service.key] = service.image;
-  });
-  return images;
-}
-
-export function getPathRequirements(serviceKey: string): { label: string; required: boolean; description: string }[] {
-  const service = getServiceConfig(serviceKey);
-  return service?.pathRequirements || [];
-}
-
-export function canAddMoreServices(currentServices: string[]): boolean {
-  return (SUPPORTED_SERVICES.length + FUTURE_SERVICES.length) > currentServices.length;
-} 

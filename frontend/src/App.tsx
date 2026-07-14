@@ -58,12 +58,7 @@ function App() {
 
     initializeApp();
 
-    const statusInterval = setInterval(() => {
-      runtimeManager.getStatus();
-    }, 10000);
-
     return () => {
-      clearInterval(statusInterval);
       runtimeManager.shutdown();
     };
   }, [])

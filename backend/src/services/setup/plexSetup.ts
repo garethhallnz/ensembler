@@ -3,13 +3,6 @@ import path from 'path';
 import { ensureMediaServerNotification } from './arrSetup';
 import { ArrTarget, SetupStepResult } from './types';
 
-// SetupStepResult carrying a stable message code (and interpolation params) for
-// client-side localization. The literal `message` remains the English fallback.
-type LocalizedStepResult = SetupStepResult & {
-  code: string;
-  params?: Record<string, string>;
-};
-
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Plex writes its account token into Preferences.xml once the user completes
@@ -162,12 +155,12 @@ export interface PlexSetupOptions {
 
 export async function setupPlex(setup: PlexSetupOptions): Promise<SetupStepResult[]> {
   const libraries = setup.libraries ?? DEFAULT_PLEX_LIBRARIES;
-  const results: LocalizedStepResult[] = [];
+  const results: SetupStepResult[] = [];
 
   try {
     await waitForPlexReady(setup.baseUrl, setup.readyTimeoutMs);
   } catch (err) {
-    const readyResult: LocalizedStepResult = {
+    const readyResult: SetupStepResult = {
       service: 'plex',
       step: 'ready',
       success: false,

@@ -7,15 +7,6 @@ import { setupJellyfin, JellyfinCredentials } from './jellyfinSetup';
 import { seedBazarrConfig } from './bazarrSetup';
 import { ArrTarget, SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
 
-// Stable message code (+ interpolation params) so the frontend can localise a
-// step result; `message` stays as the English fallback.
-declare module './types' {
-  interface SetupStepResult {
-    code?: string;
-    params?: Record<string, string>;
-  }
-}
-
 // Root folders are container-side paths fixed by the volume mappings in
 // serviceConfig, not the user's host paths.
 const ARR_SERVICES = [

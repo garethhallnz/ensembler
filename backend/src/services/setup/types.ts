@@ -6,6 +6,10 @@ export interface SetupStepResult {
   // Set when a step mutated on-disk state that needs a container restart to
   // take effect (e.g. seeding Bazarr's config.yaml).
   needsRestart?: boolean;
+  // Stable i18n code + interpolation params travel alongside the English
+  // fallback in `message`, so the frontend can localise setup-result strings.
+  code?: string;
+  params?: Record<string, string>;
 }
 
 export interface SetupConnectionsResult {

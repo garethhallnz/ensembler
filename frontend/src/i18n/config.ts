@@ -52,5 +52,3 @@ i18n
     interpolation: { escapeValue: false }, // React already escapes
     returnNull: false,
   });
-
-export default i18n;
