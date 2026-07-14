@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from './requests/client';
 import { useTranslation } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
@@ -97,7 +97,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { openService } = useServiceTabs();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
   const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
-  const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  // The enabled services are exactly the keys the status endpoint returns —
+  // derive them rather than keeping a second copy that can drift.
+  const selectedServices = useMemo(() => Object.keys(serviceStatus), [serviceStatus]);
   const [loading, setLoading] = useState(true);
   const plexWiringInFlight = useRef(false);
   const prowlarrNeedsIndexers = usePolledSetupStatus<{ enabled: boolean; hasIndexers: boolean }>({
@@ -169,7 +171,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       const data = await res.json();
       if (data.success) {
         setServiceStatus(data.serviceStatus);
-        setSelectedServices(Object.keys(data.serviceStatus));
       } else {
         console.error('Failed to fetch service status:', data.message);
       }
