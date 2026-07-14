@@ -5,19 +5,17 @@ import AdvancedSettings from './AdvancedSettings';
 import Card from './components/atoms/Card';
 import Button from './components/atoms/Button';
 import Progress from './components/atoms/Progress';
-import Badge from './components/atoms/Badge';
 import Spinner from './components/atoms/Spinner';
-import ServiceConfiguration from './components/organisms/ServiceConfiguration';
-import EnvironmentSettings from './components/molecules/EnvironmentSettings';
-import TextInput from './components/atoms/TextInput';
+import StepSelection from './components/organisms/StepSelection';
+import StepConfiguration from './components/organisms/StepConfiguration';
+import StepApply from './components/organisms/StepApply';
 import Logo from './components/atoms/Logo';
 import DocsButton from './components/molecules/DocsButton';
 import { useToast } from './contexts/ToastContext';
-import { ToggleSwitch, Drawer } from 'flowbite-react';
-import { HiCheckCircle, HiXCircle, HiExclamationCircle, HiCog } from 'react-icons/hi';
+import { Drawer } from 'flowbite-react';
+import { HiCog } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 import { toggleService } from './utils/serviceSelection';
-import { apiMessage } from './utils/apiMessage';
 
 declare global {
   interface Window {
@@ -703,287 +701,46 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       </div>
       <div className="min-h-[500px] mb-6">
         {step === 0 && (
-           <div className="space-y-6">
-             <h2 className="text-2xl font-bold text-gray-800 dark:text-white">{t('setup.step0.heading')}</h2>
-             <p className="text-gray-600 dark:text-gray-300">{t('setup.step0.subtitle')}</p>
-             
-             {/* Toggle Recommended Option */}
-             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-               <div className="flex items-center justify-between">
-                 <div className="flex-1">
-                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('setup.step0.quickActions')}</h3>
-                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                     {getToggleRecommendedState() ? t('setup.step0.recommendedOn') : t('setup.step0.recommendedOff')}
-                   </p>
-                 </div>
-                 <div className="flex items-center">
-                   <ToggleSwitch
-                     id="toggle-recommended-services"
-                     checked={getToggleRecommendedState()}
-                     onChange={handleToggleRecommended}
-                     label={t('setup.step0.toggleRecommended')}
-                   />
-                 </div>
-               </div>
-             </div>
-             
-
-
-             {/* Services grouped by category */}
-             <div className="space-y-6">
-               {['media', 'management', 'torrent', 'indexer', 'request'].map(category => {
-                 const categoryServices = serviceConfig.filter(service => service.category === category);
-                 if (categoryServices.length === 0) return null;
-
-                 const getCategoryTitle = (cat: string) =>
-                   t(`setup.categories.${cat}.title`, { defaultValue: cat });
-
-                 const getCategoryDescription = (cat: string) =>
-                   t(`setup.categories.${cat}.description`, { defaultValue: '' });
-
-                 return (
-                   <div key={category} className="space-y-3">
-                     <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
-                       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                         {getCategoryTitle(category)}
-                       </h3>
-                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                         {getCategoryDescription(category)}
-                       </p>
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                       {categoryServices.map((service) => (
-                         <Card key={service.key} className="overflow-hidden">
-                           <Card.Body>
-                             <div className="flex items-start justify-between">
-                               <div className="flex-1 pr-4">
-                                 <label htmlFor={`service-${service.key}`} className="block text-lg font-medium text-gray-900 dark:text-white cursor-pointer flex items-center gap-2">
-                                   <span>{service.name}</span>
-                                   {service.required && <Badge color="blue">{t('setup.step0.required')}</Badge>}
-                                   {service.recommended && !service.required && (
-                                     <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full dark:bg-yellow-900 dark:text-yellow-200">
-                                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                                         <path fillRule="evenodd" d="M10 15.585l-6.327 3.327 1.209-7.046L0 6.944l7.073-1.027L10 0l2.927 5.917L20 6.944l-4.882 4.922 1.209 7.046L10 15.585z" clipRule="evenodd"/>
-                                       </svg>
-                                       {t('setup.step0.recommended')}
-                                     </span>
-                                   )}
-                                 </label>
-                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{t(`services.${service.key}.description`, { defaultValue: service.description })}</p>
-                               </div>
-                               <div className="flex items-center mt-1">
-                                 <ToggleSwitch
-                                   id={`service-${service.key}`}
-                                   checked={!!selected[service.key]}
-                                   onChange={() => handleServiceChange(service.key)}
-                                   disabled={service.required}
-                                 />
-                               </div>
-                             </div>
-                           </Card.Body>
-                         </Card>
-                       ))}
-                     </div>
-                   </div>
-                 );
-               })}
-             </div>
-             {!Object.values(selected).some(Boolean) && (
-               <div className="text-sm text-amber-600 dark:text-amber-400">
-                 {t('setup.selectAtLeastOne')}
-               </div>
-             )}
-           </div>
+          <StepSelection
+            serviceConfig={serviceConfig}
+            selected={selected}
+            recommendedOn={getToggleRecommendedState()}
+            onToggleRecommended={handleToggleRecommended}
+            onServiceChange={handleServiceChange}
+          />
         )}
         {step === 1 && (
-          <div className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">{t('setup.step1.heading')}</h2>
-              <p className="text-gray-600 dark:text-gray-300">{t('setup.step1.subtitle')}</p>
-            </div>
-            <div className="space-y-6">
-              {Object.keys(selected).filter((svc) => selected[svc]).map((svc) => {
-                const service = serviceConfig.find(s => s.key === svc);
-                if (!service) return null;
-                
-                return (
-                  <ServiceConfiguration
-                    key={svc}
-                    service={service}
-                    paths={paths[svc] || []}
-                    pathErrors={pathErrors[svc] || []}
-                    port={ports[svc] || service.defaultPort}
-                    portError={portErrors[svc]}
-                    onPathChange={(idx, value) => handlePathChange(svc, idx, value)}
-                    onPortChange={(port) => handlePortChange(svc, port)}
-                    layout="card"
-                  />
-                );
-              })}
-            </div>
-            
-            {/* Environment Variables Section */}
-            <Card>
-              <Card.Header>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.environmentSettings')}</h3>
-                </div>
-              </Card.Header>
-              <Card.Body>
-                <EnvironmentSettings
-                  environment={{ tz, puid, pgid }}
-                  errors={envErrors}
-                  onEnvironmentChange={(field, value) => {
-                    if (field === 'tz') setTz(value as string);
-                    else if (field === 'puid') setPuid(value as number);
-                    else if (field === 'pgid') setPgid(value as number);
-                  }}
-                  layout="grid"
-                />
-              </Card.Body>
-            </Card>
-
-            {selected['jellyfin'] && (
-              <Card>
-                <Card.Header>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-2 py-1 rounded text-sm font-medium">Jellyfin</span>
-                    <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.jellyfinAccount')}</h3>
-                  </div>
-                </Card.Header>
-                <Card.Body>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 text-left">
-                    {t('setup.step1.jellyfinIntro')}
-                  </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">{t('setup.step1.adminUsername')}</label>
-                      <TextInput
-                        value={jellyfinUsername}
-                        onChange={e => setJellyfinUsername(e.target.value)}
-                        color={envErrors.jellyfinUsername ? 'failure' : 'gray'}
-                      />
-                      {envErrors.jellyfinUsername && <p className="text-sm text-red-500 mt-1 text-left">{envErrors.jellyfinUsername}</p>}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 text-left">{t('setup.step1.adminPassword')}</label>
-                      <TextInput
-                        type="password"
-                        value={jellyfinPassword}
-                        onChange={e => setJellyfinPassword(e.target.value)}
-                        color={envErrors.jellyfinPassword ? 'failure' : 'gray'}
-                      />
-                      {envErrors.jellyfinPassword && <p className="text-sm text-red-500 mt-1 text-left">{envErrors.jellyfinPassword}</p>}
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            )}
-
-            {/* Compact review folded into configuration, so applying is one
-                click from here rather than a separate review step. */}
-            <Card>
-              <Card.Body>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-left">{t('setup.step1.readyToSetUp')}</h3>
-                <div className="space-y-1.5">
-                  {Object.keys(selected).filter(key => selected[key]).map((key) => {
-                    const service = serviceConfig.find(s => s.key === key);
-                    const primaryPath = (paths[key] || []).find(Boolean);
-                    return (
-                      <div key={key} className="flex items-center gap-2 text-sm text-left">
-                        <span className="font-medium text-gray-900 dark:text-white min-w-[120px]">{service?.name || key}</span>
-                        <Badge color="blue">{t('setup.step1.port', { port: ports[key] || service?.defaultPort })}</Badge>
-                        {primaryPath && <span className="text-gray-500 dark:text-gray-400 font-mono truncate">{primaryPath}</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card.Body>
-            </Card>
-          </div>
+          <StepConfiguration
+            selected={selected}
+            serviceConfig={serviceConfig}
+            paths={paths}
+            pathErrors={pathErrors}
+            ports={ports}
+            portErrors={portErrors}
+            onPathChange={handlePathChange}
+            onPortChange={handlePortChange}
+            environment={{ tz, puid, pgid }}
+            envErrors={envErrors}
+            onEnvironmentChange={(field, value) => {
+              if (field === 'tz') setTz(value as string);
+              else if (field === 'puid') setPuid(value as number);
+              else if (field === 'pgid') setPgid(value as number);
+            }}
+            jellyfinUsername={jellyfinUsername}
+            jellyfinPassword={jellyfinPassword}
+            onJellyfinUsernameChange={setJellyfinUsername}
+            onJellyfinPasswordChange={setJellyfinPassword}
+          />
         )}
         {step === 2 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2 text-left">
-                {applyDone ? t('setup.apply.titleDone') : applyError ? t('setup.apply.titleError') : t('setup.apply.titleRunning')}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-300 text-left">
-                {applyDone
-                  ? t('setup.apply.subtitleDone')
-                  : applyError
-                    ? t('setup.apply.subtitleError')
-                    : t('setup.apply.subtitleRunning')}
-              </p>
-            </div>
-
-            <Card>
-              <Card.Body>
-                <div className="space-y-4">
-                  {applyPhases.map((phase) => (
-                    <div key={phase.key} className="flex items-start gap-3 text-left">
-                      <div className="mt-0.5 shrink-0">
-                        {phase.status === 'done' && <HiCheckCircle className="w-6 h-6 text-green-500" />}
-                        {phase.status === 'error' && <HiXCircle className="w-6 h-6 text-red-500" />}
-                        {phase.status === 'active' && (
-                          <div className="w-6 h-6 rounded-full border-2 border-gray-300 border-t-blue-500 dark:border-gray-600 dark:border-t-blue-400 animate-spin" />
-                        )}
-                        {phase.status === 'pending' && <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600" />}
-                      </div>
-                      <div className="flex-1">
-                        <div className={`font-medium ${
-                          phase.status === 'pending' ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'
-                        }`}>
-                          {phase.label}
-                        </div>
-                        {phase.status === 'active' && phase.detail && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{phase.detail}</p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card.Body>
-            </Card>
-
-            {applyError && (
-              <Card>
-                <Card.Body>
-                  <div className="flex items-start gap-3 text-left">
-                    <HiExclamationCircle className="w-6 h-6 text-red-500 shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-gray-900 dark:text-white font-medium">{applyError}</p>
-                      <Button color="gray" outline className="mt-3" onClick={() => setStep(1)}>
-                        {t('setup.apply.backToConfig')}
-                      </Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            )}
-
-            {applyDone && (
-              <Card>
-                <Card.Body>
-                  {connectResults.length > 0 && (
-                    <div className="space-y-1.5 mb-4">
-                      {connectResults.map((r, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-left">
-                          {r.success
-                            ? <HiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
-                            : <HiExclamationCircle className="w-4 h-4 text-yellow-500 shrink-0" />}
-                          <span className="text-gray-700 dark:text-gray-300">{apiMessage(t, r)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <Button color="green" onClick={onComplete}>
-                    {t('setup.apply.goToDashboard')}
-                  </Button>
-                </Card.Body>
-              </Card>
-            )}
-          </div>
+          <StepApply
+            applyPhases={applyPhases}
+            applyError={applyError}
+            applyDone={applyDone}
+            connectResults={connectResults}
+            onComplete={onComplete}
+            onBackToConfig={() => setStep(1)}
+          />
         )}
       </div>
       {/* The Apply step (2) drives its own actions; no wizard nav there. */}
