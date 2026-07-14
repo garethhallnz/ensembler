@@ -25,6 +25,18 @@ async function getImageLabel(container: string, label: string): Promise<string |
   }
 }
 
+// Services that publish an OCI image-version label (LinuxServer.io images).
+const IMAGE_LABEL_SERVICES = new Set(['sonarr', 'radarr', 'prowlarr', 'overseerr', 'plex', 'transmission']);
+
+// *arr-style status APIs whose JSON carries a `version` field. Port + path
+// differ per service; everything else about the probe is identical.
+const ARR_STATUS_APIS: Record<string, string> = {
+  sonarr: 'http://localhost:8989/api/v3/system/status',
+  radarr: 'http://localhost:7878/api/v3/system/status',
+  prowlarr: 'http://localhost:9696/api/v1/system/status',
+  overseerr: 'http://localhost:5055/api/v1/status',
+};
+
 // Best-effort running version of a service's container. Tries the OCI image
 // label first, then a per-service status API / exec, then falls back to the
 // image build date. Returns 'Not installed' when the container isn't present.
@@ -32,49 +44,22 @@ export async function getServiceVersion(serviceName: string): Promise<string> {
   let version: string | null = null;
 
   // Try the image label for LinuxServer.io images first.
-  switch (serviceName) {
-    case 'sonarr':
-    case 'radarr':
-    case 'prowlarr':
-    case 'overseerr':
-    case 'plex':
-    case 'transmission':
-      version = await getImageLabel(serviceName, 'org.opencontainers.image.version');
-      break;
-    default:
-      break;
+  if (IMAGE_LABEL_SERVICES.has(serviceName)) {
+    version = await getImageLabel(serviceName, 'org.opencontainers.image.version');
   }
 
+  // Then the *arr-style status API (uniform shape, per-service endpoint).
+  const statusApi = ARR_STATUS_APIS[serviceName];
+  if (!version && statusApi) {
+    const output = await execInContainer(serviceName, `curl -s ${statusApi}`);
+    if (output) {
+      try { version = JSON.parse(output).version || null; } catch { /* ignore */ }
+    }
+  }
+
+  // Bespoke probes for services without a status API.
   if (!version) {
     switch (serviceName) {
-      case 'sonarr': {
-        const output = await execInContainer('sonarr', 'curl -s http://localhost:8989/api/v3/system/status');
-        if (output) {
-          try { version = JSON.parse(output).version || null; } catch { /* ignore */ }
-        }
-        break;
-      }
-      case 'radarr': {
-        const output = await execInContainer('radarr', 'curl -s http://localhost:7878/api/v3/system/status');
-        if (output) {
-          try { version = JSON.parse(output).version || null; } catch { /* ignore */ }
-        }
-        break;
-      }
-      case 'prowlarr': {
-        const output = await execInContainer('prowlarr', 'curl -s http://localhost:9696/api/v1/system/status');
-        if (output) {
-          try { version = JSON.parse(output).version || null; } catch { /* ignore */ }
-        }
-        break;
-      }
-      case 'overseerr': {
-        const output = await execInContainer('overseerr', 'curl -s http://localhost:5055/api/v1/status');
-        if (output) {
-          try { version = JSON.parse(output).version || null; } catch { /* ignore */ }
-        }
-        break;
-      }
       case 'plex': {
         version = await execInContainer('plex', 'cat /version.txt');
         if (!version) {
