@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import type { TFunction } from 'i18next';
 import { apiFetch } from './requests/client';
 import { useTranslation } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
@@ -21,6 +20,7 @@ import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
+import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -90,35 +90,6 @@ const CATEGORY_ROLES: { [key: string]: string } = {
 
 const serviceRoleKey = (key: string, category: string): string =>
   SERVICE_ROLES[key] || CATEGORY_ROLES[category] || '';
-
-const PENDING_STATUS_LABEL_KEY = {
-  start: 'dashboard.status.starting',
-  stop: 'dashboard.status.stopping',
-  restart: 'dashboard.status.restarting',
-} as const;
-
-// Card status is a priority chain: an in-flight lifecycle action wins, then a
-// pending setup step, then an unhealthy container, then running; otherwise it's
-// stopped — echoing the raw container status when it's a known non-Unknown state.
-const serviceStatusLabel = (
-  args: { pendingLabel: string | null; needsSetup: boolean; unhealthy: boolean; isRunning: boolean; status: string },
-  t: TFunction,
-): string => {
-  if (args.pendingLabel) return args.pendingLabel;
-  if (args.needsSetup) return t('dashboard.status.setupNeeded');
-  if (args.unhealthy) return t('dashboard.status.needsAttention');
-  if (args.isRunning) return t('dashboard.status.running');
-  return args.status === 'Unknown' ? t('dashboard.status.stopped') : args.status;
-};
-
-const serviceStatusDotClass = (
-  args: { pending: boolean; needsSetup: boolean; unhealthy: boolean; isRunning: boolean },
-): string => {
-  if (args.pending) return 'bg-blue-500 animate-pulse';
-  if (args.needsSetup || args.unhealthy) return 'bg-amber-500';
-  if (args.isRunning) return 'bg-green-500';
-  return 'bg-gray-400';
-};
 
 export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { t } = useTranslation();

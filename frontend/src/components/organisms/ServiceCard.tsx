@@ -7,18 +7,11 @@ import Button from '../atoms/Button';
 import Spinner from '../atoms/Spinner';
 import ServiceActionsMenu from '../molecules/ServiceActionsMenu';
 import { isDesktopApp } from '../../utils/selectDirectory';
+import { versionTitleKey } from '../../utils/serviceStatus';
 
 // Reduce a messy image version to a recognizable major.minor.patch, e.g.
 // "4.0.19.2979-ls319" or "1.43.2.10687-563d026ea" → "4.0.19" / "1.43.2".
 const cleanVersion = (version: string): string => version.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? version;
-
-// Priority order: a pinned service is held there deliberately, so say so even
-// when an update exists; otherwise flag an update, else it's tracking latest.
-const versionTitleKey = (isPinned: boolean, hasUpdate: boolean | null | undefined): string => {
-  if (isPinned) return 'dashboard.card.version.pinned';
-  if (hasUpdate) return 'dashboard.card.version.updateAvailable';
-  return 'dashboard.card.version.latest';
-};
 
 export interface ServiceCardModel {
   serviceKey: string;
