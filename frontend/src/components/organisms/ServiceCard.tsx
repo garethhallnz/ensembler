@@ -12,6 +12,14 @@ import { isDesktopApp } from '../../utils/selectDirectory';
 // "4.0.19.2979-ls319" or "1.43.2.10687-563d026ea" → "4.0.19" / "1.43.2".
 const cleanVersion = (version: string): string => version.match(/^\d+(?:\.\d+){0,2}/)?.[0] ?? version;
 
+// Priority order: a pinned service is held there deliberately, so say so even
+// when an update exists; otherwise flag an update, else it's tracking latest.
+const versionTitleKey = (isPinned: boolean, hasUpdate: boolean | null | undefined): string => {
+  if (isPinned) return 'dashboard.card.version.pinned';
+  if (hasUpdate) return 'dashboard.card.version.updateAvailable';
+  return 'dashboard.card.version.latest';
+};
+
 export interface ServiceCardModel {
   serviceKey: string;
   name: string;
@@ -116,33 +124,40 @@ export default function ServiceCard({
       {/* Update state (left) + running version (muted, right) */}
       <div className="mt-4 flex items-center justify-between gap-2 min-h-[1.25rem]">
         <div className="min-w-0">
-          {model.isChecking ? (
-            <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-              <Spinner size="sm" /> {t('dashboard.card.checkingUpdates')}
-            </div>
-          ) : model.hasUpdate ? (
-            <button
-              onClick={onUpdate}
-              disabled={model.isUpdating}
-              className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
-            >
-              <HiArrowCircleUp className="w-4 h-4" />
-              {model.isUpdating ? t('dashboard.common.updating') : t('dashboard.card.updateAvailable')}
-            </button>
-          ) : model.recentlyChecked ? (
-            <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
-              <HiCheckCircle className="w-4 h-4" /> {t('dashboard.card.upToDate')}
-            </div>
-          ) : null}
+          {(() => {
+            if (model.isChecking) {
+              return (
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Spinner size="sm" /> {t('dashboard.card.checkingUpdates')}
+                </div>
+              );
+            }
+            if (model.hasUpdate) {
+              return (
+                <button
+                  onClick={onUpdate}
+                  disabled={model.isUpdating}
+                  className="flex items-center gap-1 text-sm text-amber-600 dark:text-amber-400 hover:underline disabled:opacity-50 disabled:no-underline"
+                >
+                  <HiArrowCircleUp className="w-4 h-4" />
+                  {model.isUpdating ? t('dashboard.common.updating') : t('dashboard.card.updateAvailable')}
+                </button>
+              );
+            }
+            if (model.recentlyChecked) {
+              return (
+                <div className="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                  <HiCheckCircle className="w-4 h-4" /> {t('dashboard.card.upToDate')}
+                </div>
+              );
+            }
+            return null;
+          })()}
         </div>
 
         {isRunning && model.runningVersion && (() => {
           const shown = cleanVersion(model.runningVersion);
-          const title = model.isPinned
-            ? t('dashboard.card.version.pinned', { version: shown })
-            : model.hasUpdate
-              ? t('dashboard.card.version.updateAvailable', { version: shown })
-              : t('dashboard.card.version.latest', { version: shown });
+          const title = t(versionTitleKey(model.isPinned, model.hasUpdate), { version: shown });
           return (
             <span
               title={title}
