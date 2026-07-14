@@ -9,6 +9,9 @@ interface WebviewElement extends HTMLElement {
   reload(): void;
 }
 
+const PILL_ACTIVE = 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm';
+const PILL_IDLE = 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70';
+
 interface TabPillProps {
   active: boolean;
   onSelect: () => void;
@@ -16,17 +19,49 @@ interface TabPillProps {
 }
 
 function TabPill({ active, onSelect, children }: TabPillProps) {
-  const activeClasses = 'bg-white dark:bg-gray-900 text-gray-900 dark:text-white shadow-sm';
-  const idleClasses = 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/70 dark:hover:bg-gray-700/70';
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-current={active ? 'page' : undefined}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${active ? activeClasses : idleClasses}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${active ? PILL_ACTIVE : PILL_IDLE}`}
     >
       {children}
     </button>
+  );
+}
+
+interface ClosableTabProps {
+  active: boolean;
+  name: string;
+  closeLabel: string;
+  onSelect: () => void;
+  onClose: () => void;
+}
+
+// Select and close are separate sibling buttons sharing one pill background,
+// so neither is nested inside the other (a button-in-button is invalid HTML
+// and unpredictable for assistive tech).
+function ClosableTab({ active, name, closeLabel, onSelect, onClose }: ClosableTabProps) {
+  return (
+    <div className={`inline-flex items-center rounded-lg text-sm font-medium transition-colors ${active ? PILL_ACTIVE : PILL_IDLE}`}>
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-current={active ? 'page' : undefined}
+        className="flex items-center gap-1.5 pl-3 pr-1 py-1.5 rounded-l-lg"
+      >
+        <span className="truncate max-w-[160px]">{name}</span>
+      </button>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label={closeLabel}
+        className="mr-1 p-0.5 rounded hover:bg-gray-300/70 dark:hover:bg-gray-600"
+      >
+        <HiX className="w-3.5 h-3.5" />
+      </button>
+    </div>
   );
 }
 
@@ -50,19 +85,14 @@ export default function ServiceTabsShell({ children }: { children: ReactNode }) 
           </TabPill>
 
           {tabs.map(tab => (
-            <TabPill key={tab.key} active={activeId === tab.key} onSelect={() => setActive(tab.key)}>
-              <span className="truncate max-w-[160px]">{tab.name}</span>
-              <span
-                role="button"
-                tabIndex={0}
-                aria-label={t('tabs.closeService', { name: tab.name })}
-                onClick={e => { e.stopPropagation(); closeService(tab.key); }}
-                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); closeService(tab.key); } }}
-                className="ml-1 -mr-1 p-0.5 rounded hover:bg-gray-300/70 dark:hover:bg-gray-600"
-              >
-                <HiX className="w-3.5 h-3.5" />
-              </span>
-            </TabPill>
+            <ClosableTab
+              key={tab.key}
+              active={activeId === tab.key}
+              name={tab.name}
+              closeLabel={t('tabs.closeService', { name: tab.name })}
+              onSelect={() => setActive(tab.key)}
+              onClose={() => closeService(tab.key)}
+            />
           ))}
 
           {activeTab && (

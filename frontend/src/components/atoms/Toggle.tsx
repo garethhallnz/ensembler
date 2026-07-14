@@ -1,4 +1,4 @@
-import React from 'react';
+import { useId } from 'react';
 
 interface ToggleProps {
   checked: boolean;
@@ -11,7 +11,7 @@ interface ToggleProps {
   'aria-label'?: string;
 }
 
-const Toggle: React.FC<ToggleProps> = ({
+export default function Toggle({
   checked,
   onChange,
   disabled = false,
@@ -19,7 +19,8 @@ const Toggle: React.FC<ToggleProps> = ({
   label,
   className = '',
   'aria-label': ariaLabel,
-}) => {
+}: ToggleProps) {
+  const labelId = useId();
   const sizeClasses = {
     sm: 'w-8 h-4',
     md: 'w-11 h-6', 
@@ -47,7 +48,7 @@ const Toggle: React.FC<ToggleProps> = ({
   return (
     <div className={`flex items-center ${className}`}>
       {label && (
-        <span className="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span id={labelId} className="mr-3 text-sm font-medium text-gray-700 dark:text-gray-300">
           {label}
         </span>
       )}
@@ -55,7 +56,8 @@ const Toggle: React.FC<ToggleProps> = ({
         type="button"
         role="switch"
         aria-checked={checked}
-        aria-label={ariaLabel}
+        aria-label={label ? undefined : ariaLabel}
+        aria-labelledby={label ? labelId : undefined}
         onClick={handleClick}
         disabled={disabled}
         className={`
@@ -81,6 +83,4 @@ const Toggle: React.FC<ToggleProps> = ({
       </button>
     </div>
   );
-};
-
-export default Toggle;
+}

@@ -1,6 +1,7 @@
 import { HiExclamationCircle } from 'react-icons/hi';
 import { useTranslation } from 'react-i18next';
 import Button from '../atoms/Button';
+import Dialog from '../atoms/Dialog';
 
 interface ActionErrorModalProps {
   show: boolean;
@@ -23,10 +24,8 @@ export default function ActionErrorModal({
 }: ActionErrorModalProps) {
   const { t } = useTranslation();
 
-  if (!show) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+    <Dialog show={show} onClose={onClose} ariaLabel={title} size="md">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md w-full border border-gray-200 dark:border-gray-700">
         <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
           <HiExclamationCircle className="w-7 h-7 text-red-600 dark:text-red-400" />
@@ -46,6 +45,6 @@ export default function ActionErrorModal({
           {onRetry && <Button variant="primary" onClick={onRetry}>{t('actionError.retry')}</Button>}
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

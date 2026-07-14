@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import Button from '../atoms/Button';
 import Badge from '../atoms/Badge';
+import Dialog from '../atoms/Dialog';
 import type { ServiceCatalogEntry } from './ServiceConfigModal';
 
 interface AddServiceModalProps {
@@ -15,7 +16,7 @@ interface AddServiceModalProps {
 export default function AddServiceModal({ available, onPick, onClose }: AddServiceModalProps) {
   const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+    <Dialog show onClose={onClose} ariaLabel={t('addService.title')} size="3xl">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">{t('addService.title')}</h3>
@@ -52,6 +53,6 @@ export default function AddServiceModal({ available, onPick, onClose }: AddServi
           <Button color="gray" outline onClick={onClose}>{t('addService.cancel')}</Button>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

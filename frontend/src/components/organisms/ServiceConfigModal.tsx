@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { apiFetch } from '../../requests/client';
 import Button from '../atoms/Button';
+import Dialog from '../atoms/Dialog';
 import TextInput from '../atoms/TextInput';
 import Select from '../atoms/Select';
 import PathConfiguration from '../molecules/PathConfiguration';
@@ -195,12 +196,16 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
     if (!startRes.ok) throw new Error('failed to start services');
   };
 
+  const title = mode === 'add'
+    ? t('serviceConfig.addTitle', { name: service.name })
+    : t('serviceConfig.configureTitle', { name: service.name });
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4">
+    <Dialog show onClose={onClose} ariaLabel={title} size="2xl" dismissible={!busy}>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            {mode === 'add' ? t('serviceConfig.addTitle', { name: service.name }) : t('serviceConfig.configureTitle', { name: service.name })}
+            {title}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t(`services.${service.key}.description`)}</p>
         </div>
@@ -299,6 +304,6 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }

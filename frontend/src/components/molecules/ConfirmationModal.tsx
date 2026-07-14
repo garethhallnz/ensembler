@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import Dialog from '../atoms/Dialog';
 
 interface ConfirmationModalProps {
   show: boolean;
@@ -21,14 +22,11 @@ export default function ConfirmationModal({
 }: ConfirmationModalProps) {
   const { t } = useTranslation();
 
-  if (!show) {
-    return null;
-  }
-
   const isDestructive = destructive || message.includes('DESTRUCTIVE');
+  const title = isDestructive ? t('confirm.destructiveTitle') : t('confirm.title');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+    <Dialog show={show} onClose={onClose} ariaLabel={title} size="md">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 max-w-md mx-auto border border-gray-200 dark:border-gray-700">
         <div className="text-center">
           {isDestructive && (
@@ -37,11 +35,11 @@ export default function ConfirmationModal({
             </div>
           )}
           <h3 className={`mb-5 text-lg font-medium ${
-            isDestructive 
-              ? 'text-red-600 dark:text-red-400' 
+            isDestructive
+              ? 'text-red-600 dark:text-red-400'
               : 'text-gray-700 dark:text-gray-300'
           }`}>
-            {isDestructive ? t('confirm.destructiveTitle') : t('confirm.title')}
+            {title}
           </h3>
           <p className="mb-6 text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
             {message}
@@ -69,6 +67,6 @@ export default function ConfirmationModal({
           </div>
         </div>
       </div>
-    </div>
+    </Dialog>
   );
 }
