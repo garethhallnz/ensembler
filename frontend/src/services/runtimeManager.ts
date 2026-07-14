@@ -1,6 +1,6 @@
 import { apiFetch } from '../requests/client';
 
-export interface RuntimeConfig {
+interface RuntimeConfig {
   autoStartServices: boolean;
   autoStopServices: boolean;
   shutdownTimeout: number;
@@ -267,5 +267,3 @@ class RuntimeManager {
 
 // Singleton instance
 export const runtimeManager = new RuntimeManager();
-
-export default RuntimeManager; 

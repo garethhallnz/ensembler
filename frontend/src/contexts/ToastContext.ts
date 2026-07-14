@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 
-export interface ToastContextType {
+interface ToastContextType {
   showToast: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
 }
 

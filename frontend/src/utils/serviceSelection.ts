@@ -3,7 +3,7 @@
 // "management" (Sonarr/Radarr/Bazarr) allows multiple. Kept pure and separate
 // from the component so it can be unit-tested — a stack with two media servers
 // or two download clients breaks the interconnection logic.
-export const SINGLE_SELECT_CATEGORIES = ['media', 'torrent', 'indexer', 'request'];
+const SINGLE_SELECT_CATEGORIES = ['media', 'torrent', 'indexer', 'request'];
 
 export interface SelectableService {
   key: string;

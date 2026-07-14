@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from 'react';
 
-export interface ServiceTab {
+interface ServiceTab {
   key: string;
   name: string;
   url: string;
