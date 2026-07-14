@@ -27,7 +27,7 @@ interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
-export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+export function CustomThemeProvider({ children }: ThemeProviderProps) {
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as ThemePreference | null;
     return saved ?? 'system';
@@ -60,4 +60,4 @@ export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) 
       {children}
     </ThemeContext.Provider>
   );
-};
+}

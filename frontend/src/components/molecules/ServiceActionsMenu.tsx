@@ -38,9 +38,9 @@ export default function ServiceActionsMenu({ items }: { items: MenuItem[] }) {
       </button>
       {open && (
         <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 py-1">
-          {items.map((item, i) => (
+          {items.map((item) => (
             <button
-              key={i}
+              key={item.label}
               disabled={item.disabled}
               onClick={() => { setOpen(false); item.onClick(); }}
               className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"

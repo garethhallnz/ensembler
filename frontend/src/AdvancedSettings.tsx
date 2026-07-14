@@ -79,7 +79,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
 
   const handleEnvironmentChange = (field: string, value: string | number) => {
     if (!config) return;
-    setConfig(prev => ({ ...prev!, environment: { ...prev!.environment, [field]: value } }));
+    setConfig(prev => prev ? { ...prev, environment: { ...prev.environment, [field]: value } } : prev);
   };
 
   const validateEnvironment = (): boolean => {
@@ -362,7 +362,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
                 </div>
                 <Toggle
                   checked={config.minimizeToTray ?? true}
-                  onChange={value => setConfig(prev => ({ ...prev!, minimizeToTray: value }))}
+                  onChange={value => setConfig(prev => prev ? { ...prev, minimizeToTray: value } : prev)}
                   aria-label={t('settings.general.trayAriaLabel')}
                   className="shrink-0"
                 />
@@ -404,7 +404,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
                 </div>
                 <Toggle
                   checked={config.autoUpdate ?? false}
-                  onChange={value => setConfig(prev => ({ ...prev!, autoUpdate: value }))}
+                  onChange={value => setConfig(prev => prev ? { ...prev, autoUpdate: value } : prev)}
                   aria-label={t('settings.updates.autoAriaLabel')}
                   className="shrink-0"
                 />

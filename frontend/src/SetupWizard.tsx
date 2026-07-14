@@ -157,8 +157,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
             return 'UTC';
           }
         })());
-        setPuid(config.environment?.puid || 1000);
-        setPgid(config.environment?.pgid || 1000);
+        setPuid(config.environment?.puid ?? 1000);
+        setPgid(config.environment?.pgid ?? 1000);
       }
     } catch (error) {
       console.error('Error loading existing configuration:', error);
@@ -689,8 +689,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
         
         <div className="flex justify-between mt-2">
           {steps.map((stepName, idx) => (
-            <div 
-              key={idx} 
+            <div
+              key={stepName}
               className={`text-sm ${step === 2 ? '' : 'cursor-pointer'} ${idx === step ? 'font-bold text-blue-600' : idx < step ? 'text-green-600' : 'text-gray-500'}`}
               onClick={() => idx < step && step !== 2 && setStep(idx)}
             >

@@ -101,8 +101,8 @@ export default function StepApply({
           <Card.Body>
             {connectResults.length > 0 && (
               <div className="space-y-1.5 mb-4">
-                {connectResults.map((r, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm text-left">
+                {connectResults.map((r) => (
+                  <div key={`${r.service}:${r.step}`} className="flex items-center gap-2 text-sm text-left">
                     {r.success
                       ? <HiCheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                       : <HiExclamationCircle className="w-4 h-4 text-yellow-500 shrink-0" />}

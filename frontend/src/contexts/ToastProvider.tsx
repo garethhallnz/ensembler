@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
+import { useState, useCallback, useRef, useEffect, type ReactNode } from 'react';
 import Toast from '../components/atoms/Toast';
 import { ToastContext } from './ToastContext';
 
-const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+function ToastProvider({ children }: { children: ReactNode }) {
   const [toast, setToast] = useState<{ show: boolean; message: string; type: 'success' | 'error' | 'warning' | 'info' } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -37,6 +37,6 @@ const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       )}
     </ToastContext.Provider>
   );
-};
+}
 
-export default ToastProvider; 
+export default ToastProvider;
