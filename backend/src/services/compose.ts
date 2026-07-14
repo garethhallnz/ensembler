@@ -4,6 +4,18 @@ import { dump as dumpYaml } from 'js-yaml';
 import { getServiceConfig } from './serviceConfig';
 import { configDir, composeFile } from './paths';
 
+// Services whose media/download paths are configured per-service (rather than
+// shared with the *arr apps via the {paths.*} template): each maps a container
+// path to its index into config.paths[serviceKey]. A configured value here
+// overrides the shared template; an unset one falls through to it.
+const SERVICE_PATH_OVERRIDES: Record<string, Record<string, number>> = {
+  plex: { '/tv': 0, '/movies': 1 },
+  emby: { '/tv': 0, '/movies': 1 },
+  jellyfin: { '/tv': 0, '/movies': 1 },
+  deluge: { '/downloads': 0 },
+  bazarr: { '/tv': 0, '/movies': 1 },
+};
+
 export interface EnsemblerConfig {
   selectedServices: Record<string, boolean>;
   environment?: { puid?: number | string; pgid?: number | string; tz?: string };
@@ -66,35 +78,11 @@ export function generateComposeFile(config: EnsemblerConfig): string {
         hostPath = hostPath.replace('{paths.downloads}', config.paths.transmission[0]);
       }
 
-      // Handle service-specific paths
-      if (serviceKey === 'plex') {
-        if (containerPath === '/tv' && config.paths.plex?.[0]) {
-          hostPath = config.paths.plex[0];
-        } else if (containerPath === '/movies' && config.paths.plex?.[1]) {
-          hostPath = config.paths.plex[1];
-        }
-      } else if (serviceKey === 'emby') {
-        if (containerPath === '/tv' && config.paths.emby?.[0]) {
-          hostPath = config.paths.emby[0];
-        } else if (containerPath === '/movies' && config.paths.emby?.[1]) {
-          hostPath = config.paths.emby[1];
-        }
-      } else if (serviceKey === 'jellyfin') {
-        if (containerPath === '/tv' && config.paths.jellyfin?.[0]) {
-          hostPath = config.paths.jellyfin[0];
-        } else if (containerPath === '/movies' && config.paths.jellyfin?.[1]) {
-          hostPath = config.paths.jellyfin[1];
-        }
-      } else if (serviceKey === 'deluge') {
-        if (containerPath === '/downloads' && config.paths.deluge?.[0]) {
-          hostPath = config.paths.deluge[0];
-        }
-      } else if (serviceKey === 'bazarr') {
-        if (containerPath === '/tv' && config.paths.bazarr?.[0]) {
-          hostPath = config.paths.bazarr[0];
-        } else if (containerPath === '/movies' && config.paths.bazarr?.[1]) {
-          hostPath = config.paths.bazarr[1];
-        }
+      // A service-specific configured path overrides the shared media path.
+      const overrideIndex = SERVICE_PATH_OVERRIDES[serviceKey]?.[containerPath];
+      if (overrideIndex !== undefined) {
+        const configured = config.paths[serviceKey]?.[overrideIndex];
+        if (configured) hostPath = configured;
       }
 
       // Never emit an empty or still-templated host path: fall back to a folder
