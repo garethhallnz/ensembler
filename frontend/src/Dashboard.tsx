@@ -21,9 +21,10 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceUpdates, checkServiceUpdates, getServiceVersion, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
+import { getDockerStatus, getServiceStatuses, getServiceVersion, getServiceCatalog } from './requests/services';
 import { useServiceAlerts } from './hooks/useServiceAlerts';
 import { useServiceLogs } from './hooks/useServiceLogs';
+import { useServiceUpdates } from './hooks/useServiceUpdates';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -44,9 +45,6 @@ interface ServiceStatusType {
 }
 
 
-interface ServiceUpdateType {
-  [key: string]: { hasUpdate: boolean | null };
-}
 
 interface DashboardProps {
   // Called after a complete reset so the app can return to the wizard in place.
@@ -125,15 +123,14 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     updates: 'No updates available'
   });
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
   const [serviceVersions, setServiceVersions] = useState<{ [key: string]: string }>({});
   const [pinnedVersions, setPinnedVersions] = useState<{ [key: string]: string }>({});
   const serviceAlerts = useServiceAlerts(selectedServices);
+  const {
+    serviceUpdates, updateChecking, recentlyChecked, checkingAll,
+    refresh: refreshUpdates, checkAll, checkOne,
+  } = useServiceUpdates(selectedServices);
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
-  const autoCheckedRef = useRef(false);
-  const [updateChecking, setUpdateChecking] = useState<{ [key: string]: boolean }>({});
-  const [recentlyChecked, setRecentlyChecked] = useState<{ [key: string]: boolean }>({});
-  const [checkingAllUpdates, setCheckingAllUpdates] = useState(false);
   const [updatingAll, setUpdatingAll] = useState(false);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
   // Per-service config ('edit') and add-service ('add') both use one modal.
@@ -202,77 +199,23 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   }, []);
 
   // Read the cached update status (instant — no image pulls).
-  const fetchServiceUpdates = useCallback(async () => {
+  // Thin toast wrappers over the update hook's data actions (the hook owns the
+  // fetch, spinner flags, and "up to date" fade; toasts are the UI's concern).
+  const handleCheckAllUpdates = async () => {
     try {
-      const { updates, lastChecked } = await getServiceUpdates();
-      setServiceUpdates(updates);
-
-      // Auto-refresh the (cheap, cached) check once per session if it has
-      // never run or is stale, so update availability surfaces on the cards
-      // without the user hunting for a button. Digest checks only, no pulls.
-      if (!autoCheckedRef.current) {
-        autoCheckedRef.current = true;
-        const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-        const last = lastChecked ? new Date(lastChecked).getTime() : 0;
-        if (Date.now() - last > TTL_MS) {
-          // Fire-and-forget: refresh availability in the background without
-          // blocking this fetch (void marks the deliberate non-await).
-          void (async () => {
-            try {
-              setServiceUpdates(await checkServiceUpdates());
-            } catch {
-              /* silent: availability just won't refresh this time */
-            }
-          })();
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching update status:', error);
-    }
-  }, []);
-
-  // Manual per-service re-check from a card's ••• menu — cognitively bound to
-  // the service it affects. Feedback is shown inline on the card (spinner, then
-  // the update prompt or a brief "up to date"), not via a distant toast; toasts
-  // are reserved for failures. Cheap digest check, no image pull.
-  // Track "up to date" fade-out timers so they can't fire setState after unmount.
-  const updateCheckTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
-  useEffect(() => () => {
-    updateCheckTimers.current.forEach(clearTimeout);
-  }, []);
-
-  const checkServiceForUpdate = async (serviceKey: string) => {
-    const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
-    setUpdateChecking(prev => ({ ...prev, [serviceKey]: true }));
-    try {
-      const hasUpdate = await getServiceUpdateStatus(serviceKey);
-      setServiceUpdates(prev => ({ ...prev, [serviceKey]: { hasUpdate } }));
-      if (!hasUpdate) {
-        // Briefly confirm "up to date" on the card, then fade back to normal.
-        setRecentlyChecked(prev => ({ ...prev, [serviceKey]: true }));
-        const timer = setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
-        updateCheckTimers.current.push(timer);
-      }
-    } catch {
-      showToast(t('dashboard.toast.checkFailed', { name }), 'error');
-    } finally {
-      setUpdateChecking(prev => ({ ...prev, [serviceKey]: false }));
-    }
-  };
-
-  // Refresh the update status for every service at once. Backs the "Check for
-  // updates" button in the Services header. Cheap digest checks, no pulls.
-  const checkAllUpdates = async () => {
-    setCheckingAllUpdates(true);
-    try {
-      const updates = await checkServiceUpdates();
-      setServiceUpdates(updates);
-      const count = Object.values(updates).filter(u => u?.hasUpdate).length;
+      const count = await checkAll();
       showToast(count > 0 ? t('dashboard.toast.updatesFound', { count }) : t('dashboard.toast.allUpToDate'), count > 0 ? 'info' : 'success');
     } catch {
       showToast(t('dashboard.toast.checkAllFailed'), 'error');
-    } finally {
-      setCheckingAllUpdates(false);
+    }
+  };
+
+  const handleCheckServiceForUpdate = async (serviceKey: string) => {
+    try {
+      await checkOne(serviceKey);
+    } catch {
+      const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
+      showToast(t('dashboard.toast.checkFailed', { name }), 'error');
     }
   };
 
@@ -323,11 +266,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   useEffect(() => {
     if (selectedServices.length > 0) {
-      fetchServiceUpdates();
       fetchServiceVersions(selectedServices);
       fetchPinnedVersions();
     }
-  }, [selectedServices, fetchServiceUpdates, fetchServiceVersions, fetchPinnedVersions]);
+  }, [selectedServices, fetchServiceVersions, fetchPinnedVersions]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -474,7 +416,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             showToast(t('dashboard.toast.updatedWithFailures', { count: updatedCount, names: failedNames || t('dashboard.common.unknown') }), 'error');
           }
           // Re-read the (backend-refreshed) availability + status so prompts clear.
-          await fetchServiceUpdates();
+          await refreshUpdates();
           await fetchServiceStatus();
           await fetchServiceVersions(data.updated ?? []);
           setRuntimeStatus(await runtimeManager.checkStatus());
@@ -504,9 +446,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             await fetchServiceStatus();
             const newStatus = await runtimeManager.checkStatus();
             setRuntimeStatus(newStatus); // Ensure up-to-date status
-            // Use the status the backend re-checked after pulling, so the
-            // prompt reflects reality (and matches the refreshed server cache).
-            setServiceUpdates(prev => ({ ...prev, [serviceName]: { hasUpdate: data.hasUpdate ?? false } }));
+            // Re-read the backend-refreshed availability so the prompt clears.
+            await refreshUpdates();
             await fetchServiceVersions([serviceName]);
           } else {
             showToast(t('dashboard.toast.updateFailed', { name: serviceName, message: apiMessage(t, data) }), 'error');
@@ -674,12 +615,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             )}
             <Button
               variant="secondary"
-              onClick={checkAllUpdates}
-              loading={checkingAllUpdates}
+              onClick={handleCheckAllUpdates}
+              loading={checkingAll}
               disabled={selectedServices.length === 0}
               tooltip={t('dashboard.services.checkAllTooltip')}
             >
-              <HiArrowCircleUp className="inline-block mr-1" /> {checkingAllUpdates ? t('dashboard.common.checking') : t('dashboard.services.checkForUpdates')}
+              <HiArrowCircleUp className="inline-block mr-1" /> {checkingAll ? t('dashboard.common.checking') : t('dashboard.services.checkForUpdates')}
             </Button>
             {serviceConfig.some(s => !selectedServices.includes(s.key)) && (
               <Button variant="primary" onClick={() => setShowAddService(true)} tooltip={t('dashboard.services.addTooltip')}>
@@ -755,7 +696,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
                   onOpenInBrowser={() => openServiceInBrowser(serviceKey)}
                   onAction={(action) => handleServiceAction(serviceKey, action)}
                   onOpenLogs={() => openLogsDrawer(serviceKey)}
-                  onCheckUpdate={() => checkServiceForUpdate(serviceKey)}
+                  onCheckUpdate={() => handleCheckServiceForUpdate(serviceKey)}
                   onConfigure={() => setConfigModal({ service, mode: 'edit' })}
                   onUpdate={() => handleServiceUpdate(serviceKey)}
                 />
