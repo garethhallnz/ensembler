@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { apiFetch } from '../requests/client';
 
 export type RuntimeStatus = {
@@ -7,6 +8,18 @@ export type RuntimeStatus = {
   servicesRunning: string[];
   lastCheck: Date;
 }
+
+// Runtime validation of the backend responses runCheck consumes, so a malformed
+// payload degrades cleanly instead of being blindly cast to the expected shape.
+const DockerStatusSchema = z.object({
+  docker: z.boolean(),
+  compose: z.boolean(),
+});
+
+const ServicesStatusSchema = z.object({
+  success: z.boolean(),
+  serviceStatus: z.record(z.string(), z.string()),
+});
 
 class RuntimeManager {
   private readonly checkIntervalMs = 30000;
@@ -84,23 +97,27 @@ class RuntimeManager {
       });
       this.status.backendConnected = backendResponse.ok;
 
-      if (this.status.backendConnected) {
+      if (!this.status.backendConnected) {
+        // Backend is unreachable — docker/services can't be available either.
+        this.status.dockerAvailable = false;
+        this.status.servicesRunning = [];
+      } else {
         // Check Docker status
         const dockerResponse = await apiFetch('/api/docker/status', {
           signal: AbortSignal.timeout(5000)
         });
-        const dockerData = await dockerResponse.json();
-        this.status.dockerAvailable = dockerData.docker && dockerData.compose;
+        const dockerData = DockerStatusSchema.safeParse(await dockerResponse.json());
+        this.status.dockerAvailable = dockerData.success && dockerData.data.docker && dockerData.data.compose;
 
         if (this.status.dockerAvailable) {
           // Check service status
           const serviceResponse = await apiFetch('/api/services/status', {
             signal: AbortSignal.timeout(5000)
           });
-          const serviceData = await serviceResponse.json();
-          if (serviceData.success) {
-            this.status.servicesRunning = Object.keys(serviceData.serviceStatus).filter(
-              service => serviceData.serviceStatus[service] === 'Running'
+          const serviceData = ServicesStatusSchema.safeParse(await serviceResponse.json());
+          if (serviceData.success && serviceData.data.success) {
+            this.status.servicesRunning = Object.keys(serviceData.data.serviceStatus).filter(
+              service => serviceData.data.serviceStatus[service] === 'Running'
             );
           }
         }
