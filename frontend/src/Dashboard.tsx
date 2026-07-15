@@ -21,6 +21,7 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
+import { getDockerStatus, getServiceStatuses, getServiceUpdates, getServiceMonitor, checkServiceUpdates } from './requests/services';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -169,13 +170,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceStatus = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/services/status');
-      const data = await res.json();
-      if (data.success) {
-        setServiceStatus(data.serviceStatus);
-      } else {
-        console.error('Failed to fetch service status:', data.message);
-      }
+      setServiceStatus(await getServiceStatuses());
     } catch (error) {
       console.error('Error fetching service status:', error);
     }
@@ -183,12 +178,9 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchDockerStatus = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/docker/status');
-      const data = await res.json();
-      setDockerStatus({
-        running: data.docker && data.compose,
-        updates: data.docker && data.compose ? 'Docker running' : 'Docker not running'
-      });
+      const { docker, compose } = await getDockerStatus();
+      const running = docker && compose;
+      setDockerStatus({ running, updates: running ? 'Docker running' : 'Docker not running' });
     } catch (error) {
       console.error('Error fetching Docker status:', error);
     }
@@ -226,31 +218,26 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // Read the cached update status (instant — no image pulls).
   const fetchServiceUpdates = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/services/updates');
-      const data = await res.json();
-      if (data.success) {
-        setServiceUpdates(data.updates || {});
+      const { updates, lastChecked } = await getServiceUpdates();
+      setServiceUpdates(updates);
 
-        // Auto-refresh the (cheap, cached) check once per session if it has
-        // never run or is stale, so update availability surfaces on the cards
-        // without the user hunting for a button. Digest checks only, no pulls.
-        if (!autoCheckedRef.current) {
-          autoCheckedRef.current = true;
-          const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
-          const last = data.lastChecked ? new Date(data.lastChecked).getTime() : 0;
-          if (Date.now() - last > TTL_MS) {
-            // Fire-and-forget: refresh availability in the background without
-            // blocking this fetch (void marks the deliberate non-await).
-            void (async () => {
-              try {
-                const checkRes = await apiFetch('/api/services/updates/check', { method: 'POST' });
-                const checkData = await checkRes.json();
-                if (checkData.success) setServiceUpdates(checkData.updates || {});
-              } catch {
-                /* silent: availability just won't refresh this time */
-              }
-            })();
-          }
+      // Auto-refresh the (cheap, cached) check once per session if it has
+      // never run or is stale, so update availability surfaces on the cards
+      // without the user hunting for a button. Digest checks only, no pulls.
+      if (!autoCheckedRef.current) {
+        autoCheckedRef.current = true;
+        const TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
+        const last = lastChecked ? new Date(lastChecked).getTime() : 0;
+        if (Date.now() - last > TTL_MS) {
+          // Fire-and-forget: refresh availability in the background without
+          // blocking this fetch (void marks the deliberate non-await).
+          void (async () => {
+            try {
+              setServiceUpdates(await checkServiceUpdates());
+            } catch {
+              /* silent: availability just won't refresh this time */
+            }
+          })();
         }
       }
     } catch (error) {
@@ -297,15 +284,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const checkAllUpdates = async () => {
     setCheckingAllUpdates(true);
     try {
-      const res = await apiFetch('/api/services/updates/check', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        setServiceUpdates(data.updates || {});
-        const count = Object.values(data.updates || {}).filter((u) => (u as { hasUpdate: boolean | null })?.hasUpdate).length;
-        showToast(count > 0 ? t('dashboard.toast.updatesFound', { count }) : t('dashboard.toast.allUpToDate'), count > 0 ? 'info' : 'success');
-      } else {
-        showToast(t('dashboard.toast.checkAllFailed'), 'error');
-      }
+      const updates = await checkServiceUpdates();
+      setServiceUpdates(updates);
+      const count = Object.values(updates).filter(u => u?.hasUpdate).length;
+      showToast(count > 0 ? t('dashboard.toast.updatesFound', { count }) : t('dashboard.toast.allUpToDate'), count > 0 ? 'info' : 'success');
     } catch {
       showToast(t('dashboard.toast.checkAllFailed'), 'error');
     } finally {
@@ -315,11 +297,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceAlerts = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/services/monitor');
-      const data = await res.json();
-      if (data.success) {
-        setServiceAlerts(data.services);
-      }
+      setServiceAlerts(await getServiceMonitor());
     } catch (error) {
       console.error('Error fetching service alerts:', error);
     }

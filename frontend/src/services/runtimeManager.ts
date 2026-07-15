@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import { apiFetch } from '../requests/client';
+import { DockerStatusSchema, ServicesStatusSchema } from '../requests/services';
 
 export type RuntimeStatus = {
   appRunning: boolean;
@@ -8,18 +8,6 @@ export type RuntimeStatus = {
   servicesRunning: string[];
   lastCheck: Date;
 }
-
-// Runtime validation of the backend responses runCheck consumes, so a malformed
-// payload degrades cleanly instead of being blindly cast to the expected shape.
-const DockerStatusSchema = z.object({
-  docker: z.boolean(),
-  compose: z.boolean(),
-});
-
-const ServicesStatusSchema = z.object({
-  success: z.boolean(),
-  serviceStatus: z.record(z.string(), z.string()),
-});
 
 class RuntimeManager {
   private readonly checkIntervalMs = 30000;
