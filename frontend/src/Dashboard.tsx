@@ -21,7 +21,7 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceUpdates, getServiceMonitor, checkServiceUpdates } from './requests/services';
+import { getDockerStatus, getServiceStatuses, getServiceUpdates, getServiceMonitor, checkServiceUpdates, getServiceVersion, getServiceLogs, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -36,11 +36,6 @@ interface ServiceConfig {
   required: boolean;
 }
 
-interface ServiceConfigResponse {
-  success: boolean;
-  services: ServiceConfig[];
-  maxServices: number;
-}
 
 interface ServiceStatusType {
   [key: string]: string;
@@ -203,10 +198,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const fetchServiceVersions = useCallback(async (keys: string[]) => {
     const entries = await Promise.all(keys.map(async key => {
       try {
-        const res = await apiFetch(`/api/services/${key}/version`);
-        const data = await res.json();
-        const version = data.success && data.version ? String(data.version) : '';
-        return [key, version] as const;
+        return [key, await getServiceVersion(key)] as const;
       } catch {
         return [key, ''] as const;
       }
@@ -259,18 +251,13 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     const name = serviceConfig.find(s => s.key === serviceKey)?.name || serviceKey;
     setUpdateChecking(prev => ({ ...prev, [serviceKey]: true }));
     try {
-      const res = await apiFetch(`/api/services/${serviceKey}/check-updates`);
-      const data = await res.json();
-      if (data.success) {
-        setServiceUpdates(prev => ({ ...prev, [serviceKey]: { hasUpdate: data.hasUpdate } }));
-        if (!data.hasUpdate) {
-          // Briefly confirm "up to date" on the card, then fade back to normal.
-          setRecentlyChecked(prev => ({ ...prev, [serviceKey]: true }));
-          const timer = setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
-          updateCheckTimers.current.push(timer);
-        }
-      } else {
-        showToast(t('dashboard.toast.checkFailed', { name }), 'error');
+      const hasUpdate = await getServiceUpdateStatus(serviceKey);
+      setServiceUpdates(prev => ({ ...prev, [serviceKey]: { hasUpdate } }));
+      if (!hasUpdate) {
+        // Briefly confirm "up to date" on the card, then fade back to normal.
+        setRecentlyChecked(prev => ({ ...prev, [serviceKey]: true }));
+        const timer = setTimeout(() => setRecentlyChecked(prev => ({ ...prev, [serviceKey]: false })), 4000);
+        updateCheckTimers.current.push(timer);
       }
     } catch {
       showToast(t('dashboard.toast.checkFailed', { name }), 'error');
@@ -305,13 +292,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchServiceConfig = useCallback(async () => {
     try {
-      const res = await apiFetch('/api/services/config');
-      if (res.ok) {
-        const data: ServiceConfigResponse = await res.json();
-        if (data.success) {
-          setServiceConfig(data.services);
-        }
-      }
+      setServiceConfig(await getServiceCatalog());
     } catch (error) {
       console.error('Error fetching service configuration:', error);
     }
@@ -479,11 +460,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const fetchLogs = useCallback(async (serviceName: string) => {
     try {
-      const res = await apiFetch(`/api/services/${serviceName}/logs`);
-      const data = await res.json();
-      if (data.success) {
-        setServiceLogs(prev => ({ ...prev, [serviceName]: data.logs }));
-      }
+      const logs = await getServiceLogs(serviceName);
+      setServiceLogs(prev => ({ ...prev, [serviceName]: logs }));
     } catch {
       // Ignore transient errors while polling; the next tick retries.
     }

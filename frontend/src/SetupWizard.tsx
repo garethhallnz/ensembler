@@ -16,6 +16,7 @@ import { Drawer } from 'flowbite-react';
 import { HiCog } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 import { toggleService } from './utils/serviceSelection';
+import { getServiceCatalog } from './requests/services';
 
 declare global {
   interface Window {
@@ -32,11 +33,6 @@ interface ServiceConfig {
   pathRequirements: { label: string; required: boolean; description: string }[];
   required: boolean;
   recommended?: boolean;
-}
-
-interface ServiceConfigResponse {
-  success: boolean;
-  services: ServiceConfig[];
 }
 
 const steps = [
@@ -105,36 +101,31 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   const loadServiceConfiguration = async () => {
     try {
-      const res = await apiFetch('/api/services/config');
-      if (res.ok) {
-        const data: ServiceConfigResponse = await res.json();
-        if (data.success) {
-          setServiceConfig(data.services);
+      const services = await getServiceCatalog();
+      setServiceConfig(services);
 
-          // Initialize default ports
-          const defaultPorts: { [key: string]: number } = {};
-          const defaultSelected: { [key: string]: boolean } = {};
-          const defaultPaths: { [service: string]: string[] } = {};
-          
-          data.services.forEach(service => {
-            defaultPorts[service.key] = service.defaultPort;
-            
-            // Auto-select required services and initialize their default paths
-            if (service.required) {
-              defaultSelected[service.key] = true;
-              if (service.pathRequirements && service.pathRequirements.length > 0) {
-                defaultPaths[service.key] = service.pathRequirements.map(field => 
-                  getDefaultPath(service.key, field.label)
-                );
-              }
-            }
-          });
-          
-          setPorts(defaultPorts);
-          setSelected(prev => ({ ...defaultSelected, ...prev }));
-          setPaths(prev => ({ ...defaultPaths, ...prev }));
+      // Initialize default ports
+      const defaultPorts: { [key: string]: number } = {};
+      const defaultSelected: { [key: string]: boolean } = {};
+      const defaultPaths: { [service: string]: string[] } = {};
+
+      services.forEach(service => {
+        defaultPorts[service.key] = service.defaultPort;
+
+        // Auto-select required services and initialize their default paths
+        if (service.required) {
+          defaultSelected[service.key] = true;
+          if (service.pathRequirements && service.pathRequirements.length > 0) {
+            defaultPaths[service.key] = service.pathRequirements.map(field =>
+              getDefaultPath(service.key, field.label)
+            );
+          }
         }
-      }
+      });
+
+      setPorts(defaultPorts);
+      setSelected(prev => ({ ...defaultSelected, ...prev }));
+      setPaths(prev => ({ ...defaultPaths, ...prev }));
     } catch (error) {
       console.error('Error loading service configuration:', error);
     } finally {

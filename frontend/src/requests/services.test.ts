@@ -9,6 +9,10 @@ import {
   getServiceUpdates,
   checkServiceUpdates,
   getServiceMonitor,
+  getServiceVersion,
+  getServiceLogs,
+  getServiceUpdateStatus,
+  getServiceCatalog,
 } from './services';
 
 const jsonRes = (body: unknown) => ({ ok: true, json: async () => body });
@@ -83,5 +87,69 @@ describe('getServiceMonitor', () => {
   it('throws on a malformed monitor entry', async () => {
     mockApiFetch.mockResolvedValue(jsonRes({ success: true, services: { sonarr: { status: 'running' } } }));
     await expect(getServiceMonitor()).rejects.toThrow();
+  });
+});
+
+describe('getServiceVersion', () => {
+  it('returns the version string on success', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, version: '4.0.19' }));
+    expect(await getServiceVersion('sonarr')).toBe('4.0.19');
+  });
+
+  it('returns "" when unsuccessful or version is absent', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: false }));
+    expect(await getServiceVersion('sonarr')).toBe('');
+  });
+});
+
+describe('getServiceLogs', () => {
+  it('returns the logs on success', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, logs: 'line1\nline2' }));
+    expect(await getServiceLogs('sonarr')).toBe('line1\nline2');
+  });
+
+  it('throws when unsuccessful', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: false }));
+    await expect(getServiceLogs('sonarr')).rejects.toThrow();
+  });
+});
+
+describe('getServiceUpdateStatus', () => {
+  it('returns hasUpdate on success (including null)', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, hasUpdate: true, currentVersion: '4.0.1' }));
+    expect(await getServiceUpdateStatus('sonarr')).toBe(true);
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, hasUpdate: null }));
+    expect(await getServiceUpdateStatus('sonarr')).toBeNull();
+  });
+
+  it('throws when unsuccessful', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: false }));
+    await expect(getServiceUpdateStatus('sonarr')).rejects.toThrow();
+  });
+});
+
+describe('getServiceCatalog', () => {
+  const entry = {
+    key: 'sonarr', name: 'Sonarr', description: 'TV', category: 'management', defaultPort: 8989,
+    pathRequirements: [{ label: 'TV', required: true, description: 'tv folder' }], required: false, recommended: true,
+  };
+
+  it('returns the validated catalog entries', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, services: [entry] }));
+    const catalog = await getServiceCatalog();
+    expect(catalog).toHaveLength(1);
+    expect(catalog[0]).toMatchObject({ key: 'sonarr', defaultPort: 8989, recommended: true });
+  });
+
+  it('accepts entries without the optional recommended flag', async () => {
+    const { recommended, ...withoutRecommended } = entry;
+    void recommended;
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, services: [withoutRecommended] }));
+    expect((await getServiceCatalog())[0].recommended).toBeUndefined();
+  });
+
+  it('throws on a malformed entry', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ success: true, services: [{ key: 'x' }] }));
+    await expect(getServiceCatalog()).rejects.toThrow();
   });
 });

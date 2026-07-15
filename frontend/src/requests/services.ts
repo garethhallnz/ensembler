@@ -66,3 +66,59 @@ export async function getServiceMonitor(): Promise<ServiceMonitor> {
   if (!data.success) throw new Error('Service monitor request was unsuccessful');
   return data.services;
 }
+
+const ServiceVersionSchema = z.object({ success: z.boolean(), version: z.string().optional() });
+const ServiceLogsSchema = z.object({ success: z.boolean(), logs: z.string().optional() });
+const ServiceUpdateCheckSchema = z.object({ success: z.boolean(), hasUpdate: z.boolean().nullish() });
+
+// Best-effort running version; '' when unavailable (caller filters those out).
+export async function getServiceVersion(serviceKey: string): Promise<string> {
+  const res = await apiFetch(`/api/services/${serviceKey}/version`);
+  const data = ServiceVersionSchema.parse(await res.json());
+  return data.success && data.version ? data.version : '';
+}
+
+export async function getServiceLogs(serviceKey: string): Promise<string> {
+  const res = await apiFetch(`/api/services/${serviceKey}/logs`);
+  const data = ServiceLogsSchema.parse(await res.json());
+  if (!data.success || data.logs === undefined) throw new Error('Service logs request was unsuccessful');
+  return data.logs;
+}
+
+// Per-service digest re-check; null when availability can't be determined.
+export async function getServiceUpdateStatus(serviceKey: string): Promise<boolean | null> {
+  const res = await apiFetch(`/api/services/${serviceKey}/check-updates`);
+  const data = ServiceUpdateCheckSchema.parse(await res.json());
+  if (!data.success) throw new Error('Update check was unsuccessful');
+  return data.hasUpdate ?? null;
+}
+
+const ServiceCatalogEntrySchema = z.object({
+  key: z.string(),
+  name: z.string(),
+  description: z.string(),
+  category: z.string(),
+  defaultPort: z.number(),
+  pathRequirements: z.array(z.object({
+    label: z.string(),
+    required: z.boolean(),
+    description: z.string(),
+  })),
+  required: z.boolean(),
+  recommended: z.boolean().optional(),
+});
+
+export type ServiceCatalogEntry = z.infer<typeof ServiceCatalogEntrySchema>;
+
+const ServiceCatalogSchema = z.object({
+  success: z.boolean(),
+  services: z.array(ServiceCatalogEntrySchema),
+});
+
+// The catalog of supported services (static metadata, not the user's config).
+export async function getServiceCatalog(): Promise<ServiceCatalogEntry[]> {
+  const res = await apiFetch('/api/services/config');
+  const data = ServiceCatalogSchema.parse(await res.json());
+  if (!data.success) throw new Error('Service catalog request was unsuccessful');
+  return data.services;
+}
