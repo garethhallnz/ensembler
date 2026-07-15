@@ -21,8 +21,9 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceUpdates, checkServiceUpdates, getServiceVersion, getServiceLogs, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
+import { getDockerStatus, getServiceStatuses, getServiceUpdates, checkServiceUpdates, getServiceVersion, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
 import { useServiceAlerts } from './hooks/useServiceAlerts';
+import { useServiceLogs } from './hooks/useServiceLogs';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -39,10 +40,6 @@ interface ServiceConfig {
 
 
 interface ServiceStatusType {
-  [key: string]: string;
-}
-
-interface ServiceLogsType {
   [key: string]: string;
 }
 
@@ -89,7 +86,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { showToast } = useToast();
   const { openService } = useServiceTabs();
   const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
-  const [serviceLogs, setServiceLogs] = useState<ServiceLogsType>({});
   // The enabled services are exactly the keys the status endpoint returns —
   // derive them rather than keeping a second copy that can drift.
   const selectedServices = useMemo(() => Object.keys(serviceStatus), [serviceStatus]);
@@ -155,6 +151,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // Add state for Drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerService, setDrawerService] = useState<string | null>(null);
+  const currentLogs = useServiceLogs(drawerService, drawerOpen);
   const logScrollRef = useRef<HTMLDivElement>(null);
   const logStickBottomRef = useRef(true);
   const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
@@ -435,15 +432,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     if (url) window.open(url, '_blank');
   };
 
-  const fetchLogs = useCallback(async (serviceName: string) => {
-    try {
-      const logs = await getServiceLogs(serviceName);
-      setServiceLogs(prev => ({ ...prev, [serviceName]: logs }));
-    } catch {
-      // Ignore transient errors while polling; the next tick retries.
-    }
-  }, []);
-
   const openLogsDrawer = (serviceName: string) => {
     logStickBottomRef.current = true; // start pinned to the newest lines
     setDrawerService(serviceName);
@@ -451,21 +439,12 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   };
   const closeLogsDrawer = () => setDrawerOpen(false);
 
-  // While the log drawer is open, stream the service's logs: fetch immediately,
-  // then poll every 2s. Cleared when the drawer closes.
-  useEffect(() => {
-    if (!drawerOpen || !drawerService) return;
-    fetchLogs(drawerService);
-    const id = setInterval(() => fetchLogs(drawerService), 2000);
-    return () => clearInterval(id);
-  }, [drawerOpen, drawerService, fetchLogs]);
-
   // Auto-scroll to the newest lines on update, unless the user scrolled up.
   useEffect(() => {
     if (logStickBottomRef.current && logScrollRef.current) {
       logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
     }
-  }, [serviceLogs, drawerService, drawerOpen]);
+  }, [currentLogs, drawerService, drawerOpen]);
 
   const handleLogScroll = () => {
     const el = logScrollRef.current;
@@ -864,7 +843,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       <LogsDrawer
         open={drawerOpen}
         serviceName={drawerService}
-        logs={drawerService ? serviceLogs[drawerService] : undefined}
+        logs={currentLogs}
         scrollRef={logScrollRef}
         onClose={closeLogsDrawer}
         onScroll={handleLogScroll}
