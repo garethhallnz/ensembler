@@ -66,7 +66,7 @@
       "recommended": "Рекомендуется"
     },
     "categories": {
-      "media": { "title": "Медиасерверы", "description": "Серверы потокового вещания (выберите один)" },
+      "media": { "title": "Медиасерверы", "description": "Серверы потокового вещания (выберите один или несколько)" },
       "management": { "title": "Управление медиатекой", "description": "Менеджеры медиаколлекций (можно выбрать несколько)" },
       "torrent": { "title": "Клиенты загрузки", "description": "Клиенты загрузки BitTorrent (выберите один)" },
       "indexer": { "title": "Индексаторы", "description": "Управление торрент-индексаторами (выберите один)" },
@@ -76,10 +76,6 @@
       "heading": "Конфигурация сервисов",
       "subtitle": "Настройте пути к файлам и порты для ваших сервисов:",
       "environmentSettings": "Настройки окружения",
-      "jellyfinAccount": "Учётная запись администратора Jellyfin",
-      "jellyfinIntro": "Выберите данные входа администратора для Jellyfin. Ensembler использует их один раз, чтобы настроить Jellyfin и создать ваши медиатеки — они никогда не сохраняются на диск, поэтому храните эти данные в надёжном месте.",
-      "adminUsername": "Имя администратора",
-      "adminPassword": "Пароль администратора",
       "readyToSetUp": "Готово к настройке",
       "port": "Порт {{port}}"
     },
@@ -108,8 +104,6 @@
       "tzRequired": "Часовой пояс обязателен.",
       "puid": "PUID должен быть неотрицательным числом.",
       "pgid": "PGID должен быть неотрицательным числом.",
-      "jellyfinUsername": "Имя администратора Jellyfin обязательно.",
-      "jellyfinPassword": "Пароль администратора Jellyfin должен содержать не менее 4 символов.",
       "portRange": "Порт должен быть в диапазоне от 1024 до 65535.",
       "portConflictSelected": "Порт конфликтует с другим выбранным сервисом.",
       "portInUseSwitched": "Порт {{port}} занят — переключено на свободный порт {{suggestion}}.",
@@ -621,21 +615,6 @@
       "configNotFound": "Файл config.yaml для Bazarr пока не найден — Bazarr запущен?",
       "connected": "Bazarr подключён к {{services}}",
       "alreadyConnected": "Bazarr уже подключён к {{services}}"
-    },
-    "jellyfin": {
-      "notReady": "{{error}}",
-      "setUpOpenToAddLibraries": "Jellyfin настроен — откройте его, чтобы добавить медиатеки",
-      "needsAdminAccount": "Jellyfin требует учётную запись администратора — повторите настройку или завершите её в Jellyfin",
-      "accountCreated": "Создана учётная запись администратора, настройка завершена",
-      "accountFailed": "{{error}}",
-      "authenticateFailed": "{{error}}",
-      "libraryCreated": "Создана медиатека «{{name}}» в {{path}}",
-      "libraryAlreadyConfigured": "«{{name}}» уже настроена",
-      "libraryFailed": "{{error}}",
-      "notifyConfigured": "{{service}} будет обновлять Jellyfin при импорте",
-      "notifyAlreadyConfigured": "{{service}} уже уведомляет Jellyfin",
-      "notifyFailed": "{{error}}",
-      "apiKeyFailed": "{{error}}"
     },
     "plex": {
       "stepFailed": "{{error}}",

@@ -66,7 +66,7 @@
       "recommended": "Empfohlen"
     },
     "categories": {
-      "media": { "title": "Media-Server", "description": "Media-Streaming-Server (wähle einen)" },
+      "media": { "title": "Media-Server", "description": "Media-Streaming-Server (einen oder mehrere)" },
       "management": { "title": "Medienverwaltung", "description": "Verwaltung von Mediensammlungen (du kannst mehrere auswählen)" },
       "torrent": { "title": "Download-Clients", "description": "BitTorrent-Download-Clients (wähle einen)" },
       "indexer": { "title": "Indexer", "description": "Verwaltung von Torrent-Indexern (wähle einen)" },
@@ -76,10 +76,6 @@
       "heading": "Dienstkonfiguration",
       "subtitle": "Konfiguriere Dateipfade und Ports für deine Dienste:",
       "environmentSettings": "Umgebungseinstellungen",
-      "jellyfinAccount": "Jellyfin-Adminkonto",
-      "jellyfinIntro": "Wähle den Admin-Login für Jellyfin. Ensembler nutzt ihn einmalig, um Jellyfin einzurichten und deine Bibliotheken anzulegen – er wird nie auf der Festplatte gespeichert, bewahre diese Daten also sicher auf.",
-      "adminUsername": "Admin-Benutzername",
-      "adminPassword": "Admin-Passwort",
       "readyToSetUp": "Bereit zur Einrichtung",
       "port": "Port {{port}}"
     },
@@ -108,8 +104,6 @@
       "tzRequired": "Zeitzone ist erforderlich.",
       "puid": "PUID muss eine nicht-negative Zahl sein.",
       "pgid": "PGID muss eine nicht-negative Zahl sein.",
-      "jellyfinUsername": "Jellyfin-Admin-Benutzername ist erforderlich.",
-      "jellyfinPassword": "Jellyfin-Admin-Passwort muss mindestens 4 Zeichen lang sein.",
       "portRange": "Port muss zwischen 1024 und 65535 liegen.",
       "portConflictSelected": "Port steht in Konflikt mit einem anderen ausgewählten Dienst.",
       "portInUseSwitched": "Port {{port}} ist belegt – zu einem freien Port gewechselt, {{suggestion}}.",
@@ -621,21 +615,6 @@
       "configNotFound": "Bazarr-config.yaml noch nicht gefunden – läuft Bazarr?",
       "connected": "Bazarr mit {{services}} verbunden",
       "alreadyConnected": "Bazarr bereits mit {{services}} verbunden"
-    },
-    "jellyfin": {
-      "notReady": "{{error}}",
-      "setUpOpenToAddLibraries": "Jellyfin ist eingerichtet – öffne es, um deine Bibliotheken hinzuzufügen",
-      "needsAdminAccount": "Jellyfin benötigt sein Adminkonto – führe die Einrichtung erneut aus oder schließe sie in Jellyfin ab",
-      "accountCreated": "Adminkonto erstellt und Einrichtung abgeschlossen",
-      "accountFailed": "{{error}}",
-      "authenticateFailed": "{{error}}",
-      "libraryCreated": "Bibliothek „{{name}}“ unter {{path}} erstellt",
-      "libraryAlreadyConfigured": "„{{name}}“ bereits konfiguriert",
-      "libraryFailed": "{{error}}",
-      "notifyConfigured": "{{service}} aktualisiert Jellyfin beim Import",
-      "notifyAlreadyConfigured": "{{service}} benachrichtigt Jellyfin bereits",
-      "notifyFailed": "{{error}}",
-      "apiKeyFailed": "{{error}}"
     },
     "plex": {
       "stepFailed": "{{error}}",

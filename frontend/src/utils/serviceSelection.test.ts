@@ -14,14 +14,17 @@ const services = [
 ];
 
 describe('toggleService', () => {
-  it('deselects the others when a "choose one" media server is picked', () => {
+  it('allows multiple media servers to be selected together', () => {
     const next = toggleService({ plex: true }, services, 'jellyfin');
+    expect(next.plex).toBe(true);
     expect(next.jellyfin).toBe(true);
-    expect(next.plex).toBe(false);
-    expect(next.emby).toBeFalsy();
+    const withEmby = toggleService(next, services, 'emby');
+    expect(withEmby.plex).toBe(true);
+    expect(withEmby.jellyfin).toBe(true);
+    expect(withEmby.emby).toBe(true);
   });
 
-  it('enforces single-select for download clients and indexers too', () => {
+  it('enforces single-select for download clients and indexers', () => {
     expect(toggleService({ transmission: true }, services, 'deluge').transmission).toBe(false);
     expect(toggleService({ prowlarr: true }, services, 'jackett').prowlarr).toBe(false);
   });
@@ -38,11 +41,11 @@ describe('toggleService', () => {
 
   it('never deselects a required service in a single-select category', () => {
     const withRequired = [
-      { key: 'plex', category: 'media', required: true },
-      { key: 'jellyfin', category: 'media' },
+      { key: 'transmission', category: 'torrent', required: true },
+      { key: 'deluge', category: 'torrent' },
     ];
-    const next = toggleService({ plex: true }, withRequired, 'jellyfin');
-    expect(next.jellyfin).toBe(true);
-    expect(next.plex).toBe(true);
+    const next = toggleService({ transmission: true }, withRequired, 'deluge');
+    expect(next.deluge).toBe(true);
+    expect(next.transmission).toBe(true);
   });
 });

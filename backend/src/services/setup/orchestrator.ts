@@ -3,7 +3,6 @@ import { readArrApiKey, tryReadArrApiKey } from './apiKeyReader';
 import { setupArrService } from './arrSetup';
 import { setupProwlarr, ProwlarrApplication } from './prowlarrSetup';
 import { readPlexToken, setupPlex } from './plexSetup';
-import { setupJellyfin, JellyfinCredentials } from './jellyfinSetup';
 import { seedBazarrConfig } from './bazarrSetup';
 import { ArrTarget, SetupConnectionsResult, SetupStepResult, UserConfig } from './types';
 
@@ -80,12 +79,6 @@ export interface SetupTimeouts {
   readyTimeoutMs?: number;
 }
 
-// Secrets supplied per-run and never persisted (Jellyfin admin credentials
-// are entered in the wizard and passed straight through to setup).
-export interface SetupSecrets {
-  jellyfin?: JellyfinCredentials;
-}
-
 // Wire the enabled services together: Sonarr/Radarr → Transmission and root
 // folders, Prowlarr → Sonarr/Radarr (indexer sync) and Transmission.
 // Failures are collected per step rather than aborting the run, so one slow
@@ -93,8 +86,7 @@ export interface SetupSecrets {
 export async function setupConnections(
   config: UserConfig,
   configDir: string,
-  timeouts: SetupTimeouts = {},
-  secrets: SetupSecrets = {}
+  timeouts: SetupTimeouts = {}
 ): Promise<SetupConnectionsResult> {
   const results: SetupStepResult[] = [];
   const isEnabled = (key: string) => !!config.selectedServices?.[key];
@@ -197,16 +189,6 @@ export async function setupConnections(
 
   if (isEnabled('plex')) {
     results.push(...await runPlexSetup(config, configDir, timeouts));
-  }
-
-  if (isEnabled('jellyfin')) {
-    results.push(...await setupJellyfin({
-      baseUrl: `http://localhost:${hostPort(config, 'jellyfin')}`,
-      credentials: secrets.jellyfin,
-      readyTimeoutMs: timeouts.readyTimeoutMs,
-      arrTargets: buildArrTargets(config, configDir),
-      networkHost: { host: 'jellyfin', port: getServiceConfig('jellyfin')!.internalPort }
-    }));
   }
 
   return {

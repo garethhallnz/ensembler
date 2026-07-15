@@ -23,10 +23,6 @@ describe('StepConfiguration', () => {
         environment={{ tz: 'UTC', puid: 1000, pgid: 1000 }}
         envErrors={{}}
         onEnvironmentChange={() => {}}
-        jellyfinUsername="admin"
-        jellyfinPassword=""
-        onJellyfinUsernameChange={() => {}}
-        onJellyfinPasswordChange={() => {}}
       />,
     );
     await expect.element(page.getByText('Service Configuration')).toBeInTheDocument();

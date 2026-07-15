@@ -66,7 +66,7 @@
       "recommended": "Recomendado"
     },
     "categories": {
-      "media": { "title": "Servidores de mídia", "description": "Servidores de streaming de mídia (escolha um)" },
+      "media": { "title": "Servidores de mídia", "description": "Servidores de streaming de mídia (escolha um ou mais)" },
       "management": { "title": "Gerenciamento de mídia", "description": "Gerenciadores de coleções de mídia (você pode selecionar vários)" },
       "torrent": { "title": "Clientes de download", "description": "Clientes de download BitTorrent (escolha um)" },
       "indexer": { "title": "Indexadores", "description": "Gerenciamento de indexadores de torrent (escolha um)" },
@@ -76,10 +76,6 @@
       "heading": "Configuração dos serviços",
       "subtitle": "Configure os caminhos de arquivos e as portas dos seus serviços:",
       "environmentSettings": "Configurações de ambiente",
-      "jellyfinAccount": "Conta de administrador do Jellyfin",
-      "jellyfinIntro": "Escolha o login de administrador do Jellyfin. O Ensembler o utiliza uma única vez para configurar o Jellyfin e criar suas bibliotecas — ele nunca é salvo em disco, então guarde esses dados em um lugar seguro.",
-      "adminUsername": "Nome de usuário do administrador",
-      "adminPassword": "Senha do administrador",
       "readyToSetUp": "Pronto para configurar",
       "port": "Porta {{port}}"
     },
@@ -108,8 +104,6 @@
       "tzRequired": "O fuso horário é obrigatório.",
       "puid": "O PUID deve ser um número não negativo.",
       "pgid": "O PGID deve ser um número não negativo.",
-      "jellyfinUsername": "O nome de usuário do administrador do Jellyfin é obrigatório.",
-      "jellyfinPassword": "A senha do administrador do Jellyfin deve ter pelo menos 4 caracteres.",
       "portRange": "A porta deve estar entre 1024 e 65535.",
       "portConflictSelected": "A porta conflita com outro serviço selecionado.",
       "portInUseSwitched": "A porta {{port}} está em uso — trocada por uma porta livre, {{suggestion}}.",
@@ -621,21 +615,6 @@
       "configNotFound": "config.yaml do Bazarr ainda não encontrado — o Bazarr está em execução?",
       "connected": "Bazarr conectado a {{services}}",
       "alreadyConnected": "O Bazarr já está conectado a {{services}}"
-    },
-    "jellyfin": {
-      "notReady": "{{error}}",
-      "setUpOpenToAddLibraries": "O Jellyfin está configurado — abra-o para adicionar suas bibliotecas",
-      "needsAdminAccount": "O Jellyfin precisa da conta de administrador — execute a configuração novamente ou conclua-a no Jellyfin",
-      "accountCreated": "Conta de administrador criada e configuração concluída",
-      "accountFailed": "{{error}}",
-      "authenticateFailed": "{{error}}",
-      "libraryCreated": "Biblioteca \"{{name}}\" criada em {{path}}",
-      "libraryAlreadyConfigured": "\"{{name}}\" já está configurada",
-      "libraryFailed": "{{error}}",
-      "notifyConfigured": "{{service}} atualizará o Jellyfin ao importar",
-      "notifyAlreadyConfigured": "{{service}} já notifica o Jellyfin",
-      "notifyFailed": "{{error}}",
-      "apiKeyFailed": "{{error}}"
     },
     "plex": {
       "stepFailed": "{{error}}",

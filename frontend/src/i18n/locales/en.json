@@ -72,7 +72,7 @@
     "categories": {
       "media": {
         "title": "Media Servers",
-        "description": "Media streaming servers (choose one)"
+        "description": "Media streaming servers (choose one or more)"
       },
       "management": {
         "title": "Media Management",
@@ -95,10 +95,6 @@
       "heading": "Service Configuration",
       "subtitle": "Configure file paths and ports for your services:",
       "environmentSettings": "Environment Settings",
-      "jellyfinAccount": "Jellyfin Admin Account",
-      "jellyfinIntro": "Choose the admin login for Jellyfin. Ensembler uses it once to set Jellyfin up and create your libraries — it is never saved to disk, so keep these details somewhere safe.",
-      "adminUsername": "Admin username",
-      "adminPassword": "Admin password",
       "readyToSetUp": "Ready to set up",
       "port": "Port {{port}}"
     },
@@ -131,8 +127,6 @@
       "tzRequired": "Timezone is required.",
       "puid": "PUID must be a non-negative number.",
       "pgid": "PGID must be a non-negative number.",
-      "jellyfinUsername": "Jellyfin admin username is required.",
-      "jellyfinPassword": "Jellyfin admin password must be at least 4 characters.",
       "portRange": "Port must be between 1024 and 65535.",
       "portConflictSelected": "Port conflicts with another selected service.",
       "portInUseSwitched": "Port {{port}} is in use — switched to a free port, {{suggestion}}.",
@@ -655,21 +649,6 @@
       "configNotFound": "Bazarr config.yaml not found yet — is Bazarr running?",
       "connected": "Connected Bazarr to {{services}}",
       "alreadyConnected": "Bazarr already connected to {{services}}"
-    },
-    "jellyfin": {
-      "notReady": "{{error}}",
-      "setUpOpenToAddLibraries": "Jellyfin is set up — open it to add your libraries",
-      "needsAdminAccount": "Jellyfin needs its admin account — re-run setup or finish it in Jellyfin",
-      "accountCreated": "Created admin account and completed setup",
-      "accountFailed": "{{error}}",
-      "authenticateFailed": "{{error}}",
-      "libraryCreated": "Created \"{{name}}\" library at {{path}}",
-      "libraryAlreadyConfigured": "\"{{name}}\" already configured",
-      "libraryFailed": "{{error}}",
-      "notifyConfigured": "{{service}} will refresh Jellyfin on import",
-      "notifyAlreadyConfigured": "{{service}} already notifies Jellyfin",
-      "notifyFailed": "{{error}}",
-      "apiKeyFailed": "{{error}}"
     },
     "plex": {
       "stepFailed": "{{error}}",

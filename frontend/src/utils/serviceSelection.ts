@@ -1,9 +1,10 @@
 // Categories shown as "choose one" in the setup wizard are single-select:
 // turning one on turns the other (non-required) services in that category off.
-// "management" (Sonarr/Radarr/Bazarr) allows multiple. Kept pure and separate
-// from the component so it can be unit-tested — a stack with two media servers
-// or two download clients breaks the interconnection logic.
-const SINGLE_SELECT_CATEGORIES = ['media', 'torrent', 'indexer', 'request'];
+// Media servers (Plex/Jellyfin/Emby) are NOT single-select — a user can run
+// several, and setup wires each *arr to notify every enabled server. Download
+// clients and indexers stay single-select: the interconnection wires one of
+// each. Kept pure and separate from the component so it can be unit-tested.
+const SINGLE_SELECT_CATEGORIES = ['torrent', 'indexer', 'request'];
 
 export interface SelectableService {
   key: string;

@@ -66,7 +66,7 @@
       "recommended": "推荐"
     },
     "categories": {
-      "media": { "title": "媒体服务器", "description": "媒体流媒体服务器（选择一项）" },
+      "media": { "title": "媒体服务器", "description": "媒体流媒体服务器（可选择一项或多项）" },
       "management": { "title": "媒体管理", "description": "媒体收藏管理工具（可多选）" },
       "torrent": { "title": "下载客户端", "description": "BitTorrent 下载客户端（选择一项）" },
       "indexer": { "title": "索引器", "description": "种子索引器管理（选择一项）" },
@@ -76,10 +76,6 @@
       "heading": "服务配置",
       "subtitle": "为您的服务配置文件路径和端口：",
       "environmentSettings": "环境设置",
-      "jellyfinAccount": "Jellyfin 管理员账户",
-      "jellyfinIntro": "选择 Jellyfin 的管理员登录信息。Ensembler 仅使用一次来完成 Jellyfin 的设置并创建媒体库——它不会保存到磁盘，因此请妥善保管这些信息。",
-      "adminUsername": "管理员用户名",
-      "adminPassword": "管理员密码",
       "readyToSetUp": "准备就绪",
       "port": "端口 {{port}}"
     },
@@ -108,8 +104,6 @@
       "tzRequired": "时区为必填项。",
       "puid": "PUID 必须为非负数。",
       "pgid": "PGID 必须为非负数。",
-      "jellyfinUsername": "Jellyfin 管理员用户名为必填项。",
-      "jellyfinPassword": "Jellyfin 管理员密码至少需要 4 个字符。",
       "portRange": "端口必须介于 1024 和 65535 之间。",
       "portConflictSelected": "端口与另一项已选服务冲突。",
       "portInUseSwitched": "端口 {{port}} 已被占用——已切换到空闲端口 {{suggestion}}。",
@@ -621,21 +615,6 @@
       "configNotFound": "尚未找到 Bazarr 的 config.yaml——Bazarr 是否正在运行？",
       "connected": "已将 Bazarr 连接到 {{services}}",
       "alreadyConnected": "Bazarr 已连接到 {{services}}"
-    },
-    "jellyfin": {
-      "notReady": "{{error}}",
-      "setUpOpenToAddLibraries": "Jellyfin 已设置完成——打开它即可添加媒体库",
-      "needsAdminAccount": "Jellyfin 需要其管理员账户——请重新运行设置或在 Jellyfin 中完成",
-      "accountCreated": "已创建管理员账户并完成设置",
-      "accountFailed": "{{error}}",
-      "authenticateFailed": "{{error}}",
-      "libraryCreated": "已在 {{path}} 创建“{{name}}”媒体库",
-      "libraryAlreadyConfigured": "“{{name}}”已配置",
-      "libraryFailed": "{{error}}",
-      "notifyConfigured": "{{service}} 将在导入时刷新 Jellyfin",
-      "notifyAlreadyConfigured": "{{service}} 已在通知 Jellyfin",
-      "notifyFailed": "{{error}}",
-      "apiKeyFailed": "{{error}}"
     },
     "plex": {
       "stepFailed": "{{error}}",

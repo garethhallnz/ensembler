@@ -76,10 +76,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
   });
   const [puid, setPuid] = useState(1000);
   const [pgid, setPgid] = useState(1000);
-  // Jellyfin admin account — collected here so Ensembler can complete Jellyfin's
-  // first-run setup automatically. Passed transiently to setup and never saved.
-  const [jellyfinUsername, setJellyfinUsername] = useState('admin');
-  const [jellyfinPassword, setJellyfinPassword] = useState('');
   const [envErrors, setEnvErrors] = useState<{[key: string]: string}>({});
   const [applyPhases, setApplyPhases] = useState<ApplyPhase[]>([]);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -532,17 +528,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       valid = false;
     }
 
-    if (selected['jellyfin']) {
-      if (!jellyfinUsername.trim()) {
-        currentEnvErrors.jellyfinUsername = t('setup.errors.jellyfinUsername');
-        valid = false;
-      }
-      if (jellyfinPassword.length < 4) {
-        currentEnvErrors.jellyfinPassword = t('setup.errors.jellyfinPassword');
-        valid = false;
-      }
-    }
-
     setEnvErrors(currentEnvErrors);
     return valid;
   };
@@ -619,15 +604,8 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
       // Wiring failures are warnings, not errors — services still run. The
       // per-service outcomes are shown in the completion panel below.
       setPhase('connect', 'active');
-      const body = selected['jellyfin']
-        ? { jellyfin: { username: jellyfinUsername, password: jellyfinPassword } }
-        : {};
       try {
-        const connectRes = await apiFetch('/api/services/setup-connections', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
+        const connectRes = await apiFetch('/api/services/setup-connections', { method: 'POST' });
         const connectData = await connectRes.json();
         setConnectResults(connectData.results || []);
       } catch (connectError) {
@@ -717,10 +695,6 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
               else if (field === 'puid') setPuid(value as number);
               else if (field === 'pgid') setPgid(value as number);
             }}
-            jellyfinUsername={jellyfinUsername}
-            jellyfinPassword={jellyfinPassword}
-            onJellyfinUsernameChange={setJellyfinUsername}
-            onJellyfinPasswordChange={setJellyfinPassword}
           />
         )}
         {step === 2 && (

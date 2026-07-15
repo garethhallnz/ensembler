@@ -339,13 +339,7 @@ app.post('/api/services/setup-connections', async (req: Request, res: Response) 
       return res.status(404).json({ success: false, code: 'messages.config.notFound', message: 'config.json not found.' });
     }
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
-    // Jellyfin admin credentials arrive in the request body from the wizard and
-    // are used transiently — never written to config.json or anywhere on disk.
-    const jellyfin = req.body?.jellyfin;
-    const secrets = jellyfin?.username && jellyfin?.password
-      ? { jellyfin: { username: jellyfin.username, password: jellyfin.password } }
-      : {};
-    const result = await setupConnections(config, configDir, {}, secrets);
+    const result = await setupConnections(config, configDir);
 
     // Any step that seeded on-disk config (Bazarr) needs its container
     // restarted to take effect.
