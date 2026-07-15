@@ -1,6 +1,5 @@
+import { delay } from './readiness';
 import { SetupStepResult } from './types';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export interface ArrRequestOptions {
   baseUrl: string;

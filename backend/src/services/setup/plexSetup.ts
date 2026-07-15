@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { ensureMediaServerNotification } from './arrSetup';
+import { waitForReady } from './readiness';
 import { ArrTarget, SetupStepResult } from './types';
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Plex writes its account token into Preferences.xml once the user completes
 // the one-time plex.tv sign-in. The /config volume is mapped to
@@ -33,24 +32,17 @@ async function waitForPlexReady(
   timeoutMs = 60000,
   pollIntervalMs = 2000
 ): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  let lastError = 'no response';
-
-  while (true) {
-    try {
+  await waitForReady(
+    async () => {
       const response = await fetch(`${baseUrl}/identity`);
-      if (response.ok) {
-        return;
+      if (!response.ok) {
+        throw new Error(`Plex responded with ${response.status}`);
       }
-      lastError = `Plex responded with ${response.status}`;
-    } catch (err) {
-      lastError = (err as Error).message;
-    }
-    if (Date.now() + pollIntervalMs > deadline) {
-      throw new Error(`Plex did not become ready within ${timeoutMs / 1000}s (${lastError})`);
-    }
-    await delay(pollIntervalMs);
-  }
+    },
+    lastError => new Error(`Plex did not become ready within ${timeoutMs / 1000}s (${lastError})`),
+    timeoutMs,
+    pollIntervalMs
+  );
 }
 
 export interface PlexLibrary {
