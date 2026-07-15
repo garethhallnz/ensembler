@@ -134,3 +134,22 @@ export async function getPinnedVersions(): Promise<Record<string, string>> {
   const data = PinnedVersionsSchema.parse(await res.json());
   return data.versions ?? {};
 }
+
+// The full user configuration. Used by the settings + per-service config screens.
+const CurrentConfigSchema = z.object({
+  selectedServices: z.record(z.string(), z.boolean()),
+  paths: z.record(z.string(), z.array(z.string())),
+  ports: z.record(z.string(), z.number()),
+  environment: z.object({ tz: z.string(), puid: z.number(), pgid: z.number() }),
+  versions: z.record(z.string(), z.string()).optional(),
+  autoUpdate: z.boolean().optional(),
+  minimizeToTray: z.boolean().optional(),
+});
+
+export type CurrentConfig = z.infer<typeof CurrentConfigSchema>;
+
+export async function getCurrentConfig(): Promise<CurrentConfig> {
+  const res = await apiFetch('/api/config/current');
+  if (!res.ok) throw new Error('Current config request was unsuccessful');
+  return CurrentConfigSchema.parse(await res.json());
+}

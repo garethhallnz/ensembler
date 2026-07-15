@@ -16,7 +16,7 @@ import { Drawer } from 'flowbite-react';
 import { HiCog } from 'react-icons/hi';
 import { getDefaultPath } from './utils/pathDefaults';
 import { toggleService } from './utils/serviceSelection';
-import { getServiceCatalog } from './requests/services';
+import { getServiceCatalog, getCurrentConfig } from './requests/services';
 
 declare global {
   interface Window {
@@ -135,22 +135,19 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
 
   const loadExistingConfiguration = async () => {
     try {
-      const res = await apiFetch('/api/config/current');
-      if (res.ok) {
-        const config = await res.json();
-        setSelected(config.selectedServices || {});
-        setPaths(config.paths || {});
-        setPorts(prev => ({ ...prev, ...config.ports }));
-        setTz(config.environment?.tz || (() => {
-          try {
-            return Intl.DateTimeFormat().resolvedOptions().timeZone;
-          } catch {
-            return 'UTC';
-          }
-        })());
-        setPuid(config.environment?.puid ?? 1000);
-        setPgid(config.environment?.pgid ?? 1000);
-      }
+      const config = await getCurrentConfig();
+      setSelected(config.selectedServices);
+      setPaths(config.paths);
+      setPorts(prev => ({ ...prev, ...config.ports }));
+      setTz(config.environment.tz || (() => {
+        try {
+          return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        } catch {
+          return 'UTC';
+        }
+      })());
+      setPuid(config.environment.puid ?? 1000);
+      setPgid(config.environment.pgid ?? 1000);
     } catch (error) {
       console.error('Error loading existing configuration:', error);
     }

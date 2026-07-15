@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from './requests/client';
+import { getCurrentConfig, type CurrentConfig } from './requests/services';
 import Button from './components/atoms/Button';
 import Spinner from './components/atoms/Spinner';
 import Alert from './components/atoms/Alert';
@@ -20,19 +21,6 @@ interface AdvancedSettingsProps {
   appearanceOnly?: boolean;
 }
 
-interface ConfigType {
-  selectedServices: { [key: string]: boolean };
-  ports: { [key: string]: number };
-  environment: {
-    tz: string;
-    puid: number;
-    pgid: number;
-  };
-  paths: { [key: string]: string[] };
-  autoUpdate?: boolean;
-  minimizeToTray?: boolean;
-}
-
 type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 
 // App-level settings only. Per-service configuration and adding services live
@@ -41,7 +29,7 @@ type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 export default function AdvancedSettings({ onClose, onResetComplete, appearanceOnly = false }: AdvancedSettingsProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
-  const [config, setConfig] = useState<ConfigType | null>(null);
+  const [config, setConfig] = useState<CurrentConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -62,10 +50,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
     }
     (async () => {
       try {
-        const res = await apiFetch('/api/config/current');
-        if (res.ok) {
-          setConfig(await res.json());
-        }
+        setConfig(await getCurrentConfig());
       } catch (error) {
         console.error('Error fetching config:', error);
       } finally {

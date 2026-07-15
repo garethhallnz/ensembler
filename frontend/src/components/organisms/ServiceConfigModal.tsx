@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { apiFetch } from '../../requests/client';
+import { getCurrentConfig, type CurrentConfig } from '../../requests/services';
 import Button from '../atoms/Button';
 import Dialog from '../atoms/Dialog';
 import TextInput from '../atoms/TextInput';
@@ -31,14 +32,6 @@ interface ServiceConfigModalProps {
   onToast: (message: string, type: 'success' | 'error' | 'warning' | 'info') => void;
 }
 
-interface CurrentConfig {
-  selectedServices: { [key: string]: boolean };
-  paths: { [key: string]: string[] };
-  ports: { [key: string]: number };
-  environment: { tz: string; puid: number; pgid: number };
-  // Optional per-service pinned image tag; absent/empty means "latest".
-  versions?: { [key: string]: string };
-}
 
 
 export default function ServiceConfigModal({ service, mode, onClose, onSaved, onToast }: ServiceConfigModalProps) {
@@ -57,8 +50,7 @@ export default function ServiceConfigModal({ service, mode, onClose, onSaved, on
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiFetch(`/api/config/current`);
-        const current: CurrentConfig = res.ok ? await res.json() : { selectedServices: {}, paths: {}, ports: {}, environment: { tz: 'UTC', puid: 1000, pgid: 1000 } };
+        const current = await getCurrentConfig();
         setConfig(current);
         setPort(current.ports?.[service.key] || service.defaultPort);
         setVersion(current.versions?.[service.key] ?? '');

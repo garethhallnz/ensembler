@@ -14,6 +14,7 @@ import {
   getServiceUpdateStatus,
   getServiceCatalog,
   getPinnedVersions,
+  getCurrentConfig,
 } from './services';
 
 const jsonRes = (body: unknown) => ({ ok: true, json: async () => body });
@@ -169,5 +170,36 @@ describe('getPinnedVersions', () => {
   it('throws when the config request is not ok', async () => {
     mockApiFetch.mockResolvedValue({ ok: false, json: async () => ({}) });
     await expect(getPinnedVersions()).rejects.toThrow();
+  });
+});
+
+describe('getCurrentConfig', () => {
+  const config = {
+    selectedServices: { sonarr: true },
+    paths: { sonarr: ['~/TV'] },
+    ports: { sonarr: 8989 },
+    environment: { tz: 'UTC', puid: 1000, pgid: 1000 },
+  };
+
+  it('parses the config, with optional fields absent', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes(config));
+    expect(await getCurrentConfig()).toEqual(config);
+  });
+
+  it('keeps optional versions/autoUpdate/minimizeToTray when present', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ ...config, versions: { sonarr: '4.0.9' }, autoUpdate: true, minimizeToTray: false }));
+    const result = await getCurrentConfig();
+    expect(result.versions).toEqual({ sonarr: '4.0.9' });
+    expect(result.autoUpdate).toBe(true);
+  });
+
+  it('throws on a malformed config (wrong port type)', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ ...config, ports: { sonarr: 'nope' } }));
+    await expect(getCurrentConfig()).rejects.toThrow();
+  });
+
+  it('throws when the request is not ok', async () => {
+    mockApiFetch.mockResolvedValue({ ok: false, json: async () => ({}) });
+    await expect(getCurrentConfig()).rejects.toThrow();
   });
 });
