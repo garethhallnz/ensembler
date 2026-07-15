@@ -21,10 +21,11 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceVersion, getServiceCatalog } from './requests/services';
+import { getDockerStatus, getServiceStatuses, getServiceCatalog } from './requests/services';
 import { useServiceAlerts } from './hooks/useServiceAlerts';
 import { useServiceLogs } from './hooks/useServiceLogs';
 import { useServiceUpdates } from './hooks/useServiceUpdates';
+import { useServiceVersions } from './hooks/useServiceVersions';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -123,8 +124,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     updates: 'No updates available'
   });
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [serviceVersions, setServiceVersions] = useState<{ [key: string]: string }>({});
-  const [pinnedVersions, setPinnedVersions] = useState<{ [key: string]: string }>({});
+  const { serviceVersions, pinnedVersions, refresh: refreshVersions } = useServiceVersions(selectedServices);
   const serviceAlerts = useServiceAlerts(selectedServices);
   const {
     serviceUpdates, updateChecking, recentlyChecked, checkingAll,
@@ -172,33 +172,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     }
   }, []);
 
-  // Which services are pinned to a specific version (vs tracking latest), so the
-  // card badge can show a lock rather than the "tracks latest" marker.
-  const fetchPinnedVersions = useCallback(async () => {
-    try {
-      const res = await apiFetch('/api/config/current');
-      if (!res.ok) return;
-      const config = await res.json();
-      setPinnedVersions(config.versions ?? {});
-    } catch {
-      /* leave as-is — badge just falls back to the "latest" marker */
-    }
-  }, []);
-
-  // Best-effort running version per service, for the muted badge on each card.
-  const fetchServiceVersions = useCallback(async (keys: string[]) => {
-    const entries = await Promise.all(keys.map(async key => {
-      try {
-        return [key, await getServiceVersion(key)] as const;
-      } catch {
-        return [key, ''] as const;
-      }
-    }));
-    const found = entries.filter(([, v]) => v && v !== 'Not installed');
-    setServiceVersions(prev => ({ ...prev, ...Object.fromEntries(found) }));
-  }, []);
-
-  // Read the cached update status (instant — no image pulls).
   // Thin toast wrappers over the update hook's data actions (the hook owns the
   // fetch, spinner flags, and "up to date" fade; toasts are the UI's concern).
   const handleCheckAllUpdates = async () => {
@@ -231,11 +204,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     await fetchServiceConfig();
     await fetchServiceStatus();
     await fetchDockerStatus();
-    await fetchPinnedVersions();
-    await fetchServiceVersions(selectedServices);
+    await refreshVersions(selectedServices);
     const newStatus = await runtimeManager.checkStatus();
     setRuntimeStatus(newStatus);
-  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, fetchPinnedVersions, fetchServiceVersions, selectedServices]);
+  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, refreshVersions, selectedServices]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -264,12 +236,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     };
   }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus]);
 
-  useEffect(() => {
-    if (selectedServices.length > 0) {
-      fetchServiceVersions(selectedServices);
-      fetchPinnedVersions();
-    }
-  }, [selectedServices, fetchServiceVersions, fetchPinnedVersions]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
@@ -418,7 +384,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           // Re-read the (backend-refreshed) availability + status so prompts clear.
           await refreshUpdates();
           await fetchServiceStatus();
-          await fetchServiceVersions(data.updated ?? []);
+          await refreshVersions(data.updated ?? []);
           setRuntimeStatus(await runtimeManager.checkStatus());
         } catch (error) {
           showToast(t('dashboard.toast.updateAllError', { error: String(error) }), 'error');
@@ -448,7 +414,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             setRuntimeStatus(newStatus); // Ensure up-to-date status
             // Re-read the backend-refreshed availability so the prompt clears.
             await refreshUpdates();
-            await fetchServiceVersions([serviceName]);
+            await refreshVersions([serviceName]);
           } else {
             showToast(t('dashboard.toast.updateFailed', { name: serviceName, message: apiMessage(t, data) }), 'error');
           }

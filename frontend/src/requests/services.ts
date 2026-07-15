@@ -122,3 +122,15 @@ export async function getServiceCatalog(): Promise<ServiceCatalogEntry[]> {
   if (!data.success) throw new Error('Service catalog request was unsuccessful');
   return data.services;
 }
+
+// Narrow read of the user config: just the per-service pinned image tags. Kept
+// lenient (only the `versions` map is validated) so it tolerates the rest of the
+// config shape, which other callers own.
+const PinnedVersionsSchema = z.object({ versions: z.record(z.string(), z.string()).optional() });
+
+export async function getPinnedVersions(): Promise<Record<string, string>> {
+  const res = await apiFetch('/api/config/current');
+  if (!res.ok) throw new Error('Current config request was unsuccessful');
+  const data = PinnedVersionsSchema.parse(await res.json());
+  return data.versions ?? {};
+}

@@ -13,6 +13,7 @@ import {
   getServiceLogs,
   getServiceUpdateStatus,
   getServiceCatalog,
+  getPinnedVersions,
 } from './services';
 
 const jsonRes = (body: unknown) => ({ ok: true, json: async () => body });
@@ -151,5 +152,22 @@ describe('getServiceCatalog', () => {
   it('throws on a malformed entry', async () => {
     mockApiFetch.mockResolvedValue(jsonRes({ success: true, services: [{ key: 'x' }] }));
     await expect(getServiceCatalog()).rejects.toThrow();
+  });
+});
+
+describe('getPinnedVersions', () => {
+  it('returns the versions map, ignoring the rest of the config', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ selectedServices: { sonarr: true }, versions: { sonarr: '4.0.9' } }));
+    expect(await getPinnedVersions()).toEqual({ sonarr: '4.0.9' });
+  });
+
+  it('returns {} when there are no pinned versions', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({ selectedServices: {} }));
+    expect(await getPinnedVersions()).toEqual({});
+  });
+
+  it('throws when the config request is not ok', async () => {
+    mockApiFetch.mockResolvedValue({ ok: false, json: async () => ({}) });
+    await expect(getPinnedVersions()).rejects.toThrow();
   });
 });
