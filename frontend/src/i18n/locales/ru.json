@@ -539,6 +539,10 @@
     "ports": {
       "validateFailed": "Не удалось проверить порты."
     },
+    "paths": {
+      "createFailed": "Не удалось создать эту папку.",
+      "notWritable": "В эту папку нельзя записывать."
+    },
     "docker": {
       "composeNotFound": "Docker Compose не найден или не работает.",
       "notRunning": "Docker не запущен или не установлен.",

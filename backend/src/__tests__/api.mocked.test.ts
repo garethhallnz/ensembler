@@ -192,11 +192,15 @@ const createTestApp = () => {
         if (!fs.existsSync(p)) {
           fs.mkdirSync(p, { recursive: true });
         }
-        fs.accessSync(p, fs.constants.W_OK);
-        return { path: p, valid: true };
-      } catch (err) {
-        return { path: p, valid: false, error: (err as Error).message };
+      } catch {
+        return { path: p, valid: false, code: 'messages.paths.createFailed', message: 'Could not create this folder.' };
       }
+      try {
+        fs.accessSync(p, fs.constants.W_OK);
+      } catch {
+        return { path: p, valid: false, code: 'messages.paths.notWritable', message: 'This folder is not writable.' };
+      }
+      return { path: p, valid: true };
     });
 
     if (results.some((r: any) => !r.valid)) {
@@ -472,7 +476,8 @@ describe('API Tests with Mocks', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.results[0].valid).toBe(false);
-      expect(response.body.results[0].error).toContain('permission denied');
+      expect(response.body.results[0].code).toBe('messages.paths.notWritable');
+      expect(response.body.results[0].error).toBeUndefined();
     });
 
     it('should reject invalid input', async () => {

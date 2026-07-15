@@ -24,12 +24,15 @@ app.post('/api/paths/validate', (req, res) => {
       if (!fs.existsSync(p)) {
         fs.mkdirSync(p, { recursive: true });
       }
-      fs.accessSync(p, fs.constants.W_OK);
-      return { path: p, valid: true };
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      return { path: p, valid: false, error: errorMessage };
+    } catch {
+      return { path: p, valid: false, code: 'messages.paths.createFailed', message: 'Could not create this folder.' };
     }
+    try {
+      fs.accessSync(p, fs.constants.W_OK);
+    } catch {
+      return { path: p, valid: false, code: 'messages.paths.notWritable', message: 'This folder is not writable.' };
+    }
+    return { path: p, valid: true };
   });
 
   if (results.some(r => !r.valid)) {
@@ -60,12 +63,13 @@ describe('POST /api/paths/validate', () => {
     expect(res.status).toBe(200);
   });
 
-  it('should return error if path is not writable', async () => {
+  it('should return a localizable code (not raw fs text) if path is not writable', async () => {
     (fs.existsSync as jest.Mock).mockReturnValue(true);
     (fs.accessSync as jest.Mock).mockImplementation(() => { throw new Error('Permission denied'); });
     const res = await request(app).post('/api/paths/validate').send({ paths: ['/invalid/path'] });
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
-    expect(res.body.results[0].error).toBe('Permission denied');
+    expect(res.body.results[0].code).toBe('messages.paths.notWritable');
+    expect(res.body.results[0].error).toBeUndefined();
   });
 });

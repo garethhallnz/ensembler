@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from './requests/client';
+import { apiMessage } from './utils/apiMessage';
 import AdvancedSettings from './AdvancedSettings';
 import Card from './components/atoms/Card';
 import Button from './components/atoms/Button';
@@ -356,7 +357,9 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
     interface PathValidateResult {
         path: string;
         valid: boolean;
-        error?: string;
+        code?: string;
+        message?: string;
+        params?: Record<string, unknown>;
     }
     const data: { success: boolean; results: PathValidateResult[] } = await res.json();
     const errors: { [service: string]: string[] } = {};
@@ -366,7 +369,7 @@ export default function SetupWizard({ onComplete, isRerun = false }: SetupWizard
                 const pathIndex = paths[svc].indexOf(result.path);
                 if (pathIndex !== -1) {
                     if (!errors[svc]) errors[svc] = [];
-                    errors[svc][pathIndex] = result.error || '';
+                    errors[svc][pathIndex] = apiMessage(t, result);
                 }
             });
         }

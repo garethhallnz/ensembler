@@ -539,6 +539,10 @@
     "ports": {
       "validateFailed": "端口校验失败。"
     },
+    "paths": {
+      "createFailed": "无法创建此文件夹。",
+      "notWritable": "此文件夹不可写入。"
+    },
     "docker": {
       "composeNotFound": "未找到 Docker Compose 或其无法正常工作。",
       "notRunning": "Docker 未运行或未安装。",

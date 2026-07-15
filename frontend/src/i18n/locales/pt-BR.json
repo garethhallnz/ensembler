@@ -539,6 +539,10 @@
     "ports": {
       "validateFailed": "Falha ao validar as portas."
     },
+    "paths": {
+      "createFailed": "Não foi possível criar esta pasta.",
+      "notWritable": "Esta pasta não é gravável."
+    },
     "docker": {
       "composeNotFound": "Docker Compose não encontrado ou não está funcionando.",
       "notRunning": "O Docker não está em execução ou não está instalado.",

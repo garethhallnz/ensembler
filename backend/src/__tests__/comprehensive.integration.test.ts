@@ -365,7 +365,7 @@ describe('Comprehensive Integration Tests', () => {
         expect(response.body.success).toBe(true);
       });
 
-      it('should handle permission errors', async () => {
+      it('returns a code (not raw fs error text) when a path is not writable', async () => {
         (fs.accessSync as jest.Mock).mockImplementation(() => {
           throw new Error('Permission denied');
         });
@@ -377,7 +377,23 @@ describe('Comprehensive Integration Tests', () => {
 
         expect(response.body.success).toBe(false);
         expect(response.body.results[0].valid).toBe(false);
-        expect(response.body.results[0].error).toBe('Permission denied');
+        expect(response.body.results[0].code).toBe('messages.paths.notWritable');
+        expect(response.body.results[0].error).toBeUndefined();
+      });
+
+      it('returns a code (not raw fs error text) when a path cannot be created', async () => {
+        (fs.existsSync as jest.Mock).mockReturnValue(false);
+        (fs.mkdirSync as jest.Mock).mockImplementationOnce(() => {
+          throw new Error('EACCES: permission denied, mkdir');
+        });
+
+        const response = await request(app)
+          .post('/api/paths/validate')
+          .send({ paths: ['/root/nope'] })
+          .expect(400);
+
+        expect(response.body.results[0].code).toBe('messages.paths.createFailed');
+        expect(response.body.results[0].error).toBeUndefined();
       });
 
       it('should reject invalid input', async () => {

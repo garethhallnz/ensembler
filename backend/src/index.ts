@@ -79,11 +79,16 @@ app.post('/api/paths/validate', (req, res) => {
         if (!fs.existsSync(p)) {
           fs.mkdirSync(p, { recursive: true });
         }
-        fs.accessSync(p, fs.constants.W_OK);
-        return { path: p, valid: true };
-      } catch (err) {
-        return { path: p, valid: false, error: (err as Error).message };
+      } catch {
+        // Don't leak raw fs error text to the client; return a stable code the UI localizes.
+        return { path: p, valid: false, code: 'messages.paths.createFailed', message: 'Could not create this folder.' };
       }
+      try {
+        fs.accessSync(p, fs.constants.W_OK);
+      } catch {
+        return { path: p, valid: false, code: 'messages.paths.notWritable', message: 'This folder is not writable.' };
+      }
+      return { path: p, valid: true };
     });
   
     if (results.some(r => !r.valid)) {

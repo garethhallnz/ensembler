@@ -539,6 +539,10 @@
     "ports": {
       "validateFailed": "No se pudieron validar los puertos."
     },
+    "paths": {
+      "createFailed": "No se pudo crear esta carpeta.",
+      "notWritable": "No se puede escribir en esta carpeta."
+    },
     "docker": {
       "composeNotFound": "Docker Compose no se encontró o no funciona.",
       "notRunning": "Docker no está en ejecución o no está instalado.",

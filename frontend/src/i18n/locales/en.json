@@ -573,6 +573,10 @@
     "ports": {
       "validateFailed": "Failed to validate ports."
     },
+    "paths": {
+      "createFailed": "Could not create this folder.",
+      "notWritable": "This folder is not writable."
+    },
     "docker": {
       "composeNotFound": "Docker Compose not found or not working.",
       "notRunning": "Docker not running or not installed.",
