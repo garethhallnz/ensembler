@@ -21,7 +21,8 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceUpdates, getServiceMonitor, checkServiceUpdates, getServiceVersion, getServiceLogs, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
+import { getDockerStatus, getServiceStatuses, getServiceUpdates, checkServiceUpdates, getServiceVersion, getServiceLogs, getServiceUpdateStatus, getServiceCatalog } from './requests/services';
+import { useServiceAlerts } from './hooks/useServiceAlerts';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -48,10 +49,6 @@ interface ServiceLogsType {
 
 interface ServiceUpdateType {
   [key: string]: { hasUpdate: boolean | null };
-}
-
-interface ServiceAlertsType {
-  [key: string]: { alert: boolean; status: string; healthy: boolean };
 }
 
 interface DashboardProps {
@@ -135,7 +132,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const [serviceUpdates, setServiceUpdates] = useState<ServiceUpdateType>({});
   const [serviceVersions, setServiceVersions] = useState<{ [key: string]: string }>({});
   const [pinnedVersions, setPinnedVersions] = useState<{ [key: string]: string }>({});
-  const [serviceAlerts, setServiceAlerts] = useState<ServiceAlertsType>({});
+  const serviceAlerts = useServiceAlerts(selectedServices);
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
   const autoCheckedRef = useRef(false);
   const [updateChecking, setUpdateChecking] = useState<{ [key: string]: boolean }>({});
@@ -282,14 +279,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     }
   };
 
-  const fetchServiceAlerts = useCallback(async () => {
-    try {
-      setServiceAlerts(await getServiceMonitor());
-    } catch (error) {
-      console.error('Error fetching service alerts:', error);
-    }
-  }, []);
-
   const fetchServiceConfig = useCallback(async () => {
     try {
       setServiceConfig(await getServiceCatalog());
@@ -338,22 +327,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   useEffect(() => {
     if (selectedServices.length > 0) {
       fetchServiceUpdates();
-      fetchServiceAlerts();
       fetchServiceVersions(selectedServices);
       fetchPinnedVersions();
     }
-  }, [selectedServices, fetchServiceUpdates, fetchServiceAlerts, fetchServiceVersions, fetchPinnedVersions]);
-
-  // Set up monitoring interval for service alerts
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (selectedServices.length > 0) {
-        fetchServiceAlerts();
-      }
-    }, 30000); // Check every 30 seconds
-
-    return () => clearInterval(interval);
-  }, [selectedServices, fetchServiceAlerts]);
+  }, [selectedServices, fetchServiceUpdates, fetchServiceVersions, fetchPinnedVersions]);
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
     const key = `${serviceName}:${action}`;
