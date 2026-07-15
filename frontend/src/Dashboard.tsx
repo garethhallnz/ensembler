@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { apiFetch } from './requests/client';
 import { useTranslation } from 'react-i18next';
 import AdvancedSettings from './AdvancedSettings';
-import { runtimeManager, type RuntimeStatus } from './services/runtimeManager';
 import Card from './components/atoms/Card';
 import Button from './components/atoms/Button';
 import ServiceConfigModal from './components/organisms/ServiceConfigModal';
@@ -21,11 +20,12 @@ import { isDesktopApp } from './utils/selectDirectory';
 import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
-import { getDockerStatus, getServiceStatuses, getServiceCatalog } from './requests/services';
+import { getServiceCatalog } from './requests/services';
 import { useServiceAlerts } from './hooks/useServiceAlerts';
 import { useServiceLogs } from './hooks/useServiceLogs';
 import { useServiceUpdates } from './hooks/useServiceUpdates';
 import { useServiceVersions } from './hooks/useServiceVersions';
+import { useServiceStatus } from './hooks/useServiceStatus';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
 import { Drawer, Progress } from 'flowbite-react';
 import { HiPlay, HiStop, HiArrowCircleUp, HiCog, HiPlus } from 'react-icons/hi';
@@ -38,11 +38,6 @@ interface ServiceConfig {
   defaultPort: number;
   pathRequirements: { label: string; required: boolean; description: string }[];
   required: boolean;
-}
-
-
-interface ServiceStatusType {
-  [key: string]: string;
 }
 
 
@@ -84,11 +79,10 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const { openService } = useServiceTabs();
-  const [serviceStatus, setServiceStatus] = useState<ServiceStatusType>({});
+  const { serviceStatus, dockerStatus, runtimeStatus, loading, refresh: refreshStatus } = useServiceStatus();
   // The enabled services are exactly the keys the status endpoint returns —
   // derive them rather than keeping a second copy that can drift.
   const selectedServices = useMemo(() => Object.keys(serviceStatus), [serviceStatus]);
-  const [loading, setLoading] = useState(true);
   const plexWiringInFlight = useRef(false);
   const prowlarrNeedsIndexers = usePolledSetupStatus<{ enabled: boolean; hasIndexers: boolean }>({
     endpoint: '/api/services/prowlarr/indexer-status',
@@ -119,10 +113,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   });
   const [actionLoading, setActionLoading] = useState<{ [key: string]: boolean }>({});
   const [actionError, setActionError] = useState<{ title: string; detail?: string; serviceKey: string; retry: () => void } | null>(null);
-  const [dockerStatus, setDockerStatus] = useState<{ running: boolean; updates: string }>({
-    running: true,
-    updates: 'No updates available'
-  });
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const { serviceVersions, pinnedVersions, refresh: refreshVersions } = useServiceVersions(selectedServices);
   const serviceAlerts = useServiceAlerts(selectedServices);
@@ -136,7 +126,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   // Per-service config ('edit') and add-service ('add') both use one modal.
   const [configModal, setConfigModal] = useState<{ service: ServiceConfig; mode: 'edit' | 'add' } | null>(null);
   const [showAddService, setShowAddService] = useState(false);
-  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState<{
     message: string;
@@ -153,24 +142,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const logStickBottomRef = useRef(true);
   const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
   const [isSystemStatusExpanded, setIsSystemStatusExpanded] = useState(false);
-
-  const fetchServiceStatus = useCallback(async () => {
-    try {
-      setServiceStatus(await getServiceStatuses());
-    } catch (error) {
-      console.error('Error fetching service status:', error);
-    }
-  }, []);
-
-  const fetchDockerStatus = useCallback(async () => {
-    try {
-      const { docker, compose } = await getDockerStatus();
-      const running = docker && compose;
-      setDockerStatus({ running, updates: running ? 'Docker running' : 'Docker not running' });
-    } catch (error) {
-      console.error('Error fetching Docker status:', error);
-    }
-  }, []);
 
   // Thin toast wrappers over the update hook's data actions (the hook owns the
   // fetch, spinner flags, and "up to date" fade; toasts are the UI's concern).
@@ -202,39 +173,15 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
 
   const refreshDashboard = useCallback(async () => {
     await fetchServiceConfig();
-    await fetchServiceStatus();
-    await fetchDockerStatus();
+    await refreshStatus();
     await refreshVersions(selectedServices);
-    const newStatus = await runtimeManager.checkStatus();
-    setRuntimeStatus(newStatus);
-  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus, refreshVersions, selectedServices]);
+  }, [fetchServiceConfig, refreshStatus, refreshVersions, selectedServices]);
 
+  // Load the service catalog once on mount; useServiceStatus owns loading and
+  // polling of service/docker/runtime status.
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await fetchServiceConfig();
-      await fetchServiceStatus();
-      await fetchDockerStatus();
-
-      // Get runtime status
-      setRuntimeStatus(runtimeManager.getStatus());
-      
-      setLoading(false);
-    };
-    loadData();
-
-    // Refresh runtime status and re-poll service/docker status so cards reflect
-    // containers that changed state out-of-band (e.g. a crash or a manual stop).
-    const runtimeInterval = setInterval(() => {
-      setRuntimeStatus(runtimeManager.getStatus());
-      fetchServiceStatus();
-      fetchDockerStatus();
-    }, 30000); // Update every 30 seconds
-
-    return () => {
-      clearInterval(runtimeInterval);
-    };
-  }, [fetchServiceConfig, fetchServiceStatus, fetchDockerStatus]);
+    fetchServiceConfig();
+  }, [fetchServiceConfig]);
 
 
   const handleServiceAction = async (serviceName: string, action: 'start' | 'stop' | 'restart') => {
@@ -247,9 +194,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
       const data = await res.json();
       if (data.success) {
         showToast(t(`dashboard.toast.actionSuccess_${action}`, { name: serviceName }), 'success');
-        await fetchServiceStatus();
-        const newStatus = await runtimeManager.checkStatus();
-        setRuntimeStatus(newStatus); // Ensure up-to-date status
+        await refreshStatus();
       } else {
         showActionFailure(serviceName, action, apiMessage(t, data));
       }
@@ -299,9 +244,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         }
         setActionLoading(prev => ({ ...prev, [key]: false }));
         setGlobalActionProgress(null);
-        await fetchServiceStatus();
-        const newStatus = await runtimeManager.checkStatus();
-        setRuntimeStatus(newStatus); // Ensure up-to-date status
+        await refreshStatus();
         showToast(t(`dashboard.toast.globalDone_${verb}`), 'success');
       }
     });
@@ -383,9 +326,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           }
           // Re-read the (backend-refreshed) availability + status so prompts clear.
           await refreshUpdates();
-          await fetchServiceStatus();
+          await refreshStatus();
           await refreshVersions(data.updated ?? []);
-          setRuntimeStatus(await runtimeManager.checkStatus());
         } catch (error) {
           showToast(t('dashboard.toast.updateAllError', { error: String(error) }), 'error');
         } finally {
@@ -409,9 +351,7 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           const data = await res.json();
           if (data.success) {
             showToast(t('dashboard.toast.updateSuccess', { name: serviceName }), 'success');
-            await fetchServiceStatus();
-            const newStatus = await runtimeManager.checkStatus();
-            setRuntimeStatus(newStatus); // Ensure up-to-date status
+            await refreshStatus();
             // Re-read the backend-refreshed availability so the prompt clears.
             await refreshUpdates();
             await refreshVersions([serviceName]);
