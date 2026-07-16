@@ -1,9 +1,17 @@
 {
   "name": "ensembler",
-  "description": "Ensembler: A self-hosted media center orchestrator",
-  "author": "Gemini",
-  "private": true,
   "version": "1.0.0",
+  "description": "A self-hosted media center orchestrator — run the *arr stack and a media server without Docker or the command line.",
+  "author": "Gareth Hall (https://github.com/garethhallnz)",
+  "license": "MIT",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/garethhallnz/media-center.git"
+  },
+  "bugs": {
+    "url": "https://github.com/garethhallnz/media-center/issues"
+  },
   "type": "module",
   "main": "electron.js",
   "homepage": "./",

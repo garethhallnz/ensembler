@@ -1,7 +1,8 @@
 {
   "name": "ensembler",
   "description": "Ensembler: A self-hosted media center orchestrator",
-  "author": "Gemini",
+  "author": "Gareth Hall (https://github.com/garethhallnz)",
+  "license": "MIT",
   "private": true,
   "version": "1.0.0",
   "type": "module",

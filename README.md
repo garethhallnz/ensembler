@@ -28,11 +28,13 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
 
 1. **Choose your services.** A short wizard lets you select what you want (media servers, TV/movie managers, a download client, an indexer manager, requests). Recommended services are pre-selected.
 2. **Set your folders.** Point Ensembler at where your TV shows, movies, and downloads live. Ports are checked for you and free ones are chosen automatically if a default is taken.
-3. **Apply.** Ensembler generates the Docker configuration, starts the services, and **connects them to each other automatically** — Sonarr/Radarr get their download client and folders, Prowlarr links to them, media servers get import notifications, and so on. You watch each step complete.
+3. **Apply.** Ensembler generates the Docker configuration, starts the services, and **connects them to each other automatically** — Sonarr/Radarr get their download client and folders, Prowlarr links to them, Plex gets import notifications once you sign in, and so on. You watch each step complete.
 4. **Finish the few things only you can do.** The dashboard prompts you for the handful of steps that require a personal choice or account:
    - **Add an indexer** in Prowlarr (you choose your own sources — Ensembler never picks these for you).
-   - **Sign in to Plex** (Ensembler then creates your TV and Movies libraries automatically). Jellyfin needs no sign-in — it's set up entirely for you.
+   - **Sign in to Plex** (Ensembler then creates your TV and Movies libraries automatically).
    - **Finish Overseerr** setup (it signs in with Plex and discovers your services).
+
+   You can run more than one media server. Jellyfin and Emby manage their own first-run — open each from the dashboard and set it up in its own web interface (create your account and libraries).
 5. **Manage everything from the dashboard.** Each service has a card showing its status, an **Open** button, start/stop, and a menu for logs, restart, and per-service configuration. Add more services any time, and check for updates with one click.
 
 > **What Ensembler does and doesn't do:** Ensembler connects your services together. It never selects, requests, or downloads any content, and it never configures indexers or trackers for you — you choose your own sources and are responsible for how you use them.
@@ -55,7 +57,7 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
 
 ## Where your settings live
 
-- Configuration is stored in `~/.ensembler/` (macOS/Linux) or `%USERPROFILE%\.ensembler\` (Windows).
+- Configuration is stored in a per-user folder: macOS `~/Library/Application Support/Ensembler`, Windows `%APPDATA%\Ensembler`, Linux `~/.config/Ensembler`.
 - Ensembler manages `config.json`, `.env`, and `docker-compose.yml` for you, plus each service's own data folder.
 - **Your media files are never touched by Ensembler** — including when you reset. Resetting only removes the services and their settings.
 
