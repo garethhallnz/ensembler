@@ -82,8 +82,10 @@ export default function StepConfiguration({
       {/* Compact review folded into configuration, so applying is one
           click from here rather than a separate review step. */}
       <Card>
+        <Card.Header>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.readyToSetUp')}</h3>
+        </Card.Header>
         <Card.Body>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 text-left">{t('setup.step1.readyToSetUp')}</h3>
           <div className="space-y-1.5">
             {Object.keys(selected).filter(key => selected[key]).map((key) => {
               const service = serviceConfig.find(s => s.key === key);
