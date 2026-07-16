@@ -6,6 +6,12 @@
 
 <p align="center"><em>The easiest way to run your *arr stack.</em></p>
 
+<p align="center">
+  <a href="https://github.com/garethhallnz/ensembler/releases"><img src="https://img.shields.io/badge/download-latest-2ea44f.svg" alt="Download the latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" /></a>
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg" alt="Platforms: macOS, Windows, Linux" />
+</p>
+
 **Ensembler** is a cross-platform desktop app that makes it easy to set up and run a home media center — Sonarr, Radarr, Plex, Jellyfin, Prowlarr, and more — without needing to know Docker, YAML, or the command line.
 
 You pick the services you want, Ensembler installs and starts them, wires them together, and gives you one dashboard to manage everything.
@@ -18,7 +24,7 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
 
 ## Install
 
-1. Download the app for your system from the Releases page:
+1. Download the app for your system from the [**Releases** page](https://github.com/garethhallnz/ensembler/releases):
    - macOS — `.dmg`
    - Windows — `.exe` installer
    - Linux — `.AppImage`
