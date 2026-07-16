@@ -20,6 +20,7 @@ import { apiMessage } from './utils/apiMessage';
 import { usePolledSetupStatus } from './hooks/usePolledSetupStatus';
 import { PENDING_STATUS_LABEL_KEY, serviceStatusLabel, serviceStatusDotClass } from './utils/serviceStatus';
 import { getServiceCatalog } from './requests/services';
+import { groupByCategory } from './utils/serviceCategories';
 import { useServiceAlerts } from './hooks/useServiceAlerts';
 import { useServiceLogs } from './hooks/useServiceLogs';
 import { useServiceUpdates } from './hooks/useServiceUpdates';
@@ -404,6 +405,57 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
     );
   }
 
+  const renderServiceCard = (service: ServiceConfig) => {
+    const serviceKey = service.key;
+    const status = serviceStatus[serviceKey] || 'Unknown';
+    const updateInfo = serviceUpdates[serviceKey];
+    const alertInfo = serviceAlerts[serviceKey];
+    const isRunning = status === 'Running';
+    const needsSetup =
+      (serviceKey === 'prowlarr' && prowlarrNeedsIndexers) ||
+      (serviceKey === 'plex' && plexNeedsSignIn) ||
+      (serviceKey === 'overseerr' && overseerrNeedsSetup);
+    const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
+
+    // A lifecycle action moved into the overflow menu no longer has a
+    // visible button spinner, so surface progress in the status pill.
+    const pendingAction = (['start', 'stop', 'restart'] as const).find(
+      a => actionLoading[`${serviceKey}:${a}`]
+    );
+    const pendingLabel = pendingAction ? t(PENDING_STATUS_LABEL_KEY[pendingAction]) : null;
+
+    const statusLabel = serviceStatusLabel({ pendingLabel, needsSetup, unhealthy, isRunning, status }, t);
+    const statusDotClass = serviceStatusDotClass({ pending: !!pendingLabel, needsSetup, unhealthy, isRunning });
+
+    return (
+      <ServiceCard
+        key={serviceKey}
+        model={{
+          serviceKey,
+          name: service.name,
+          roleKey: serviceRoleKey(serviceKey, service.category),
+          statusLabel,
+          statusDotClass,
+          unhealthy,
+          isRunning,
+          isUpdating: !!updateLoading[serviceKey],
+          isChecking: !!updateChecking[serviceKey],
+          hasUpdate: updateInfo?.hasUpdate,
+          recentlyChecked: !!recentlyChecked[serviceKey],
+          runningVersion: serviceVersions[serviceKey],
+          isPinned: !!pinnedVersions[serviceKey],
+        }}
+        onLaunch={() => handleLaunchService(serviceKey, service.name)}
+        onOpenInBrowser={() => openServiceInBrowser(serviceKey)}
+        onAction={(action) => handleServiceAction(serviceKey, action)}
+        onOpenLogs={() => openLogsDrawer(serviceKey)}
+        onCheckUpdate={() => handleCheckServiceForUpdate(serviceKey)}
+        onConfigure={() => setConfigModal({ service, mode: 'edit' })}
+        onUpdate={() => handleServiceUpdate(serviceKey)}
+      />
+    );
+  };
+
   return (
     <div className="px-8 py-8">
       <div className="flex justify-between items-center mb-8">
@@ -553,59 +605,26 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
             </Card.Body>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {selectedServices.map(serviceKey => {
-              const service = serviceConfig.find(s => s.key === serviceKey);
-              if (!service) return null;
-
-              const status = serviceStatus[serviceKey] || 'Unknown';
-              const updateInfo = serviceUpdates[serviceKey];
-              const alertInfo = serviceAlerts[serviceKey];
-              const isRunning = status === 'Running';
-              const needsSetup =
-                (serviceKey === 'prowlarr' && prowlarrNeedsIndexers) ||
-                (serviceKey === 'plex' && plexNeedsSignIn) ||
-                (serviceKey === 'overseerr' && overseerrNeedsSetup);
-              const unhealthy = !!alertInfo && !alertInfo.healthy && isRunning;
-
-              // A lifecycle action moved into the overflow menu no longer has a
-              // visible button spinner, so surface progress in the status pill.
-              const pendingAction = (['start', 'stop', 'restart'] as const).find(
-                a => actionLoading[`${serviceKey}:${a}`]
-              );
-              const pendingLabel = pendingAction ? t(PENDING_STATUS_LABEL_KEY[pendingAction]) : null;
-
-              const statusLabel = serviceStatusLabel({ pendingLabel, needsSetup, unhealthy, isRunning, status }, t);
-              const statusDotClass = serviceStatusDotClass({ pending: !!pendingLabel, needsSetup, unhealthy, isRunning });
-
-              return (
-                <ServiceCard
-                  key={serviceKey}
-                  model={{
-                    serviceKey,
-                    name: service.name,
-                    roleKey: serviceRoleKey(serviceKey, service.category),
-                    statusLabel,
-                    statusDotClass,
-                    unhealthy,
-                    isRunning,
-                    isUpdating: !!updateLoading[serviceKey],
-                    isChecking: !!updateChecking[serviceKey],
-                    hasUpdate: updateInfo?.hasUpdate,
-                    recentlyChecked: !!recentlyChecked[serviceKey],
-                    runningVersion: serviceVersions[serviceKey],
-                    isPinned: !!pinnedVersions[serviceKey],
-                  }}
-                  onLaunch={() => handleLaunchService(serviceKey, service.name)}
-                  onOpenInBrowser={() => openServiceInBrowser(serviceKey)}
-                  onAction={(action) => handleServiceAction(serviceKey, action)}
-                  onOpenLogs={() => openLogsDrawer(serviceKey)}
-                  onCheckUpdate={() => handleCheckServiceForUpdate(serviceKey)}
-                  onConfigure={() => setConfigModal({ service, mode: 'edit' })}
-                  onUpdate={() => handleServiceUpdate(serviceKey)}
-                />
-              );
-            })}
+          <div className="space-y-8">
+            {groupByCategory(
+              selectedServices
+                .map(key => serviceConfig.find(s => s.key === key))
+                .filter((s): s is ServiceConfig => !!s)
+            ).map(({ category, services }) => (
+              <div key={category} className="space-y-3">
+                <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {t(`setup.categories.${category}.title`, { defaultValue: category })}
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {t(`setup.categories.${category}.description`, { defaultValue: '' })}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {services.map(renderServiceCard)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

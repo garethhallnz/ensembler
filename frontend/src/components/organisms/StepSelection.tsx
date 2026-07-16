@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ToggleSwitch } from 'flowbite-react';
 import Card from '../atoms/Card';
 import Badge from '../atoms/Badge';
+import { CATEGORY_ORDER } from '../../utils/serviceCategories';
 
 interface ServiceConfig {
   key: string;
@@ -19,8 +20,6 @@ interface StepSelectionProps {
   onToggleRecommended: () => void;
   onServiceChange: (key: string) => void;
 }
-
-const CATEGORY_ORDER = ['media', 'management', 'torrent', 'indexer', 'request'];
 
 export default function StepSelection({
   serviceConfig, selected, recommendedOn, onToggleRecommended, onServiceChange,

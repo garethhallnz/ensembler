@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import Button from '../atoms/Button';
 import Badge from '../atoms/Badge';
 import Dialog from '../atoms/Dialog';
+import { groupByCategory } from '../../utils/serviceCategories';
 import type { ServiceCatalogEntry } from './ServiceConfigModal';
 
 interface AddServiceModalProps {
@@ -27,21 +28,35 @@ export default function AddServiceModal({ available, onPick, onClose }: AddServi
           {available.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-center py-8">{t('addService.allAdded')}</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {available.map(service => (
-                <div
-                  key={service.key}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="text-left min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-gray-900 dark:text-white">{service.name}</h4>
-                        {service.recommended && <Badge color="blue">{t('addService.recommended')}</Badge>}
+            <div className="space-y-6">
+              {groupByCategory(available).map(({ category, services }) => (
+                <div key={category} className="space-y-3">
+                  <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {t(`setup.categories.${category}.title`, { defaultValue: category })}
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {t(`setup.categories.${category}.description`, { defaultValue: '' })}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {services.map(service => (
+                      <div
+                        key={service.key}
+                        className="rounded-lg border border-gray-200 dark:border-gray-700 p-5 hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="text-left min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-semibold text-gray-900 dark:text-white">{service.name}</h4>
+                              {service.recommended && <Badge color="blue">{t('addService.recommended')}</Badge>}
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{t(`services.${service.key}.description`)}</p>
+                          </div>
+                          <Button size="sm" color="blue" onClick={() => onPick(service)} className="shrink-0">{t('addService.add')}</Button>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{t(`services.${service.key}.description`)}</p>
-                    </div>
-                    <Button size="sm" color="blue" onClick={() => onPick(service)} className="shrink-0">{t('addService.add')}</Button>
+                    ))}
                   </div>
                 </div>
               ))}
