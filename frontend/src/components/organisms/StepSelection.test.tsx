@@ -13,7 +13,7 @@ describe('StepSelection', () => {
     render(
       <StepSelection serviceConfig={services} selected={{ plex: true }} recommendedOn={false} onToggleRecommended={() => {}} onServiceChange={() => {}} />,
     );
-    await expect.element(page.getByText('Select Services')).toBeInTheDocument();
+    await expect.element(page.getByText('Select services')).toBeInTheDocument();
     await expect.element(page.getByText('Media Servers')).toBeInTheDocument();
     await expect.element(page.getByText('Plex', { exact: true })).toBeInTheDocument();
     await expect.element(page.getByText('Sonarr', { exact: true })).toBeInTheDocument();

@@ -48,9 +48,9 @@ describe('AdvancedSettings', () => {
     await expect.element(page.getByRole('heading', { name: 'File ownership' })).toBeInTheDocument();
     await expect.element(page.getByText('User ID (PUID)')).toBeInTheDocument();
 
-    // The nav item is "Reset"; the card inside keeps the "Danger Zone" framing.
+    // The nav item is "Reset"; the card inside keeps the "Danger zone" framing.
     await page.getByRole('button', { name: 'Reset', exact: true }).click();
-    await expect.element(page.getByRole('heading', { name: 'Danger Zone' })).toBeInTheDocument();
-    await expect.element(page.getByRole('button', { name: 'Reset Everything' })).toBeInTheDocument();
+    await expect.element(page.getByRole('heading', { name: 'Danger zone' })).toBeInTheDocument();
+    await expect.element(page.getByRole('button', { name: 'Reset everything' })).toBeInTheDocument();
   });
 });

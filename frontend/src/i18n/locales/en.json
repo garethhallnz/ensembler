@@ -9,7 +9,7 @@
   "app": {
     "checkingStatus": "Checking Docker and Docker Compose status…",
     "dockerRequired": {
-      "title": "Docker Required",
+      "title": "Docker required",
       "subtitle": "Ensembler needs Docker — or another container runtime — to run your services",
       "toGetStarted": "To get started:",
       "step1": "Download and install Docker Desktop",
@@ -19,14 +19,14 @@
       "downloadHeading": "Download Docker Desktop:",
       "downloadButton": "Download Docker Desktop",
       "otherRuntimes": "Already use OrbStack, Podman, or another container runtime? That works too — just make sure it's installed and running.",
-      "checkAgain": "Check Again",
-      "refreshPage": "Refresh Page",
+      "checkAgain": "Check again",
+      "refreshPage": "Refresh page",
       "refreshConfirm": "This will refresh the page and check Docker status again.",
       "havingTrouble": "Having trouble? Make sure your container runtime is fully started (not just installed) and try refreshing this page.",
       "readDocs": "Read the docs"
     },
     "composeMissing": {
-      "title": "Docker Compose Not Available",
+      "title": "Docker Compose not available",
       "heading": "Docker Compose is not available"
     },
     "install": {
@@ -52,7 +52,7 @@
     "loading": "Loading service configuration…",
     "title": "Setup",
     "steps": {
-      "selection": "Service Selection",
+      "selection": "Service selection",
       "configuration": "Configuration",
       "apply": "Apply"
     },
@@ -60,26 +60,26 @@
     "selectAtLeastOneToast": "Please select at least one service to continue.",
     "portsPrefilled": "Some default ports were already in use, so we've pre-selected free ones ({{list}}). You can change these below.",
     "step0": {
-      "heading": "Select Services",
+      "heading": "Select services",
       "subtitle": "Choose the services you want to run:",
-      "quickActions": "Quick Actions",
+      "quickActions": "Quick actions",
       "recommendedOn": "Deselect recommended services",
       "recommendedOff": "Select recommended services for a complete media center",
-      "toggleRecommended": "Toggle Recommended",
+      "toggleRecommended": "Toggle recommended",
       "required": "Required",
       "recommended": "Recommended"
     },
     "categories": {
       "media": {
-        "title": "Media Servers",
+        "title": "Media servers",
         "description": "Media streaming servers (choose one or more)"
       },
       "management": {
-        "title": "Media Management",
+        "title": "Media management",
         "description": "Media collection managers (you can select multiple)"
       },
       "torrent": {
-        "title": "Download Clients",
+        "title": "Download clients",
         "description": "BitTorrent download clients (choose one)"
       },
       "indexer": {
@@ -87,14 +87,14 @@
         "description": "Torrent indexer management (choose one)"
       },
       "request": {
-        "title": "Request Management",
+        "title": "Request management",
         "description": "Media request and discovery tools (choose one)"
       }
     },
     "step1": {
-      "heading": "Service Configuration",
+      "heading": "Service configuration",
       "subtitle": "Configure file paths and ports for your services:",
-      "environmentSettings": "Environment Settings",
+      "environmentSettings": "Environment settings",
       "readyToSetUp": "Ready to set up",
       "port": "Port {{port}}"
     },
@@ -112,12 +112,12 @@
       "phaseConnect": "Connecting services together",
       "phaseConnectDetail": "Waiting for each service to be ready, then linking them. This can take a minute.",
       "backToConfig": "Back to configuration",
-      "goToDashboard": "Go to Dashboard"
+      "goToDashboard": "Go to dashboard"
     },
     "nav": {
       "previous": "Previous",
       "next": "Next",
-      "apply": "Apply Setup"
+      "apply": "Apply setup"
     },
     "errors": {
       "save": "Could not save your configuration.",
@@ -143,18 +143,18 @@
       "subtitle": "Manage your media center services"
     },
     "settings": {
-      "tooltip": "Advanced Settings",
+      "tooltip": "Advanced settings",
       "button": "Settings"
     },
     "globalControls": {
-      "stopAll": "Stop All",
-      "startAll": "Start All",
+      "stopAll": "Stop all",
+      "startAll": "Start all",
       "noServicesToStop": "No services to stop",
       "allStopped": "All services are already stopped",
-      "stopAllTooltip": "Stop All Services",
+      "stopAllTooltip": "Stop all services",
       "noServicesToStart": "No services to start",
       "allRunning": "All services are already running",
-      "startAllTooltip": "Start All Services"
+      "startAllTooltip": "Start all services"
     },
     "roles": {
       "tvShows": "Manages your TV shows",
@@ -188,10 +188,10 @@
       "checkAllTooltip": "Check every service for available updates",
       "checkForUpdates": "Check for updates",
       "addTooltip": "Add another service",
-      "addService": "Add Service"
+      "addService": "Add service"
     },
     "empty": {
-      "title": "No Services Configured",
+      "title": "No services configured",
       "description": "Get started by adding and configuring your media center services. You can add services individually as needed."
     },
     "status": {
@@ -300,7 +300,7 @@
     "loadError": "Failed to load configuration. Please try again.",
     "close": "Close",
     "cancel": "Cancel",
-    "save": "Save & Apply",
+    "save": "Save & apply",
     "saving": "Applying…",
     "toast": {
       "savedPartial": "Settings saved. Some services may need to be started manually.",
@@ -336,10 +336,10 @@
     },
     "danger": {
       "navLabel": "Reset",
-      "heading": "Danger Zone",
+      "heading": "Danger zone",
       "resetLabel": "Reset everything",
       "resetDescription": "Removes all services and their settings, returning to a fresh install. Media files are kept.",
-      "resetButton": "Reset Everything",
+      "resetButton": "Reset everything",
       "confirm": "⚠️ DESTRUCTIVE ACTION: This will stop and remove all services and delete all of their settings, histories, and databases, returning to a fresh install. Your media files (TV shows, movies, downloads) will NOT be deleted. This action cannot be undone. Are you absolutely sure?"
     },
     "reset": {
@@ -377,8 +377,8 @@
     "keep": "Keep",
     "removeNamed": "Remove {{name}}",
     "cancel": "Cancel",
-    "addService": "Add Service",
-    "saveChanges": "Save Changes"
+    "addService": "Add service",
+    "saveChanges": "Save changes"
   },
   "addService": {
     "title": "Add a service",
@@ -404,8 +404,8 @@
     "retry": "Retry"
   },
   "confirm": {
-    "title": "Confirm Action",
-    "destructiveTitle": "Destructive Action",
+    "title": "Confirm action",
+    "destructiveTitle": "Destructive action",
     "confirm": "Yes, I'm sure",
     "cancel": "No, cancel"
   },
@@ -426,17 +426,17 @@
   },
   "serviceConfiguration": {
     "portBadge": "Port",
-    "portConfiguration": "Port Configuration",
-    "servicePort": "{{name}} Port:",
+    "portConfiguration": "Port configuration",
+    "servicePort": "{{name}} port:",
     "portDefault": "Default: {{port}}",
     "infoBadge": "Info",
-    "serviceInformation": "Service Information",
+    "serviceInformation": "Service information",
     "noPathsRequired": "No file paths required",
     "noPathsDescription": "This service doesn't require any file path configuration."
   },
   "pathConfig": {
     "badge": "Paths",
-    "heading": "File Paths",
+    "heading": "File paths",
     "placeholder": "{{description}} (default: {{default}})",
     "useDefaultTitle": "Use default path",
     "default": "Default",
@@ -472,7 +472,7 @@
       "description": "PVR for Usenet and BitTorrent users",
       "paths": [
         {
-          "label": "TV Shows Path",
+          "label": "TV shows path",
           "description": "Directory where TV shows will be stored"
         }
       ]
@@ -481,7 +481,7 @@
       "description": "Movie collection manager for Usenet and BitTorrent users",
       "paths": [
         {
-          "label": "Movies Path",
+          "label": "Movies path",
           "description": "Directory where movies will be stored"
         }
       ]
@@ -490,11 +490,11 @@
       "description": "Media server for streaming your content",
       "paths": [
         {
-          "label": "TV Shows Path",
+          "label": "TV shows path",
           "description": "Directory containing your TV shows"
         },
         {
-          "label": "Movies Path",
+          "label": "Movies path",
           "description": "Directory containing your movies"
         }
       ]
@@ -503,7 +503,7 @@
       "description": "BitTorrent client",
       "paths": [
         {
-          "label": "Downloads Path",
+          "label": "Downloads path",
           "description": "Directory where downloads will be stored"
         }
       ]
@@ -515,11 +515,11 @@
       "description": "Open-source media server with no licensing fees",
       "paths": [
         {
-          "label": "TV Shows Path",
+          "label": "TV shows path",
           "description": "Directory containing your TV shows"
         },
         {
-          "label": "Movies Path",
+          "label": "Movies path",
           "description": "Directory containing your movies"
         }
       ]
@@ -528,11 +528,11 @@
       "description": "Feature-rich media server with mobile apps",
       "paths": [
         {
-          "label": "TV Shows Path",
+          "label": "TV shows path",
           "description": "Directory containing your TV shows"
         },
         {
-          "label": "Movies Path",
+          "label": "Movies path",
           "description": "Directory containing your movies"
         }
       ]
@@ -541,11 +541,11 @@
       "description": "Companion app for Sonarr and Radarr to manage subtitles",
       "paths": [
         {
-          "label": "TV Shows Path",
+          "label": "TV shows path",
           "description": "Directory containing your TV shows (same as Sonarr)"
         },
         {
-          "label": "Movies Path",
+          "label": "Movies path",
           "description": "Directory containing your movies (same as Radarr)"
         }
       ]
@@ -554,7 +554,7 @@
       "description": "BitTorrent client with web interface",
       "paths": [
         {
-          "label": "Downloads Path",
+          "label": "Downloads path",
           "description": "Directory where downloads will be stored"
         }
       ]

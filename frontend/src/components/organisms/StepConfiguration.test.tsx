@@ -25,8 +25,8 @@ describe('StepConfiguration', () => {
         onEnvironmentChange={() => {}}
       />,
     );
-    await expect.element(page.getByText('Service Configuration')).toBeInTheDocument();
-    await expect.element(page.getByText('Environment Settings')).toBeInTheDocument();
+    await expect.element(page.getByText('Service configuration')).toBeInTheDocument();
+    await expect.element(page.getByText('Environment settings')).toBeInTheDocument();
     await expect.element(page.getByText('Ready to set up')).toBeInTheDocument();
   });
 });
