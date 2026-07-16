@@ -37,7 +37,9 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
    You can run more than one media server. Jellyfin and Emby manage their own first-run — open each from the dashboard and set it up in its own web interface (create your account and libraries).
 5. **Manage everything from the dashboard.** Each service has a card showing its status, an **Open** button, start/stop, and a menu for logs, restart, and per-service configuration. Add more services any time, and check for updates with one click.
 
-> **What Ensembler does and doesn't do:** Ensembler connects your services together. It never selects, requests, or downloads any content, and it never configures indexers or trackers for you — you choose your own sources and are responsible for how you use them.
+> **What Ensembler does and doesn't do:** Ensembler connects your services together. It never selects, requests, or downloads any content, and it never configures indexers or trackers for you — you choose your own sources and are responsible for how you use them. See the [full disclaimer](DISCLAIMER.md).
+>
+> **Privacy:** Ensembler collects no data — no telemetry, no accounts, nothing leaves your machine.
 
 ## Supported services
 
