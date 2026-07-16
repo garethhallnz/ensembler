@@ -13,6 +13,7 @@ import Logo from './components/atoms/Logo';
 import DocsButton from './components/molecules/DocsButton';
 import ActionErrorModal from './components/molecules/ActionErrorModal';
 import SystemChecksBanner from './components/organisms/SystemChecksBanner';
+import AppUpdateBanner from './components/organisms/AppUpdateBanner';
 import { useToast } from './contexts/ToastContext';
 import { useServiceTabs } from './contexts/ServiceTabsContext';
 import { isDesktopApp } from './utils/selectDirectory';
@@ -529,6 +530,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      <AppUpdateBanner />
 
       <SystemChecksBanner />
 

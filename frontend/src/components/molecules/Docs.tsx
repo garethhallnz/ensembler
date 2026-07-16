@@ -12,6 +12,16 @@ import overviewEn from '../../../../docs/overview.md?raw';
 import gettingStartedEn from '../../../../docs/getting-started.md?raw';
 import managingEn from '../../../../docs/managing-services.md?raw';
 import troubleshootingEn from '../../../../docs/troubleshooting.md?raw';
+import howToUpdateEn from '../../../../docs/how-to-update.md?raw';
+import howToUpdateEs from '../../../../docs/es/how-to-update.md?raw';
+import howToUpdateDe from '../../../../docs/de/how-to-update.md?raw';
+import howToUpdateFr from '../../../../docs/fr/how-to-update.md?raw';
+import howToUpdateZhHans from '../../../../docs/zh-Hans/how-to-update.md?raw';
+import howToUpdatePtBR from '../../../../docs/pt-BR/how-to-update.md?raw';
+import howToUpdateRu from '../../../../docs/ru/how-to-update.md?raw';
+import howToUpdateAf from '../../../../docs/af/how-to-update.md?raw';
+import howToUpdateJa from '../../../../docs/ja/how-to-update.md?raw';
+import howToUpdateKo from '../../../../docs/ko/how-to-update.md?raw';
 
 import overviewEs from '../../../../docs/es/overview.md?raw';
 import gettingStartedEs from '../../../../docs/es/getting-started.md?raw';
@@ -58,7 +68,7 @@ import gettingStartedKo from '../../../../docs/ko/getting-started.md?raw';
 import managingKo from '../../../../docs/ko/managing-services.md?raw';
 import troubleshootingKo from '../../../../docs/ko/troubleshooting.md?raw';
 
-type DocName = 'overview' | 'getting-started' | 'managing' | 'troubleshooting';
+export type DocName = 'overview' | 'getting-started' | 'managing' | 'troubleshooting' | 'how-to-update';
 
 // [language][docName] → markdown. English is the guaranteed-complete baseline
 // used as the fallback when a language is missing a page.
@@ -68,60 +78,70 @@ const DOCS: Record<string, Partial<Record<DocName, string>>> = {
     'getting-started': gettingStartedEn,
     managing: managingEn,
     troubleshooting: troubleshootingEn,
+    'how-to-update': howToUpdateEn,
   },
   es: {
     overview: overviewEs,
     'getting-started': gettingStartedEs,
     managing: managingEs,
     troubleshooting: troubleshootingEs,
+    'how-to-update': howToUpdateEs,
   },
   de: {
     overview: overviewDe,
     'getting-started': gettingStartedDe,
     managing: managingDe,
     troubleshooting: troubleshootingDe,
+    'how-to-update': howToUpdateDe,
   },
   fr: {
     overview: overviewFr,
     'getting-started': gettingStartedFr,
     managing: managingFr,
     troubleshooting: troubleshootingFr,
+    'how-to-update': howToUpdateFr,
   },
   'zh-Hans': {
     overview: overviewZhHans,
     'getting-started': gettingStartedZhHans,
     managing: managingZhHans,
     troubleshooting: troubleshootingZhHans,
+    'how-to-update': howToUpdateZhHans,
   },
   'pt-BR': {
     overview: overviewPtBR,
     'getting-started': gettingStartedPtBR,
     managing: managingPtBR,
     troubleshooting: troubleshootingPtBR,
+    'how-to-update': howToUpdatePtBR,
   },
   ru: {
     overview: overviewRu,
     'getting-started': gettingStartedRu,
     managing: managingRu,
     troubleshooting: troubleshootingRu,
+    'how-to-update': howToUpdateRu,
   },
   af: {
     overview: overviewAf,
     'getting-started': gettingStartedAf,
     managing: managingAf,
     troubleshooting: troubleshootingAf,
+    'how-to-update': howToUpdateAf,
   },
   ja: {
     overview: overviewJa,
     'getting-started': gettingStartedJa,
     managing: managingJa,
     troubleshooting: troubleshootingJa,
+    'how-to-update': howToUpdateJa,
   },
   ko: {
     overview: overviewKo,
     'getting-started': gettingStartedKo,
     managing: managingKo,
     troubleshooting: troubleshootingKo,
+    'how-to-update': howToUpdateKo,
   },
 };
 
@@ -131,6 +151,7 @@ const PAGES: { id: DocName; titleKey: string }[] = [
   { id: 'getting-started', titleKey: 'docsViewer.pages.gettingStarted' },
   { id: 'managing', titleKey: 'docsViewer.pages.managing' },
   { id: 'troubleshooting', titleKey: 'docsViewer.pages.troubleshooting' },
+  { id: 'how-to-update', titleKey: 'docsViewer.pages.howToUpdate' },
 ];
 
 // Map markdown elements to Tailwind so rendered docs match the app and adapt to
@@ -153,9 +174,9 @@ const md: Components = {
   td: (p) => <td className="border border-gray-200 dark:border-gray-700 px-3 py-2 text-gray-700 dark:text-gray-300" {...p} />,
 };
 
-export default function Docs() {
+export default function Docs({ initialPage }: { initialPage?: DocName } = {}) {
   const { t, i18n } = useTranslation();
-  const [active, setActive] = useState<DocName>(PAGES[0].id);
+  const [active, setActive] = useState<DocName>(initialPage ?? PAGES[0].id);
   const page = PAGES.find((p) => p.id === active) ?? PAGES[0];
 
   const language = i18n.resolvedLanguage ?? 'en';

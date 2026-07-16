@@ -26,8 +26,8 @@ You need [Node.js](https://nodejs.org/) 20+, npm, and a Docker-compatible runtim
 (Docker Desktop, OrbStack, Podman, …). Then:
 
 ```bash
-git clone https://github.com/garethhallnz/media-center.git
-cd media-center
+git clone https://github.com/garethhallnz/ensembler.git
+cd ensembler
 npm run install-deps      # installs root, backend, and frontend deps
 ```
 

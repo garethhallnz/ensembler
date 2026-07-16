@@ -332,7 +332,16 @@
     "updates": {
       "autoLabel": "Installeer opdaterings outomaties",
       "autoDescription": "Wanneer aan, word beskikbare opdaterings elke dag op die agtergrond toegepas. Standaard af — jy bly in beheer en pas dit self toe met “Dateer alles op”.",
-      "autoAriaLabel": "Installeer opdaterings outomaties"
+      "autoAriaLabel": "Installeer opdaterings outomaties",
+      "notificationsLabel": "Opdateringkennisgewings",
+      "notificationsDescription": "Laat Ensembler jou weet wanneer ’n nuwe weergawe van die toepassing beskikbaar is. Dit dateer nooit self op nie — jy laai opdaterings self af en installeer dit.",
+      "notificationsAriaLabel": "Opdateringkennisgewings",
+      "checkLabel": "Kontroleer vir ’n nuwe weergawe",
+      "checkDescription": "Kontroleer nou of ’n nuwer weergawe van Ensembler vrygestel is.",
+      "checkButton": "Kontroleer vir opdaterings",
+      "checkToastAvailable": "Weergawe {{version}} is beskikbaar. Sien Hoe om op te dateer in die dokumentasie.",
+      "checkToastUpToDate": "Jy is op die nuutste weergawe.",
+      "checkToastFailed": "Kon nie nou vir opdaterings kontroleer nie. Probeer asseblief later weer."
     },
     "danger": {
       "navLabel": "Terugstel",
@@ -390,6 +399,14 @@
   },
   "actionsMenu": {
     "moreActions": "Meer aksies"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "’n Nuwe weergawe is beskikbaar",
+      "message": "Ensembler {{version}} is vrygestel. Jy loop ’n ouer weergawe.",
+      "howToUpdate": "Hoe om op te dateer",
+      "dismiss": "Maak toe"
+    }
   },
   "systemChecks": {
     "heading": "Kontroleer jou opstelling",
@@ -453,7 +470,8 @@
       "overview": "Oorsig",
       "gettingStarted": "Kom aan die gang",
       "managing": "Bestuur van dienste",
-      "troubleshooting": "Probleemoplossing"
+      "troubleshooting": "Probleemoplossing",
+      "howToUpdate": "Hoe om op te dateer"
     }
   },
   "tabs": {
@@ -566,6 +584,9 @@
   "messages": {
     "common": {
       "invalidInput": "Ongeldige invoer"
+    },
+    "app": {
+      "updateCheckFailed": "Kon nie vir opdaterings kontroleer nie."
     },
     "ports": {
       "validateFailed": "Kon nie poorte valideer nie."

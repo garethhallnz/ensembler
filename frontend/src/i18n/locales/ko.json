@@ -332,7 +332,16 @@
     "updates": {
       "autoLabel": "업데이트 자동 설치",
       "autoDescription": "켜면 사용 가능한 업데이트가 매일 백그라운드에서 적용됩니다. 기본값은 꺼짐입니다 — 직접 “전체 업데이트”로 적용하며 제어권을 유지하세요.",
-      "autoAriaLabel": "업데이트 자동 설치"
+      "autoAriaLabel": "업데이트 자동 설치",
+      "notificationsLabel": "업데이트 알림",
+      "notificationsDescription": "새 버전의 앱이 나오면 Ensembler가 알려주도록 합니다. 앱이 스스로 업데이트하지는 않습니다 — 업데이트는 직접 다운로드하여 설치합니다.",
+      "notificationsAriaLabel": "업데이트 알림",
+      "checkLabel": "새 버전 확인",
+      "checkDescription": "지금 Ensembler의 새 버전이 출시되었는지 확인합니다.",
+      "checkButton": "업데이트 확인",
+      "checkToastAvailable": "버전 {{version}}을(를) 사용할 수 있습니다. 문서의 업데이트 방법을 참고하세요.",
+      "checkToastUpToDate": "최신 버전을 사용하고 있습니다.",
+      "checkToastFailed": "지금은 업데이트를 확인할 수 없습니다. 나중에 다시 시도하세요."
     },
     "danger": {
       "navLabel": "초기화",
@@ -390,6 +399,14 @@
   },
   "actionsMenu": {
     "moreActions": "추가 작업"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "새 버전을 사용할 수 있습니다",
+      "message": "Ensembler {{version}}이(가) 출시되었습니다. 이전 버전을 사용하고 있습니다.",
+      "howToUpdate": "업데이트 방법",
+      "dismiss": "닫기"
+    }
   },
   "systemChecks": {
     "heading": "설정 확인",
@@ -453,7 +470,8 @@
       "overview": "개요",
       "gettingStarted": "시작하기",
       "managing": "서비스 관리",
-      "troubleshooting": "문제 해결"
+      "troubleshooting": "문제 해결",
+      "howToUpdate": "업데이트 방법"
     }
   },
   "tabs": {
@@ -566,6 +584,9 @@
   "messages": {
     "common": {
       "invalidInput": "잘못된 입력"
+    },
+    "app": {
+      "updateCheckFailed": "업데이트를 확인하지 못했습니다."
     },
     "ports": {
       "validateFailed": "포트를 검증하지 못했습니다."

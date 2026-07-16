@@ -18,6 +18,7 @@ import {
   recordServiceUpdate,
   startUpdateScheduler,
 } from './services/updates';
+import { checkForAppUpdate } from './services/appUpdate';
 import { runSystemChecks } from './services/systemChecks';
 import { resetStopServices, resetCleanFilesAndData } from './services/reset';
 import { getServiceVersion } from './services/versions';
@@ -642,6 +643,29 @@ app.get('/api/services/:serviceName/check-updates', async (req: Request, res: Re
     res.json({ success: true, hasUpdate, currentVersion });
   } catch (err) {
     res.status(500).json({ success: false, code: 'messages.service.checkUpdatesFailed', params: { name: serviceName }, message: `Failed to check updates for ${serviceName}.`, error: (err as Error).message });
+  }
+});
+
+// Ensembler's own update check. Queries the GitHub Releases API and compares
+// the latest published release to the running version — it never downloads or
+// installs anything (users update by re-downloading; see the in-app "How to
+// update" docs). GET returns the cached result (re-checked at most every few
+// hours); POST forces a fresh check for the manual "Check for updates" button.
+app.get('/api/app/update', async (req: Request, res: Response) => {
+  try {
+    const status = await checkForAppUpdate();
+    res.json({ success: true, ...status });
+  } catch (err) {
+    res.status(500).json({ success: false, code: 'messages.app.updateCheckFailed', message: 'Failed to check for updates.', error: (err as Error).message });
+  }
+});
+
+app.post('/api/app/update/check', async (req: Request, res: Response) => {
+  try {
+    const status = await checkForAppUpdate(true);
+    res.json({ success: true, ...status });
+  } catch (err) {
+    res.status(500).json({ success: false, code: 'messages.app.updateCheckFailed', message: 'Failed to check for updates.', error: (err as Error).message });
   }
 });
 

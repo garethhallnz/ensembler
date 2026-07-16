@@ -1,7 +1,7 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from './requests/client';
-import { getCurrentConfig, type CurrentConfig } from './requests/services';
+import { getCurrentConfig, checkAppUpdate, type CurrentConfig } from './requests/services';
 import Button from './components/atoms/Button';
 import Spinner from './components/atoms/Spinner';
 import Alert from './components/atoms/Alert';
@@ -47,6 +47,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
   const [config, setConfig] = useState<CurrentConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [checkingAppUpdate, setCheckingAppUpdate] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [resetPhases, setResetPhases] = useState<{ key: string; label: string; status: ResetPhaseStatus }[]>([]);
   const [resetStage, setResetStage] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
@@ -74,6 +75,24 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
       }
     })();
   }, [appearanceOnly]);
+
+  const handleCheckAppUpdate = async () => {
+    setCheckingAppUpdate(true);
+    try {
+      const update = await checkAppUpdate();
+      if (update.latestVersion === null) {
+        showToast(t('settings.updates.checkToastFailed'), 'warning');
+      } else if (update.hasUpdate) {
+        showToast(t('settings.updates.checkToastAvailable', { version: update.latestVersion }), 'info');
+      } else {
+        showToast(t('settings.updates.checkToastUpToDate'), 'success');
+      }
+    } catch {
+      showToast(t('settings.updates.checkToastFailed'), 'error');
+    } finally {
+      setCheckingAppUpdate(false);
+    }
+  };
 
   const handleEnvironmentChange = (field: string, value: string | number) => {
     if (!config) return;
@@ -292,6 +311,27 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
                 aria-label={t('settings.updates.autoAriaLabel')}
                 className="shrink-0"
               />
+            </div>
+            <div className="flex items-center justify-between gap-4 py-5">
+              <div className="text-left">
+                <p className="font-medium text-gray-900 dark:text-white">{t('settings.updates.notificationsLabel')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.updates.notificationsDescription')}</p>
+              </div>
+              <Toggle
+                checked={config.updateNotifications ?? true}
+                onChange={value => setConfig(prev => prev ? { ...prev, updateNotifications: value } : prev)}
+                aria-label={t('settings.updates.notificationsAriaLabel')}
+                className="shrink-0"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 py-5">
+              <div className="text-left">
+                <p className="font-medium text-gray-900 dark:text-white">{t('settings.updates.checkLabel')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.updates.checkDescription')}</p>
+              </div>
+              <Button variant="secondary" onClick={handleCheckAppUpdate} loading={checkingAppUpdate} className="shrink-0">
+                {t('settings.updates.checkButton')}
+              </Button>
             </div>
             <div className="pt-5">
               <EnvironmentSettings

@@ -298,7 +298,16 @@
     "updates": {
       "autoLabel": "自动安装更新",
       "autoDescription": "开启后，每天会在后台应用可用更新。默认关闭——您可自行掌控，通过“全部更新”手动应用。",
-      "autoAriaLabel": "自动安装更新"
+      "autoAriaLabel": "自动安装更新",
+      "notificationsLabel": "更新通知",
+      "notificationsDescription": "让 Ensembler 在有新版本应用可用时提醒您。它绝不会自行更新——由您自己下载并安装更新。",
+      "notificationsAriaLabel": "更新通知",
+      "checkLabel": "检查新版本",
+      "checkDescription": "立即检查 Ensembler 是否已发布更新的版本。",
+      "checkButton": "检查更新",
+      "checkToastAvailable": "版本 {{version}} 可用。请参阅文档中的“如何更新”。",
+      "checkToastUpToDate": "您已是最新版本。",
+      "checkToastFailed": "暂时无法检查更新。请稍后重试。"
     },
     "danger": {
       "navLabel": "重置",
@@ -356,6 +365,14 @@
   },
   "actionsMenu": {
     "moreActions": "更多操作"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "有新版本可用",
+      "message": "Ensembler {{version}} 已发布。您正在运行较旧的版本。",
+      "howToUpdate": "如何更新",
+      "dismiss": "忽略"
+    }
   },
   "systemChecks": {
     "heading": "检查您的设置",
@@ -419,7 +436,8 @@
       "overview": "概览",
       "gettingStarted": "快速开始",
       "managing": "管理服务",
-      "troubleshooting": "故障排查"
+      "troubleshooting": "故障排查",
+      "howToUpdate": "如何更新"
     }
   },
   "tabs": {
@@ -532,6 +550,9 @@
   "messages": {
     "common": {
       "invalidInput": "输入无效"
+    },
+    "app": {
+      "updateCheckFailed": "检查更新失败。"
     },
     "ports": {
       "validateFailed": "端口校验失败。"

@@ -298,7 +298,16 @@
     "updates": {
       "autoLabel": "Installer les mises à jour automatiquement",
       "autoDescription": "Lorsque cette option est activée, les mises à jour disponibles sont appliquées en arrière-plan chaque jour. Désactivée par défaut — vous gardez le contrôle et les appliquez vous-même avec « Tout mettre à jour ».",
-      "autoAriaLabel": "Installer les mises à jour automatiquement"
+      "autoAriaLabel": "Installer les mises à jour automatiquement",
+      "notificationsLabel": "Notifications de mise à jour",
+      "notificationsDescription": "Laissez Ensembler vous prévenir lorsqu'une nouvelle version de l'application est disponible. Il ne se met jamais à jour tout seul — vous téléchargez et installez les mises à jour vous-même.",
+      "notificationsAriaLabel": "Notifications de mise à jour",
+      "checkLabel": "Rechercher une nouvelle version",
+      "checkDescription": "Vérifiez maintenant si une version plus récente d'Ensembler est disponible.",
+      "checkButton": "Vérifier les mises à jour",
+      "checkToastAvailable": "La version {{version}} est disponible. Consultez Comment mettre à jour dans la documentation.",
+      "checkToastUpToDate": "Vous utilisez la dernière version.",
+      "checkToastFailed": "Impossible de vérifier les mises à jour pour le moment. Veuillez réessayer plus tard."
     },
     "danger": {
       "navLabel": "Réinitialiser",
@@ -356,6 +365,14 @@
   },
   "actionsMenu": {
     "moreActions": "Plus d'actions"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "Une nouvelle version est disponible",
+      "message": "Ensembler {{version}} est disponible. Vous utilisez une version plus ancienne.",
+      "howToUpdate": "Comment mettre à jour",
+      "dismiss": "Ignorer"
+    }
   },
   "systemChecks": {
     "heading": "Vérifiez votre installation",
@@ -419,7 +436,8 @@
       "overview": "Vue d'ensemble",
       "gettingStarted": "Premiers pas",
       "managing": "Gestion des services",
-      "troubleshooting": "Dépannage"
+      "troubleshooting": "Dépannage",
+      "howToUpdate": "Comment mettre à jour"
     }
   },
   "tabs": {
@@ -532,6 +550,9 @@
   "messages": {
     "common": {
       "invalidInput": "Entrée invalide"
+    },
+    "app": {
+      "updateCheckFailed": "Échec de la vérification des mises à jour."
     },
     "ports": {
       "validateFailed": "Échec de la validation des ports."

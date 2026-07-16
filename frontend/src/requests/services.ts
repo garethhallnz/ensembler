@@ -60,6 +60,31 @@ export async function checkServiceUpdates(): Promise<ServiceUpdates> {
   return data.updates;
 }
 
+// Ensembler's own update check (GitHub Releases). latestVersion is null when
+// the check couldn't reach GitHub — treated as "couldn't determine", never as
+// up-to-date. The app never self-installs; users update by re-downloading.
+const AppUpdateSchema = z.object({
+  success: z.boolean(),
+  currentVersion: z.string(),
+  latestVersion: z.string().nullable(),
+  hasUpdate: z.boolean(),
+  releaseUrl: z.string().nullable(),
+  lastChecked: z.string().nullable(),
+});
+
+export type AppUpdate = z.infer<typeof AppUpdateSchema>;
+
+export async function getAppUpdate(): Promise<AppUpdate> {
+  const res = await apiFetch('/api/app/update');
+  return AppUpdateSchema.parse(await res.json());
+}
+
+// POST — force a fresh check now (backs the settings "Check for updates" button).
+export async function checkAppUpdate(): Promise<AppUpdate> {
+  const res = await apiFetch('/api/app/update/check', { method: 'POST' });
+  return AppUpdateSchema.parse(await res.json());
+}
+
 export async function getServiceMonitor(): Promise<ServiceMonitor> {
   const res = await apiFetch('/api/services/monitor');
   const data = ServiceMonitorSchema.parse(await res.json());
@@ -143,6 +168,7 @@ const CurrentConfigSchema = z.object({
   environment: z.object({ tz: z.string(), puid: z.number(), pgid: z.number() }),
   versions: z.record(z.string(), z.string()).optional(),
   autoUpdate: z.boolean().optional(),
+  updateNotifications: z.boolean().optional(),
   minimizeToTray: z.boolean().optional(),
 });
 

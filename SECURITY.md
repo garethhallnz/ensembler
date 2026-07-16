@@ -10,7 +10,7 @@ release; please make sure you're on the newest version before reporting.
 Please **do not** open a public issue for security problems.
 
 Instead, report privately via GitHub's
-[private vulnerability reporting](https://github.com/garethhallnz/media-center/security/advisories/new)
+[private vulnerability reporting](https://github.com/garethhallnz/ensembler/security/advisories/new)
 ("Report a vulnerability" on the repository's **Security** tab). Include:
 
 - what the issue is and its impact,

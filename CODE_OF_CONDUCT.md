@@ -57,7 +57,7 @@ an individual is officially representing the community in public spaces.
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the project maintainer through GitHub — open a
-[private security advisory](https://github.com/garethhallnz/media-center/security/advisories/new)
+[private security advisory](https://github.com/garethhallnz/ensembler/security/advisories/new)
 (which allows private reporting) or contact the maintainer, [@garethhallnz](https://github.com/garethhallnz).
 All complaints will be reviewed and investigated promptly and fairly.
 

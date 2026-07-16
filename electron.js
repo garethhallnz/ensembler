@@ -190,7 +190,7 @@ function startBackend() {
       stdio: 'inherit',
       cwd: path.join(__dirname, 'backend'),
       shell: true,
-      env: { ...process.env, PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData') },
+      env: { ...process.env, PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
     };
   } else {
     // Run the bundled backend with Electron's own Node runtime (no system Node
@@ -201,7 +201,7 @@ function startBackend() {
     args = [bundlePath];
     options = {
       stdio: 'inherit',
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData') },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
       shell: false
     };
   }
@@ -234,6 +234,9 @@ function stopBackend() {
 ipcMain.handle('show-open-dialog', async (_event, options) => {
   return dialog.showOpenDialog(mainWindow, options ?? { properties: ['openDirectory'] });
 });
+
+// Renderer reads the running app version via window.electronAPI.getVersion().
+ipcMain.handle('get-version', () => app.getVersion());
 
 // App event handlers
 app.whenReady().then(() => {

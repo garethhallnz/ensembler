@@ -7,10 +7,10 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/garethhallnz/media-center.git"
+    "url": "git+https://github.com/garethhallnz/ensembler.git"
   },
   "bugs": {
-    "url": "https://github.com/garethhallnz/media-center/issues"
+    "url": "https://github.com/garethhallnz/ensembler/issues"
   },
   "type": "module",
   "main": "electron.js",
@@ -51,7 +51,7 @@
     "publish": {
       "provider": "github",
       "owner": "garethhallnz",
-      "repo": "media-center"
+      "repo": "ensembler"
     },
     "directories": {
       "output": "dist-electron"

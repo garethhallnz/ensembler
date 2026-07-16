@@ -298,7 +298,16 @@
     "updates": {
       "autoLabel": "Updates automatisch installieren",
       "autoDescription": "Wenn aktiviert, werden verfügbare Updates täglich im Hintergrund angewendet. Standardmäßig aus – du behältst die Kontrolle und wendest sie selbst mit „Alle aktualisieren“ an.",
-      "autoAriaLabel": "Updates automatisch installieren"
+      "autoAriaLabel": "Updates automatisch installieren",
+      "notificationsLabel": "Update-Benachrichtigungen",
+      "notificationsDescription": "Lass Ensembler dich benachrichtigen, wenn eine neue Version der App verfügbar ist. Es aktualisiert sich nie selbst – du lädst Updates herunter und installierst sie selbst.",
+      "notificationsAriaLabel": "Update-Benachrichtigungen",
+      "checkLabel": "Nach einer neuen Version suchen",
+      "checkDescription": "Prüfe jetzt, ob eine neuere Version von Ensembler veröffentlicht wurde.",
+      "checkButton": "Nach Updates suchen",
+      "checkToastAvailable": "Version {{version}} ist verfügbar. Siehe „So aktualisierst du“ in der Dokumentation.",
+      "checkToastUpToDate": "Du hast die neueste Version.",
+      "checkToastFailed": "Es konnte gerade nicht nach Updates gesucht werden. Bitte versuche es später erneut."
     },
     "danger": {
       "navLabel": "Zurücksetzen",
@@ -356,6 +365,14 @@
   },
   "actionsMenu": {
     "moreActions": "Weitere Aktionen"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "Eine neue Version ist verfügbar",
+      "message": "Ensembler {{version}} wurde veröffentlicht. Du verwendest eine ältere Version.",
+      "howToUpdate": "So aktualisierst du",
+      "dismiss": "Verwerfen"
+    }
   },
   "systemChecks": {
     "heading": "Prüfe deine Einrichtung",
@@ -419,7 +436,8 @@
       "overview": "Überblick",
       "gettingStarted": "Erste Schritte",
       "managing": "Dienste verwalten",
-      "troubleshooting": "Fehlerbehebung"
+      "troubleshooting": "Fehlerbehebung",
+      "howToUpdate": "So aktualisierst du"
     }
   },
   "tabs": {
@@ -532,6 +550,9 @@
   "messages": {
     "common": {
       "invalidInput": "Ungültige Eingabe"
+    },
+    "app": {
+      "updateCheckFailed": "Es konnte nicht nach Updates gesucht werden."
     },
     "ports": {
       "validateFailed": "Ports konnten nicht validiert werden."

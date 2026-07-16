@@ -332,7 +332,16 @@
     "updates": {
       "autoLabel": "アップデートを自動的にインストールする",
       "autoDescription": "オンにすると、利用可能なアップデートが毎日バックグラウンドで適用されます。デフォルトはオフです。「すべてアップデート」で自分のタイミングで適用でき、制御を維持できます。",
-      "autoAriaLabel": "アップデートを自動的にインストールする"
+      "autoAriaLabel": "アップデートを自動的にインストールする",
+      "notificationsLabel": "アップデート通知",
+      "notificationsDescription": "アプリの新しいバージョンが利用可能になったときに Ensembler が知らせます。Ensembler が自動的にアップデートすることはありません。アップデートはご自身でダウンロードしてインストールします。",
+      "notificationsAriaLabel": "アップデート通知",
+      "checkLabel": "新しいバージョンを確認",
+      "checkDescription": "Ensembler の新しいバージョンがリリースされているかどうかを今すぐ確認します。",
+      "checkButton": "アップデートを確認",
+      "checkToastAvailable": "バージョン {{version}} が利用可能です。ドキュメントの「アップデート方法」をご覧ください。",
+      "checkToastUpToDate": "最新バージョンを使用しています。",
+      "checkToastFailed": "現在アップデートを確認できませんでした。後でもう一度お試しください。"
     },
     "danger": {
       "navLabel": "リセット",
@@ -390,6 +399,14 @@
   },
   "actionsMenu": {
     "moreActions": "その他の操作"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "新しいバージョンが利用可能です",
+      "message": "Ensembler {{version}} がリリースされました。古いバージョンを使用しています。",
+      "howToUpdate": "アップデート方法",
+      "dismiss": "閉じる"
+    }
   },
   "systemChecks": {
     "heading": "セットアップを確認",
@@ -453,7 +470,8 @@
       "overview": "概要",
       "gettingStarted": "はじめに",
       "managing": "サービスの管理",
-      "troubleshooting": "トラブルシューティング"
+      "troubleshooting": "トラブルシューティング",
+      "howToUpdate": "アップデート方法"
     }
   },
   "tabs": {
@@ -566,6 +584,9 @@
   "messages": {
     "common": {
       "invalidInput": "無効な入力"
+    },
+    "app": {
+      "updateCheckFailed": "アップデートの確認に失敗しました。"
     },
     "ports": {
       "validateFailed": "ポートの検証に失敗しました。"

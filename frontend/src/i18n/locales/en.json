@@ -332,7 +332,16 @@
     "updates": {
       "autoLabel": "Install updates automatically",
       "autoDescription": "When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.",
-      "autoAriaLabel": "Install updates automatically"
+      "autoAriaLabel": "Install updates automatically",
+      "notificationsLabel": "Update notifications",
+      "notificationsDescription": "Let Ensembler tell you when a new version of the app is available. It never updates itself — you download and install updates yourself.",
+      "notificationsAriaLabel": "Update notifications",
+      "checkLabel": "Check for a new version",
+      "checkDescription": "Check now whether a newer version of Ensembler has been released.",
+      "checkButton": "Check for updates",
+      "checkToastAvailable": "Version {{version}} is available. See How to update in the docs.",
+      "checkToastUpToDate": "You’re on the latest version.",
+      "checkToastFailed": "Couldn’t check for updates right now. Please try again later."
     },
     "danger": {
       "navLabel": "Reset",
@@ -390,6 +399,14 @@
   },
   "actionsMenu": {
     "moreActions": "More actions"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "A new version is available",
+      "message": "Ensembler {{version}} has been released. You’re running an older version.",
+      "howToUpdate": "How to update",
+      "dismiss": "Dismiss"
+    }
   },
   "systemChecks": {
     "heading": "Check your setup",
@@ -453,7 +470,8 @@
       "overview": "Overview",
       "gettingStarted": "Getting started",
       "managing": "Managing services",
-      "troubleshooting": "Troubleshooting"
+      "troubleshooting": "Troubleshooting",
+      "howToUpdate": "How to update"
     }
   },
   "tabs": {
@@ -566,6 +584,9 @@
   "messages": {
     "common": {
       "invalidInput": "Invalid input"
+    },
+    "app": {
+      "updateCheckFailed": "Failed to check for updates."
     },
     "ports": {
       "validateFailed": "Failed to validate ports."

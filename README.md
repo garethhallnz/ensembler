@@ -76,8 +76,8 @@ You do **not** need Node.js, a terminal, or any developer tools to use the app. 
 Requirements: [Node.js](https://nodejs.org/) 20+, npm, and Docker.
 
 ```bash
-git clone https://github.com/garethhallnz/media-center.git
-cd media-center
+git clone https://github.com/garethhallnz/ensembler.git
+cd ensembler
 npm run install-deps
 ```
 

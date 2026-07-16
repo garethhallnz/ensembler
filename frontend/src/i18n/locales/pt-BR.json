@@ -298,7 +298,16 @@
     "updates": {
       "autoLabel": "Instalar atualizações automaticamente",
       "autoDescription": "Quando ativado, as atualizações disponíveis são aplicadas em segundo plano todos os dias. Desativado por padrão — você mantém o controle e as aplica você mesmo com “Atualizar todos”.",
-      "autoAriaLabel": "Instalar atualizações automaticamente"
+      "autoAriaLabel": "Instalar atualizações automaticamente",
+      "notificationsLabel": "Notificações de atualização",
+      "notificationsDescription": "Deixe o Ensembler avisar você quando uma nova versão do app estiver disponível. Ele nunca se atualiza sozinho — você baixa e instala as atualizações você mesmo.",
+      "notificationsAriaLabel": "Notificações de atualização",
+      "checkLabel": "Verificar uma nova versão",
+      "checkDescription": "Verifique agora se uma versão mais recente do Ensembler foi lançada.",
+      "checkButton": "Verificar atualizações",
+      "checkToastAvailable": "A versão {{version}} está disponível. Consulte Como atualizar na documentação.",
+      "checkToastUpToDate": "Você está na versão mais recente.",
+      "checkToastFailed": "Não foi possível verificar atualizações agora. Tente novamente mais tarde."
     },
     "danger": {
       "navLabel": "Redefinir",
@@ -356,6 +365,14 @@
   },
   "actionsMenu": {
     "moreActions": "Mais ações"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "Uma nova versão está disponível",
+      "message": "O Ensembler {{version}} foi lançado. Você está usando uma versão mais antiga.",
+      "howToUpdate": "Como atualizar",
+      "dismiss": "Dispensar"
+    }
   },
   "systemChecks": {
     "heading": "Verifique sua configuração",
@@ -419,7 +436,8 @@
       "overview": "Visão geral",
       "gettingStarted": "Primeiros passos",
       "managing": "Gerenciar serviços",
-      "troubleshooting": "Solução de problemas"
+      "troubleshooting": "Solução de problemas",
+      "howToUpdate": "Como atualizar"
     }
   },
   "tabs": {
@@ -532,6 +550,9 @@
   "messages": {
     "common": {
       "invalidInput": "Entrada inválida"
+    },
+    "app": {
+      "updateCheckFailed": "Falha ao verificar atualizações."
     },
     "ports": {
       "validateFailed": "Falha ao validar as portas."

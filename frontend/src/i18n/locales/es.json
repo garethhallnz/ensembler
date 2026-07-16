@@ -298,7 +298,16 @@
     "updates": {
       "autoLabel": "Instalar actualizaciones automáticamente",
       "autoDescription": "Cuando está activado, las actualizaciones disponibles se aplican en segundo plano cada día. Desactivado de forma predeterminada: mantienes el control y las aplicas tú mismo con «Actualizar todo».",
-      "autoAriaLabel": "Instalar actualizaciones automáticamente"
+      "autoAriaLabel": "Instalar actualizaciones automáticamente",
+      "notificationsLabel": "Notificaciones de actualización",
+      "notificationsDescription": "Deja que Ensembler te avise cuando haya disponible una nueva versión de la aplicación. Nunca se actualiza solo: tú descargas e instalas las actualizaciones.",
+      "notificationsAriaLabel": "Notificaciones de actualización",
+      "checkLabel": "Buscar una nueva versión",
+      "checkDescription": "Comprueba ahora si se ha publicado una versión más reciente de Ensembler.",
+      "checkButton": "Buscar actualizaciones",
+      "checkToastAvailable": "La versión {{version}} está disponible. Consulta Cómo actualizar en la documentación.",
+      "checkToastUpToDate": "Tienes la última versión.",
+      "checkToastFailed": "No se pudo buscar actualizaciones ahora mismo. Inténtalo de nuevo más tarde."
     },
     "danger": {
       "navLabel": "Restablecer",
@@ -356,6 +365,14 @@
   },
   "actionsMenu": {
     "moreActions": "Más acciones"
+  },
+  "appUpdate": {
+    "banner": {
+      "heading": "Hay una nueva versión disponible",
+      "message": "Se ha publicado Ensembler {{version}}. Estás usando una versión anterior.",
+      "howToUpdate": "Cómo actualizar",
+      "dismiss": "Descartar"
+    }
   },
   "systemChecks": {
     "heading": "Comprueba tu configuración",
@@ -419,7 +436,8 @@
       "overview": "Resumen",
       "gettingStarted": "Primeros pasos",
       "managing": "Gestión de servicios",
-      "troubleshooting": "Solución de problemas"
+      "troubleshooting": "Solución de problemas",
+      "howToUpdate": "Cómo actualizar"
     }
   },
   "tabs": {
@@ -532,6 +550,9 @@
   "messages": {
     "common": {
       "invalidInput": "Entrada no válida"
+    },
+    "app": {
+      "updateCheckFailed": "No se pudieron buscar actualizaciones."
     },
     "ports": {
       "validateFailed": "No se pudieron validar los puertos."
