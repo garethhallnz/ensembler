@@ -1,6 +1,3 @@
-import { Docker } from 'node-docker-api';
-import { exec } from 'child_process';
-
 // Mock Docker container interface
 export interface MockContainer {
   id: string;

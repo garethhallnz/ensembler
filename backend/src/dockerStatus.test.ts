@@ -55,7 +55,7 @@ function dockerAutostartHandler(req: any, res: any) {
         }
       }, 10);
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ success: false, message: 'Error attempting to start Docker.' });
   }
 }

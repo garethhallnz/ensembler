@@ -24,8 +24,14 @@
     "electron-dist": "npm run build && electron-builder --publish=never",
     "install-deps": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "test": "cd backend && npm test && cd ../frontend && npm test",
+    "lint": "cd backend && npm run lint && cd ../frontend && npm run lint",
     "frontend": "cd frontend && npm run dev",
-    "backend": "cd backend && npm run dev"
+    "backend": "cd backend && npm run dev",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "backend/**/*.ts": "eslint --fix --config backend/eslint.config.mjs",
+    "frontend/**/*.{ts,tsx}": "eslint --fix --config frontend/eslint.config.js"
   },
   "dependencies": {
     "node-docker-api": "^1.1.22"
@@ -34,6 +40,9 @@
     "concurrently": "^9.1.2",
     "electron": "^36.2.0",
     "electron-builder": "^25.1.8",
+    "eslint": "^9.39.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "wait-on": "^8.0.2"
   },
   "build": {

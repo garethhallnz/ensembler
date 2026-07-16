@@ -25,7 +25,7 @@ const createTestApp = () => {
   app.use(express.json());
 
   // Import the service configuration that should work with mocks
-  const { SUPPORTED_SERVICES, getServiceConfig } = require('../services/serviceConfig');
+  const { SUPPORTED_SERVICES } = require('../services/serviceConfig');
   
   // Recreate key endpoints for testing
   app.get('/api/docker/status', async (req, res) => {
@@ -41,7 +41,7 @@ const createTestApp = () => {
         }
         res.json({ docker: true, compose: true, composeVersion: stdout.trim() });
       });
-    } catch (e) {
+    } catch {
       res.json({ docker: false, compose: false, message: 'Docker not running or not installed.' });
     }
   });
@@ -152,7 +152,7 @@ const createTestApp = () => {
           } else {
             serviceStatus[serviceName] = 'Starting';
           }
-        } catch (err) {
+        } catch {
           serviceStatus[serviceName] = 'Unknown';
         }
       }

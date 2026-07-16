@@ -40,7 +40,7 @@ app.post('/api/config/generate-compose', (req, res) => {
       PGID: config.environment.pgid || 1000,
     };
 
-    let envContent = `TZ=${envVars.TZ}\nPUID=${envVars.PUID}\nPGID=${envVars.PGID}\n`;
+    const envContent = `TZ=${envVars.TZ}\nPUID=${envVars.PUID}\nPGID=${envVars.PGID}\n`;
     fs.writeFileSync(envFile, envContent);
 
     let composeServices = '';

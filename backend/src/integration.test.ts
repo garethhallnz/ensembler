@@ -1,8 +1,5 @@
 import request from 'supertest';
-import express from 'express';
 import fs from 'fs';
-import path from 'path';
-import os from 'os';
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
@@ -30,9 +27,9 @@ jest.mock('child_process', () => ({
 
 jest.mock('util', () => ({
   ...jest.requireActual('util'),
-  promisify: jest.fn((fn) => {
+  promisify: jest.fn((_fn) => {
     return jest.fn((cmd: string) => {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve, _reject) => {
         if (cmd.includes('docker ps')) {
           resolve({ stdout: 'Up 5 minutes', stderr: '' });
         } else if (cmd.includes('docker compose') && cmd.includes('logs')) {
@@ -51,9 +48,6 @@ jest.mock('util', () => ({
 import app from './index';
 
 describe('Integration Tests - Frontend-Backend Communication', () => {
-  const configDir = path.join(os.homedir(), '.ensembler');
-  const configFile = path.join(configDir, 'config.json');
-
   beforeEach(() => {
     jest.clearAllMocks();
   });

@@ -8,7 +8,6 @@ const baseConfig: EnsemblerConfig = {
   environment: { tz: 'UTC', puid: 1000, pgid: 1000 },
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parse = (yaml: string): any => loadYaml(yaml);
 
 describe('generateComposeFile', () => {

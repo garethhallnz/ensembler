@@ -5,7 +5,7 @@ import path from 'path';
 import { exec } from 'child_process';
 import { SUPPORTED_SERVICES, getServiceConfig } from './services/serviceConfig';
 import { configDir, configFile, composeFile, writeFileAtomic } from './services/paths';
-import { execAsync, execFileAsync, dockerCompose } from './services/exec';
+import { execAsync, execFileAsync } from './services/exec';
 import { isDockerRunning, composeUp, composeStop, composeRestart, composeLogs, getContainerStatus } from './services/docker';
 import { getEffectiveImage, writeComposeFile } from './services/compose';
 import {
@@ -141,7 +141,7 @@ app.get('/api/docker/status', async (req: Request, res: Response) => {
       }
       res.json({ docker: true, compose: true, composeVersion: stdout.trim() });
     });
-  } catch (e) {
+  } catch {
     res.json({ docker: false, compose: false, code: 'messages.docker.notRunning', message: 'Docker not running or not installed.' });
   }
 });
@@ -215,7 +215,7 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
   if (platform === 'darwin') {
     startCmd = 'open --background -a Docker';
   } else if (platform === 'win32') {
-    startCmd = 'start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"';
+    startCmd = 'start "" "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe"';
   } else if (platform === 'linux') {
     startCmd = 'systemctl start docker';
   } else {
@@ -235,7 +235,7 @@ app.post('/api/docker/autostart', async (req: Request, res: Response) => {
         }
       }, 5000);
     });
-  } catch (e) {
+  } catch {
     res.status(500).json({ success: false, code: 'messages.docker.startError', message: 'Error attempting to start Docker.' });
   }
 });
@@ -392,7 +392,7 @@ app.get('/api/services/prowlarr/indexer-status', async (req: Request, res: Respo
     }
     const indexers = await response.json() as unknown[];
     res.json({ success: true, enabled: true, hasIndexers: indexers.length > 0 });
-  } catch (err) {
+  } catch {
     res.json({ success: true, enabled: true, hasIndexers: null });
   }
 });
@@ -423,7 +423,7 @@ app.get('/api/services/plex/setup-status', async (req: Request, res: Response) =
     } catch {
       res.json({ success: true, enabled: true, signedIn: true, librariesConfigured: null });
     }
-  } catch (err) {
+  } catch {
     res.json({ success: true, enabled: true, signedIn: null, librariesConfigured: null });
   }
 });
@@ -709,7 +709,12 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
     const config = JSON.parse(fs.readFileSync(configFile, 'utf-8'));
     const selectedServices = Object.keys(config.selectedServices).filter((key: string) => config.selectedServices[key]);
     
-    const serviceHealthChecks: { [key: string]: any } = {};
+    const serviceHealthChecks: Record<string, {
+      running: boolean;
+      healthy: boolean;
+      status: string;
+      alert: boolean;
+    }> = {};
     
     for (const serviceName of selectedServices) {
       try {
@@ -723,7 +728,7 @@ app.get('/api/services/monitor', async (req: Request, res: Response) => {
           status: containerInfo.trim() || 'Not running',
           alert: !isRunning || !isHealthy
         };
-      } catch (err) {
+      } catch {
         serviceHealthChecks[serviceName] = {
           running: false,
           healthy: false,

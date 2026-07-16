@@ -63,7 +63,6 @@ const generatedCompose = (): string => {
   return call ? String(call[1]) : '';
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const parsedCompose = (): any => loadYaml(generatedCompose());
 
 beforeEach(() => {
@@ -89,7 +88,7 @@ describe('compose generation with a spaced data dir', () => {
   it('never leaks an unresolved {placeholder} or an empty host path', async () => {
     await request(app).post('/api/config/generate-compose').expect(200);
     const services = parsedCompose().services;
-    const allVolumes: string[] = Object.values(services).flatMap((s: any) => s.volumes); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const allVolumes: string[] = Object.values(services).flatMap((s: any) => s.volumes);
     allVolumes.forEach(v => {
       expect(v).not.toMatch(/\{[a-zA-Z.]+\}/); // e.g. {paths.movies}, {configDir}
       expect(v.startsWith(':')).toBe(false); // no empty host before the container path
