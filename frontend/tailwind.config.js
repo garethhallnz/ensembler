@@ -11,6 +11,18 @@ export default {
   ],
   theme: {
     extend: {
+      // Tighter corners app-wide: every rounded-* utility (and Flowbite's) is
+      // halved from the Tailwind defaults. `full` is left alone so circular
+      // elements (toggles, status dots, pills) stay round.
+      borderRadius: {
+        sm: '0.0625rem',   // was 0.125rem
+        DEFAULT: '0.125rem', // was 0.25rem
+        md: '0.1875rem',   // was 0.375rem
+        lg: '0.25rem',     // was 0.5rem
+        xl: '0.375rem',    // was 0.75rem
+        '2xl': '0.5rem',   // was 1rem
+        '3xl': '0.75rem',  // was 1.5rem
+      },
       button: {
         color: {
           primary: 'bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-800',
