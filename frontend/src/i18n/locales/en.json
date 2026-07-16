@@ -244,6 +244,8 @@
       "disconnected": "Disconnected",
       "servicesRunning": "Services running",
       "lastChecked": "Last checked",
+      "diskFree": "Disk free space",
+      "dockerMemory": "Docker memory",
       "note": "Docker services keep running independently, and continue even when the app is closed."
     },
     "logs": {
@@ -309,6 +311,7 @@
     "appearance": {
       "heading": "Appearance",
       "description": "Choose how the app looks. System follows your operating system.",
+      "themeLabel": "Theme",
       "theme": {
         "light": "Light",
         "dark": "Dark",
@@ -321,18 +324,18 @@
       "trayDescription": "Ensembler stays in your menu bar / system tray for quick access. Your services keep running either way — quit fully from the tray menu.",
       "trayAriaLabel": "Keep running in the tray when the window is closed"
     },
-    "environment": {
-      "heading": "Environment",
-      "description": "Global settings applied to all services."
+    "advanced": {
+      "heading": "Advanced",
+      "ownershipHeading": "File ownership",
+      "ownershipDescription": "The user and group IDs services use when reading and writing your files (usually 1000)."
     },
     "updates": {
-      "heading": "Updates",
-      "description": "Ensembler checks daily for new service versions and shows what's available on the dashboard.",
       "autoLabel": "Install updates automatically",
       "autoDescription": "When on, available updates are applied in the background each day. Off by default — you stay in control and apply them yourself with “Update all”.",
       "autoAriaLabel": "Install updates automatically"
     },
     "danger": {
+      "navLabel": "Reset",
       "heading": "Danger Zone",
       "resetLabel": "Reset everything",
       "resetDescription": "Removes all services and their settings, returning to a fresh install. Media files are kept.",

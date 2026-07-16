@@ -8,7 +8,6 @@ import ServiceConfigModal from './components/organisms/ServiceConfigModal';
 import AddServiceModal from './components/organisms/AddServiceModal';
 import ServiceCard from './components/organisms/ServiceCard';
 import SetupChecklist from './components/organisms/SetupChecklist';
-import DiagnosticsPanel from './components/organisms/DiagnosticsPanel';
 import LogsDrawer from './components/organisms/LogsDrawer';
 import Logo from './components/atoms/Logo';
 import DocsButton from './components/molecules/DocsButton';
@@ -141,7 +140,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const logScrollRef = useRef<HTMLDivElement>(null);
   const logStickBottomRef = useRef(true);
   const [globalActionProgress, setGlobalActionProgress] = useState<number | null>(null);
-  const [isSystemStatusExpanded, setIsSystemStatusExpanded] = useState(false);
 
   // Thin toast wrappers over the update hook's data actions (the hook owns the
   // fetch, spinner flags, and "up to date" fade; toasts are the UI's concern).
@@ -612,13 +610,6 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         )}
       </div>
 
-      <DiagnosticsPanel
-        dockerStatus={dockerStatus}
-        runtimeStatus={runtimeStatus}
-        expanded={isSystemStatusExpanded}
-        onToggleExpanded={() => setIsSystemStatusExpanded(!isSystemStatusExpanded)}
-      />
-
       {/* Advanced Settings Drawer */}
       <Drawer
         open={showAdvancedSettings} 
@@ -633,6 +624,8 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
         <div className="h-full bg-white dark:bg-gray-800">
           <AdvancedSettings
             onResetComplete={onResetComplete}
+            dockerStatus={dockerStatus}
+            runtimeStatus={runtimeStatus}
             onClose={async () => {
               setShowAdvancedSettings(false);
               // Refresh dashboard data after settings are saved

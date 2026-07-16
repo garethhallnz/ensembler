@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiFetch } from './requests/client';
 import { getCurrentConfig, type CurrentConfig } from './requests/services';
@@ -8,7 +8,9 @@ import Alert from './components/atoms/Alert';
 import Card from './components/atoms/Card';
 import EnvironmentSettings from './components/molecules/EnvironmentSettings';
 import AppearanceSettings from './components/molecules/AppearanceSettings';
+import DiagnosticsSection from './components/organisms/DiagnosticsSection';
 import Toggle from './components/atoms/Toggle';
+import type { RuntimeStatus } from './services/runtimeManager';
 import { HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import { useToast } from './contexts/ToastContext';
 import ConfirmationModal from './components/molecules/ConfirmationModal';
@@ -19,14 +21,27 @@ interface AdvancedSettingsProps {
   // During setup there's no config to manage yet, so show only Appearance
   // (theme + language) with a Close — never the config-dependent sections.
   appearanceOnly?: boolean;
+  // Runtime status for the Diagnostics section, supplied by the dashboard.
+  dockerStatus?: { running: boolean };
+  runtimeStatus?: RuntimeStatus | null;
 }
 
 type ResetPhaseStatus = 'pending' | 'active' | 'done' | 'error';
 
+type SettingsSection = 'appearance' | 'general' | 'advanced' | 'danger';
+
+// Sidebar sections, in display order.
+const SECTIONS: { id: SettingsSection; labelKey: string }[] = [
+  { id: 'appearance', labelKey: 'settings.appearance.heading' },
+  { id: 'general', labelKey: 'settings.general.heading' },
+  { id: 'advanced', labelKey: 'settings.advanced.heading' },
+  { id: 'danger', labelKey: 'settings.danger.navLabel' },
+];
+
 // App-level settings only. Per-service configuration and adding services live
 // on the dashboard now, so this is limited to global environment settings and
 // a clearly separated danger zone (full reset).
-export default function AdvancedSettings({ onClose, onResetComplete, appearanceOnly = false }: AdvancedSettingsProps) {
+export default function AdvancedSettings({ onClose, onResetComplete, appearanceOnly = false, dockerStatus, runtimeStatus }: AdvancedSettingsProps) {
   const { t } = useTranslation();
   const { showToast } = useToast();
   const [config, setConfig] = useState<CurrentConfig | null>(null);
@@ -36,6 +51,7 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
   const [resetPhases, setResetPhases] = useState<{ key: string; label: string; status: ResetPhaseStatus }[]>([]);
   const [resetStage, setResetStage] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [openModal, setOpenModal] = useState(false);
+  const [activeSection, setActiveSection] = useState<SettingsSection>('appearance');
   const [confirmationModal, setConfirmationModal] = useState<{ message: string; onConfirm: () => void }>({
     message: '',
     onConfirm: () => {},
@@ -243,101 +259,130 @@ export default function AdvancedSettings({ onClose, onResetComplete, appearanceO
     );
   }
 
-  return (
-    <>
-      <div className="h-full flex flex-col">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-600">
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.title')}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {t('settings.subtitle')}
-          </p>
-        </div>
+  const sectionContent: Record<SettingsSection, ReactNode> = {
+    appearance: <AppearanceSettings selectId="app-language" />,
 
-        <div className="flex-1 overflow-auto p-4 space-y-6">
-          <AppearanceSettings selectId="app-language" />
-
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium">{t('settings.general.heading')}</h4>
-            </Card.Header>
-            <Card.Body>
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.trayLabel')}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('settings.general.trayDescription')}
-                  </p>
-                </div>
-                <Toggle
-                  checked={config.minimizeToTray ?? true}
-                  onChange={value => setConfig(prev => prev ? { ...prev, minimizeToTray: value } : prev)}
-                  aria-label={t('settings.general.trayAriaLabel')}
-                  className="shrink-0"
-                />
+    general: (
+      <Card>
+        <Card.Header>
+          <h4 className="text-lg font-medium">{t('settings.general.heading')}</h4>
+        </Card.Header>
+        <Card.Body>
+          <div className="divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="flex items-center justify-between gap-4 pb-5">
+              <div className="text-left">
+                <p className="font-medium text-gray-900 dark:text-white">{t('settings.general.trayLabel')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.general.trayDescription')}</p>
               </div>
-            </Card.Body>
-          </Card>
-
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium">{t('settings.environment.heading')}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t('settings.environment.description')}
-              </p>
-            </Card.Header>
-            <Card.Body>
+              <Toggle
+                checked={config.minimizeToTray ?? true}
+                onChange={value => setConfig(prev => prev ? { ...prev, minimizeToTray: value } : prev)}
+                aria-label={t('settings.general.trayAriaLabel')}
+                className="shrink-0"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 py-5">
+              <div className="text-left">
+                <p className="font-medium text-gray-900 dark:text-white">{t('settings.updates.autoLabel')}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.updates.autoDescription')}</p>
+              </div>
+              <Toggle
+                checked={config.autoUpdate ?? false}
+                onChange={value => setConfig(prev => prev ? { ...prev, autoUpdate: value } : prev)}
+                aria-label={t('settings.updates.autoAriaLabel')}
+                className="shrink-0"
+              />
+            </div>
+            <div className="pt-5">
               <EnvironmentSettings
                 environment={config.environment}
                 errors={errors}
                 onEnvironmentChange={handleEnvironmentChange}
                 layout="vertical"
+                fields={['tz']}
               />
-            </Card.Body>
-          </Card>
+            </div>
+          </div>
+        </Card.Body>
+      </Card>
+    ),
 
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium">{t('settings.updates.heading')}</h4>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {t('settings.updates.description')}
-              </p>
-            </Card.Header>
-            <Card.Body>
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.updates.autoLabel')}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('settings.updates.autoDescription')}
-                  </p>
-                </div>
-                <Toggle
-                  checked={config.autoUpdate ?? false}
-                  onChange={value => setConfig(prev => prev ? { ...prev, autoUpdate: value } : prev)}
-                  aria-label={t('settings.updates.autoAriaLabel')}
-                  className="shrink-0"
-                />
-              </div>
-            </Card.Body>
-          </Card>
+    advanced: (
+      <div className="space-y-6">
+        <DiagnosticsSection
+          dockerStatus={dockerStatus ?? { running: false }}
+          runtimeStatus={runtimeStatus ?? null}
+        />
+        <Card>
+          <Card.Header>
+            <h4 className="text-lg font-medium">{t('settings.advanced.ownershipHeading')}</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.advanced.ownershipDescription')}</p>
+          </Card.Header>
+          <Card.Body>
+            <EnvironmentSettings
+              environment={config.environment}
+              errors={errors}
+              onEnvironmentChange={handleEnvironmentChange}
+              layout="grid"
+              fields={['puid', 'pgid']}
+            />
+          </Card.Body>
+        </Card>
+      </div>
+    ),
 
-          <Card>
-            <Card.Header>
-              <h4 className="text-lg font-medium text-red-600 dark:text-red-400">{t('settings.danger.heading')}</h4>
-            </Card.Header>
-            <Card.Body>
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 dark:text-white">{t('settings.danger.resetLabel')}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t('settings.danger.resetDescription')}
-                  </p>
-                </div>
-                <Button variant="danger" onClick={handleCompleteReset} className="shrink-0">
-                  {t('settings.danger.resetButton')}
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
+    danger: (
+      <Card>
+        <Card.Header>
+          <h4 className="text-lg font-medium text-red-600 dark:text-red-400">{t('settings.danger.heading')}</h4>
+        </Card.Header>
+        <Card.Body>
+          <div className="flex items-center justify-between gap-4">
+            <div className="text-left">
+              <p className="font-medium text-gray-900 dark:text-white">{t('settings.danger.resetLabel')}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{t('settings.danger.resetDescription')}</p>
+            </div>
+            <Button variant="danger" onClick={handleCompleteReset} className="shrink-0">
+              {t('settings.danger.resetButton')}
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+    ),
+  };
+
+  return (
+    <>
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-600">
+          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('settings.title')}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.subtitle')}</p>
+        </div>
+
+        <div className="flex-1 flex overflow-hidden">
+          <aside className="w-56 shrink-0 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+            <nav className="space-y-1">
+              {SECTIONS.map(section => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                    section.id === activeSection
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {t(section.labelKey)}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-2xl">
+              {sectionContent[activeSection]}
+            </div>
+          </div>
         </div>
 
         <div className="border-t border-gray-200 dark:border-gray-600 p-4">

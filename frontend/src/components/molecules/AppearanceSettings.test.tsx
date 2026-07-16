@@ -12,6 +12,7 @@ describe('AppearanceSettings', () => {
       </CustomThemeProvider>,
     );
     await expect.element(page.getByText('Appearance')).toBeInTheDocument();
+    await expect.element(page.getByText('Theme')).toBeInTheDocument();
     await expect.element(page.getByRole('button', { name: 'Light' })).toBeInTheDocument();
     await expect.element(page.getByRole('button', { name: 'Dark' })).toBeInTheDocument();
     await expect.element(page.getByRole('button', { name: 'System' })).toBeInTheDocument();

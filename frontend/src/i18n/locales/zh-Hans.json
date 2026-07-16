@@ -214,6 +214,8 @@
       "disconnected": "已断开",
       "servicesRunning": "运行中的服务",
       "lastChecked": "上次检查",
+      "diskFree": "磁盘可用空间",
+      "dockerMemory": "Docker 内存",
       "note": "Docker 服务独立运行，即使关闭应用也会继续运行。"
     },
     "logs": {
@@ -279,6 +281,7 @@
     "appearance": {
       "heading": "外观",
       "description": "选择应用的外观。“跟随系统”将采用您的操作系统设置。",
+      "themeLabel": "主题",
       "theme": { "light": "浅色", "dark": "深色", "system": "跟随系统" }
     },
     "general": {
@@ -287,18 +290,18 @@
       "trayDescription": "Ensembler 会保留在菜单栏／系统托盘中以便快速访问。无论如何您的服务都会继续运行——可从托盘菜单完全退出。",
       "trayAriaLabel": "关闭窗口时保持在托盘中运行"
     },
-    "environment": {
-      "heading": "环境",
-      "description": "应用于所有服务的全局设置。"
+    "advanced": {
+      "heading": "高级",
+      "ownershipHeading": "文件所有权",
+      "ownershipDescription": "服务读写您的文件时使用的用户和组 ID（通常为 1000）。"
     },
     "updates": {
-      "heading": "更新",
-      "description": "Ensembler 每天检查新的服务版本，并在仪表板上显示可用更新。",
       "autoLabel": "自动安装更新",
       "autoDescription": "开启后，每天会在后台应用可用更新。默认关闭——您可自行掌控，通过“全部更新”手动应用。",
       "autoAriaLabel": "自动安装更新"
     },
     "danger": {
+      "navLabel": "重置",
       "heading": "危险区域",
       "resetLabel": "重置全部",
       "resetDescription": "移除所有服务及其设置，恢复到全新安装状态。媒体文件将会保留。",

@@ -214,6 +214,8 @@
       "disconnected": "Desconectado",
       "servicesRunning": "Servicios en ejecución",
       "lastChecked": "Última comprobación",
+      "diskFree": "Espacio libre en disco",
+      "dockerMemory": "Memoria de Docker",
       "note": "Los servicios de Docker siguen ejecutándose de forma independiente y continúan incluso cuando la aplicación está cerrada."
     },
     "logs": {
@@ -279,6 +281,7 @@
     "appearance": {
       "heading": "Apariencia",
       "description": "Elige el aspecto de la aplicación. «Sistema» sigue el de tu sistema operativo.",
+      "themeLabel": "Tema",
       "theme": { "light": "Claro", "dark": "Oscuro", "system": "Sistema" }
     },
     "general": {
@@ -287,18 +290,18 @@
       "trayDescription": "Ensembler permanece en tu barra de menús / bandeja del sistema para un acceso rápido. Tus servicios siguen en ejecución de todos modos; sal por completo desde el menú de la bandeja.",
       "trayAriaLabel": "Seguir en ejecución en la bandeja cuando la ventana está cerrada"
     },
-    "environment": {
-      "heading": "Entorno",
-      "description": "Ajustes globales aplicados a todos los servicios."
+    "advanced": {
+      "heading": "Avanzado",
+      "ownershipHeading": "Propiedad de archivos",
+      "ownershipDescription": "Los ID de usuario y grupo que los servicios usan para leer y escribir tus archivos (normalmente 1000)."
     },
     "updates": {
-      "heading": "Actualizaciones",
-      "description": "Ensembler comprueba a diario si hay nuevas versiones de los servicios y muestra las disponibles en el panel.",
       "autoLabel": "Instalar actualizaciones automáticamente",
       "autoDescription": "Cuando está activado, las actualizaciones disponibles se aplican en segundo plano cada día. Desactivado de forma predeterminada: mantienes el control y las aplicas tú mismo con «Actualizar todo».",
       "autoAriaLabel": "Instalar actualizaciones automáticamente"
     },
     "danger": {
+      "navLabel": "Restablecer",
       "heading": "Zona de peligro",
       "resetLabel": "Restablecer todo",
       "resetDescription": "Elimina todos los servicios y sus ajustes, volviendo a una instalación nueva. Los archivos multimedia se conservan.",

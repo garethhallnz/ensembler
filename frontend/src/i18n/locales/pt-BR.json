@@ -214,6 +214,8 @@
       "disconnected": "Desconectado",
       "servicesRunning": "Serviços em execução",
       "lastChecked": "Última verificação",
+      "diskFree": "Espaço livre em disco",
+      "dockerMemory": "Memória do Docker",
       "note": "Os serviços do Docker continuam em execução de forma independente, mesmo quando o app é fechado."
     },
     "logs": {
@@ -279,6 +281,7 @@
     "appearance": {
       "heading": "Aparência",
       "description": "Escolha a aparência do app. A opção Sistema segue o seu sistema operacional.",
+      "themeLabel": "Tema",
       "theme": { "light": "Claro", "dark": "Escuro", "system": "Sistema" }
     },
     "general": {
@@ -287,18 +290,18 @@
       "trayDescription": "O Ensembler permanece na barra de menus / bandeja do sistema para acesso rápido. Seus serviços continuam em execução de qualquer forma — encerre completamente pelo menu da bandeja.",
       "trayAriaLabel": "Manter em execução na bandeja quando a janela for fechada"
     },
-    "environment": {
-      "heading": "Ambiente",
-      "description": "Configurações globais aplicadas a todos os serviços."
+    "advanced": {
+      "heading": "Avançado",
+      "ownershipHeading": "Propriedade de arquivos",
+      "ownershipDescription": "Os IDs de usuário e grupo que os serviços usam para ler e gravar seus arquivos (geralmente 1000)."
     },
     "updates": {
-      "heading": "Atualizações",
-      "description": "O Ensembler verifica diariamente se há novas versões dos serviços e mostra o que está disponível no painel.",
       "autoLabel": "Instalar atualizações automaticamente",
       "autoDescription": "Quando ativado, as atualizações disponíveis são aplicadas em segundo plano todos os dias. Desativado por padrão — você mantém o controle e as aplica você mesmo com “Atualizar todos”.",
       "autoAriaLabel": "Instalar atualizações automaticamente"
     },
     "danger": {
+      "navLabel": "Redefinir",
       "heading": "Zona de perigo",
       "resetLabel": "Redefinir tudo",
       "resetDescription": "Remove todos os serviços e suas configurações, voltando a uma instalação limpa. Os arquivos de mídia são mantidos.",

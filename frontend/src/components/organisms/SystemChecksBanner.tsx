@@ -28,17 +28,23 @@ export default function SystemChecksBanner() {
   const [checks, setChecks] = useState<SystemChecks | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
+  // Re-check periodically, not just on mount: disks fill over time as media
+  // downloads, and that's exactly when a non-technical user needs the warning.
   useEffect(() => {
-    (async () => {
+    let active = true;
+    const check = async () => {
       try {
         const res = await apiFetch('/api/system/checks');
         if (!res.ok) return;
         const data = await res.json();
-        if (data.success) setChecks(data.checks);
+        if (active && data.success) setChecks(data.checks);
       } catch {
         /* silent — these checks are advisory */
       }
-    })();
+    };
+    check();
+    const interval = setInterval(check, 120000);
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
   if (dismissed || !checks) return null;

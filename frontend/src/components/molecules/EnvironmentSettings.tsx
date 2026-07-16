@@ -16,6 +16,9 @@ interface EnvironmentSettingsProps {
   onEnvironmentChange: (field: keyof EnvironmentConfig, value: string | number) => void;
   layout?: 'grid' | 'vertical';
   className?: string;
+  // Which fields to render; defaults to all. Lets callers place the timezone and
+  // the file-ownership IDs (PUID/PGID) in separate settings sections.
+  fields?: ('tz' | 'puid' | 'pgid')[];
 }
 
 const timezoneOptions = [
@@ -52,78 +55,82 @@ export default function EnvironmentSettings({
   errors = {},
   onEnvironmentChange,
   layout = 'grid',
-  className = ''
+  className = '',
+  fields = ['tz', 'puid', 'pgid']
 }: EnvironmentSettingsProps) {
   const { t } = useTranslation();
 
   return (
     <div className={`space-y-6 ${className}`}>
-      
+
       <div className={layout === 'grid' ? 'grid grid-cols-1 lg:grid-cols-3 gap-6' : 'space-y-4'}>
-        {/* Timezone */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('environment.timezone.label')} <span className="text-red-500">*</span>
-          </label>
-          <Select
-            value={environment.tz}
-            onChange={(e) => onEnvironmentChange('tz', e.target.value)}
-            color={errors.tz ? 'failure' : 'gray'}
-          >
-            <option value="">{t('environment.timezone.placeholder')}</option>
-            {timezoneOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('environment.timezone.help')}
-          </p>
-          {errors.tz && (
-            <Alert color="red" className="text-xs">{errors.tz}</Alert>
-          )}
-        </div>
+        {fields.includes('tz') && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('environment.timezone.label')} <span className="text-red-500">*</span>
+            </label>
+            <Select
+              value={environment.tz}
+              onChange={(e) => onEnvironmentChange('tz', e.target.value)}
+              color={errors.tz ? 'failure' : 'gray'}
+            >
+              <option value="">{t('environment.timezone.placeholder')}</option>
+              {timezoneOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t('environment.timezone.help')}
+            </p>
+            {errors.tz && (
+              <Alert color="red" className="text-xs">{errors.tz}</Alert>
+            )}
+          </div>
+        )}
 
-        {/* PUID */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('environment.puid.label')} <span className="text-red-500">*</span>
-          </label>
-          <TextInput
-            type="number"
-            value={String(environment.puid)}
-            onChange={(e) => onEnvironmentChange('puid', parseInt(e.target.value) || 0)}
-            color={errors.puid ? 'failure' : 'gray'}
-            min="0"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('environment.puid.help')}
-          </p>
-          {errors.puid && (
-            <Alert color="red" className="text-xs">{errors.puid}</Alert>
-          )}
-        </div>
+        {fields.includes('puid') && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('environment.puid.label')} <span className="text-red-500">*</span>
+            </label>
+            <TextInput
+              type="number"
+              value={String(environment.puid)}
+              onChange={(e) => onEnvironmentChange('puid', parseInt(e.target.value) || 0)}
+              color={errors.puid ? 'failure' : 'gray'}
+              min="0"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t('environment.puid.help')}
+            </p>
+            {errors.puid && (
+              <Alert color="red" className="text-xs">{errors.puid}</Alert>
+            )}
+          </div>
+        )}
 
-        {/* PGID */}
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            {t('environment.pgid.label')} <span className="text-red-500">*</span>
-          </label>
-          <TextInput
-            type="number"
-            value={String(environment.pgid)}
-            onChange={(e) => onEnvironmentChange('pgid', parseInt(e.target.value) || 0)}
-            color={errors.pgid ? 'failure' : 'gray'}
-            min="0"
-          />
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t('environment.pgid.help')}
-          </p>
-          {errors.pgid && (
-            <Alert color="red" className="text-xs">{errors.pgid}</Alert>
-          )}
-        </div>
+        {fields.includes('pgid') && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('environment.pgid.label')} <span className="text-red-500">*</span>
+            </label>
+            <TextInput
+              type="number"
+              value={String(environment.pgid)}
+              onChange={(e) => onEnvironmentChange('pgid', parseInt(e.target.value) || 0)}
+              color={errors.pgid ? 'failure' : 'gray'}
+              min="0"
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {t('environment.pgid.help')}
+            </p>
+            {errors.pgid && (
+              <Alert color="red" className="text-xs">{errors.pgid}</Alert>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

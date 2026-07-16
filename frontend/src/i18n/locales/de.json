@@ -214,6 +214,8 @@
       "disconnected": "Getrennt",
       "servicesRunning": "Laufende Dienste",
       "lastChecked": "Zuletzt geprüft",
+      "diskFree": "Freier Speicherplatz",
+      "dockerMemory": "Docker-Arbeitsspeicher",
       "note": "Docker-Dienste laufen unabhängig weiter, auch wenn die App geschlossen ist."
     },
     "logs": {
@@ -279,6 +281,7 @@
     "appearance": {
       "heading": "Darstellung",
       "description": "Wähle, wie die App aussieht. „System“ folgt deinem Betriebssystem.",
+      "themeLabel": "Design",
       "theme": { "light": "Hell", "dark": "Dunkel", "system": "System" }
     },
     "general": {
@@ -287,18 +290,18 @@
       "trayDescription": "Ensembler bleibt für schnellen Zugriff in deiner Menüleiste / im System-Tray. Deine Dienste laufen so oder so weiter – beende die App vollständig über das Tray-Menü.",
       "trayAriaLabel": "Beim Schließen des Fensters im Tray weiterlaufen lassen"
     },
-    "environment": {
-      "heading": "Umgebung",
-      "description": "Globale Einstellungen, die auf alle Dienste angewendet werden."
+    "advanced": {
+      "heading": "Erweitert",
+      "ownershipHeading": "Dateibesitz",
+      "ownershipDescription": "Die Benutzer- und Gruppen-IDs, mit denen Dienste deine Dateien lesen und schreiben (normalerweise 1000)."
     },
     "updates": {
-      "heading": "Updates",
-      "description": "Ensembler prüft täglich auf neue Dienstversionen und zeigt Verfügbares auf dem Dashboard an.",
       "autoLabel": "Updates automatisch installieren",
       "autoDescription": "Wenn aktiviert, werden verfügbare Updates täglich im Hintergrund angewendet. Standardmäßig aus – du behältst die Kontrolle und wendest sie selbst mit „Alle aktualisieren“ an.",
       "autoAriaLabel": "Updates automatisch installieren"
     },
     "danger": {
+      "navLabel": "Zurücksetzen",
       "heading": "Gefahrenzone",
       "resetLabel": "Alles zurücksetzen",
       "resetDescription": "Entfernt alle Dienste und ihre Einstellungen und kehrt zu einer frischen Installation zurück. Mediendateien bleiben erhalten.",

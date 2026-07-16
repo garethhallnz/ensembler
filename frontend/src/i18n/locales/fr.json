@@ -214,6 +214,8 @@
       "disconnected": "Déconnecté",
       "servicesRunning": "Services en cours d'exécution",
       "lastChecked": "Dernière vérification",
+      "diskFree": "Espace disque libre",
+      "dockerMemory": "Mémoire Docker",
       "note": "Les services Docker continuent de fonctionner de manière indépendante, même lorsque l'application est fermée."
     },
     "logs": {
@@ -279,6 +281,7 @@
     "appearance": {
       "heading": "Apparence",
       "description": "Choisissez l'apparence de l'application. Système suit votre système d'exploitation.",
+      "themeLabel": "Thème",
       "theme": { "light": "Clair", "dark": "Sombre", "system": "Système" }
     },
     "general": {
@@ -287,18 +290,18 @@
       "trayDescription": "Ensembler reste dans votre barre de menus / barre d'état système pour un accès rapide. Vos services continuent de fonctionner dans tous les cas — quittez complètement depuis le menu de la barre d'état.",
       "trayAriaLabel": "Continuer à s'exécuter dans la barre d'état lorsque la fenêtre est fermée"
     },
-    "environment": {
-      "heading": "Environnement",
-      "description": "Paramètres globaux appliqués à tous les services."
+    "advanced": {
+      "heading": "Avancé",
+      "ownershipHeading": "Propriété des fichiers",
+      "ownershipDescription": "Les identifiants d’utilisateur et de groupe que les services utilisent pour lire et écrire vos fichiers (généralement 1000)."
     },
     "updates": {
-      "heading": "Mises à jour",
-      "description": "Ensembler vérifie chaque jour les nouvelles versions des services et affiche celles disponibles sur le tableau de bord.",
       "autoLabel": "Installer les mises à jour automatiquement",
       "autoDescription": "Lorsque cette option est activée, les mises à jour disponibles sont appliquées en arrière-plan chaque jour. Désactivée par défaut — vous gardez le contrôle et les appliquez vous-même avec « Tout mettre à jour ».",
       "autoAriaLabel": "Installer les mises à jour automatiquement"
     },
     "danger": {
+      "navLabel": "Réinitialiser",
       "heading": "Zone de danger",
       "resetLabel": "Tout réinitialiser",
       "resetDescription": "Supprime tous les services et leurs paramètres, pour revenir à une installation neuve. Les fichiers multimédias sont conservés.",

@@ -18,20 +18,29 @@ export default function AppearanceSettings({ selectId }: { selectId: string }) {
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t('settings.appearance.description')}</p>
       </Card.Header>
       <Card.Body>
-        <div className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1">
-          {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
-            <button
-              key={opt}
-              onClick={() => setPreference(opt)}
-              className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
-                preference === opt
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              {t(`settings.appearance.theme.${opt}`)}
-            </button>
-          ))}
+        <div>
+          <span id={`${selectId}-theme-label`} className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            {t('settings.appearance.themeLabel')}
+          </span>
+          <div
+            role="group"
+            aria-labelledby={`${selectId}-theme-label`}
+            className="inline-flex rounded-lg border border-gray-300 dark:border-gray-600 p-1 gap-1"
+          >
+            {(['light', 'dark', 'system'] as ThemePreference[]).map(opt => (
+              <button
+                key={opt}
+                onClick={() => setPreference(opt)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md capitalize transition-colors ${
+                  preference === opt
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                {t(`settings.appearance.theme.${opt}`)}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="mt-5">
