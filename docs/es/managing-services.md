@@ -28,8 +28,12 @@ Mientras un servicio se está iniciando o deteniendo, el estado muestra un breve
 ## Añadir y eliminar servicios
 
 - **Añadir servicio** (arriba de la sección Servicios) te permite añadir
-  cualquier cosa que no eligieras durante la configuración.
+  cualquier cosa que no eligieras durante la configuración, agrupada por categoría
+  para que sea fácil de encontrar.
 - Para eliminar un servicio, abre su **menú ⋯ → Configurar**.
+
+Tanto aquí como en el panel, los servicios se agrupan por categoría (servidores
+multimedia, gestión de medios, clientes de descargas, etc.).
 
 ## Mantener los servicios actualizados
 
@@ -46,7 +50,7 @@ Mientras un servicio se está iniciando o deteniendo, el estado muestra un breve
   mantener uno en una versión concreta, abre **menú ⋯ → Configurar** y elige del
   desplegable **Versión**. Los servicios fijados muestran un 🔒 y dejan de
   ofrecer actualizaciones.
-- **Actualizaciones automáticas.** Activa **Ajustes → Actualizaciones → Instalar
+- **Actualizaciones automáticas.** Activa **Ajustes → General → Instalar
   actualizaciones automáticamente** para que Ensembler aplique las
   actualizaciones disponibles en segundo plano. Está desactivado por defecto,
   para que mantengas el control.
@@ -55,17 +59,18 @@ Mientras un servicio se está iniciando o deteniendo, el estado muestra un breve
 
 Abre **Ajustes** (arriba a la derecha) para las opciones de toda la aplicación:
 
-- **Apariencia** — Claro, Oscuro o Sistema (sigue tu sistema operativo).
+- **Apariencia** — tema (Claro, Oscuro o Sistema) e idioma.
 - **General** — mantén Ensembler en la barra de menú / bandeja del sistema cuando
-  cierres la ventana (activado por defecto) para que esté a un clic de distancia.
-  Tus servicios siguen funcionando en cualquier caso; usa **Salir** en el menú de
-  la bandeja para cerrar por completo.
-- **Actualizaciones** — activa las actualizaciones automáticas en segundo plano
-  para tus servicios (desactivadas por defecto).
-- **Entorno** — zona horaria y los identificadores de usuario/grupo usados para
-  los permisos de archivos.
-- **Zona de peligro → Restablecer todo** — detiene y elimina todos los servicios
-  y sus ajustes, devolviendo Ensembler a una instalación nueva. **Tus archivos
+  cierres la ventana (activado por defecto; tus servicios siguen funcionando en
+  cualquier caso — usa **Salir** en el menú de la bandeja para cerrar por
+  completo), instala las actualizaciones de los servicios automáticamente
+  (desactivado por defecto) y tu zona horaria.
+- **Avanzado** — detalles técnicos que normalmente no necesitarás: diagnósticos
+  (si Docker está en funcionamiento, cuántos servicios están activos), espacio
+  libre en disco y memoria, y los identificadores de usuario/grupo usados para los
+  permisos de archivos.
+- **Restablecer → Restablecer todo** — detiene y elimina todos los servicios y sus
+  ajustes, devolviendo Ensembler a una instalación nueva. **Tus archivos
   multimedia nunca se tocan** — solo se eliminan los servicios y su
   configuración.
 
@@ -83,7 +88,7 @@ durante la configuración y son independientes de esto.
 
 ## Diagnósticos
 
-En la parte inferior del panel, el panel de **Diagnósticos** (contraído por
-defecto) muestra el estado técnico — si Docker está en funcionamiento, cuántos
-servicios están activos, etc. Normalmente no lo necesitarás, pero resulta útil
-para solucionar problemas.
+El estado técnico —si Docker está en funcionamiento, cuántos servicios están
+activos y cuánto espacio libre hay en disco y memoria— se encuentra en **Ajustes
+→ Avanzado**. Normalmente no lo necesitarás, pero resulta útil para solucionar
+problemas.

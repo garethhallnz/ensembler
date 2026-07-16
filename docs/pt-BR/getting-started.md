@@ -29,9 +29,10 @@ está em execução, e o Ensembler continuará.
 
 ### 1. Escolha seus serviços
 Serviços recomendados vêm pré-selecionados para um centro de mídia completo.
-Categorias rotuladas como **"escolha um"** (servidor de mídia, cliente de
-download, gerenciador de indexadores, solicitações) permitem escolher uma única
-opção; "gerenciamento de mídia" permite escolher vários.
+Algumas categorias — cliente de download, gerenciador de indexadores e
+solicitações — permitem escolher uma única opção; outras — servidores de mídia e
+gerenciamento de mídia — permitem escolher vários (por exemplo, rodar o Plex e o
+Jellyfin ao mesmo tempo).
 
 ### 2. Defina suas pastas
 Diga ao Ensembler onde ficam suas **séries de TV**, **filmes** e **downloads**.
@@ -52,11 +53,15 @@ lista **"Concluir a configuração"**:
   buscar conteúdo. Você escolhe suas próprias fontes; o Ensembler nunca as
   escolhe por você.
 - **Entrar no Plex** — o Ensembler então cria suas bibliotecas de TV e Filmes
-  automaticamente. (O Jellyfin não exige login — ele é configurado inteiramente
-  para você.)
+  automaticamente.
 - **Finalizar o Overseerr** — ele entra com o Plex e descobre seus outros
   serviços.
 
 Cada solicitação tem um link **Abrir** que leva você diretamente ao lugar certo.
+
+Usa o Jellyfin ou o Emby? Eles não aparecem nessa lista — o Ensembler roda o
+contêiner, mas cada um cuida da própria configuração inicial. Abra-o pelo painel
+e conclua a configuração na sua própria interface web (crie sua conta de
+administrador e adicione suas bibliotecas).
 
 Quando essas etapas estiverem concluídas, tudo estará funcionando.

@@ -30,10 +30,10 @@ indique qu'il est en cours d'exécution, et Ensembler continuera.
 
 ### 1. Choisissez vos services
 Les services recommandés sont présélectionnés pour un centre multimédia complet.
-Les catégories intitulées **« choisir un »** (serveur multimédia, client de
-téléchargement, gestionnaire d'indexeurs, demandes) vous laissent sélectionner
-une seule option ; « gestion multimédia » vous permet d'en sélectionner
-plusieurs.
+Certaines catégories — client de téléchargement, gestionnaire d'indexeurs et
+demandes — vous laissent choisir une seule option ; d'autres — serveurs
+multimédias et gestion multimédia — vous permettent d'en sélectionner plusieurs
+(par exemple, faire tourner à la fois Plex et Jellyfin).
 
 ### 2. Définissez vos dossiers
 Indiquez à Ensembler où se trouvent vos **séries TV**, vos **films** et vos
@@ -55,12 +55,16 @@ vous les proposera dans une liste **« Terminer la configuration »** :
   rechercher du contenu. Vous choisissez vos propres sources ; Ensembler ne les
   sélectionne jamais à votre place.
 - **Se connecter à Plex** — Ensembler crée alors automatiquement vos
-  bibliothèques Séries TV et Films. (Jellyfin ne nécessite aucune connexion — il
-  est entièrement configuré pour vous.)
+  bibliothèques Séries TV et Films.
 - **Terminer Overseerr** — il se connecte avec Plex et découvre vos autres
   services.
 
 Chaque invite dispose d'un lien **Ouvrir** qui vous amène directement au bon
 endroit.
+
+Jellyfin ou Emby ? Ils ne figurent pas dans cette liste — Ensembler fait tourner
+le conteneur, mais chacun gère sa propre configuration au premier lancement.
+Ouvrez-le depuis le tableau de bord et terminez sa configuration dans sa propre
+interface web (créez votre compte administrateur et ajoutez vos bibliothèques).
 
 Une fois ces étapes terminées, tout est opérationnel.

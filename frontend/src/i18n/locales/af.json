@@ -1,0 +1,669 @@
+{
+  "language": {
+    "chooseTitle": "Kies jou taal",
+    "chooseSubtitle": "Jy kan dit enige tyd in Instellings verander.",
+    "continue": "Gaan voort",
+    "label": "Taal",
+    "settingHint": "Die taal wat deur die hele Ensembler gebruik word."
+  },
+  "app": {
+    "checkingStatus": "Kontroleer tans die status van Docker en Docker Compose…",
+    "dockerRequired": {
+      "title": "Docker word vereis",
+      "subtitle": "Ensembler benodig Docker — of ’n ander houer-looptyd — om jou dienste te laat loop",
+      "toGetStarted": "Om te begin:",
+      "step1": "Laai Docker Desktop af en installeer dit",
+      "step2": "Begin Docker Desktop en wag dat dit begin",
+      "step3": "Kyk vir die groen “Docker Desktop is running”-status",
+      "step4": "Kom terug hierheen en klik op “Check Again” hieronder",
+      "downloadHeading": "Laai Docker Desktop af:",
+      "downloadButton": "Laai Docker Desktop af",
+      "otherRuntimes": "Gebruik jy reeds OrbStack, Podman, of ’n ander houer-looptyd? Dit werk ook — maak net seker dit is geïnstalleer en aan die loop.",
+      "checkAgain": "Kontroleer weer",
+      "refreshPage": "Herlaai bladsy",
+      "refreshConfirm": "Dit sal die bladsy herlaai en die Docker-status weer kontroleer.",
+      "havingTrouble": "Sukkel jy? Maak seker jou houer-looptyd is heeltemal begin (nie net geïnstalleer nie) en probeer om hierdie bladsy te herlaai.",
+      "readDocs": "Lees die dokumentasie"
+    },
+    "composeMissing": {
+      "title": "Docker Compose is nie beskikbaar nie",
+      "heading": "Docker Compose is nie beskikbaar nie"
+    },
+    "install": {
+      "mac": {
+        "docker": "Installeer Docker Desktop vanaf https://www.docker.com/products/docker-desktop/ en begin dit vanuit Applications.",
+        "compose": "Docker Compose is by Docker Desktop op macOS ingesluit."
+      },
+      "win": {
+        "docker": "Installeer Docker Desktop vanaf https://www.docker.com/products/docker-desktop/ en begin dit vanuit die Start-kieslys.",
+        "compose": "Docker Compose is by Docker Desktop op Windows ingesluit."
+      },
+      "linux": {
+        "docker": "Installeer Docker Engine: https://docs.docker.com/engine/install/ en begin die diens (bv. sudo systemctl start docker).",
+        "compose": "Installeer Docker Compose: https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "Nie-ondersteunde bedryfstelsel. Raadpleeg asseblief https://docs.docker.com/get-docker/",
+        "compose": "Nie-ondersteunde bedryfstelsel. Raadpleeg asseblief https://docs.docker.com/compose/install/"
+      }
+    }
+  },
+  "setup": {
+    "loading": "Laai tans die dienskonfigurasie…",
+    "title": "Opstelling",
+    "steps": {
+      "selection": "Diensseleksie",
+      "configuration": "Konfigurasie",
+      "apply": "Pas toe"
+    },
+    "selectAtLeastOne": "Kies ten minste een diens om voort te gaan.",
+    "selectAtLeastOneToast": "Kies asseblief ten minste een diens om voort te gaan.",
+    "portsPrefilled": "Sommige verstekpoorte was reeds in gebruik, so ons het vrye poorte vooraf gekies ({{list}}). Jy kan dit hieronder verander.",
+    "step0": {
+      "heading": "Kies dienste",
+      "subtitle": "Kies die dienste wat jy wil laat loop:",
+      "quickActions": "Vinnige aksies",
+      "recommendedOn": "Deselekteer aanbevole dienste",
+      "recommendedOff": "Kies aanbevole dienste vir ’n volledige mediasentrum",
+      "toggleRecommended": "Wissel aanbevole",
+      "required": "Vereis",
+      "recommended": "Aanbeveel"
+    },
+    "categories": {
+      "media": {
+        "title": "Mediabedieners",
+        "description": "Media-stroombedieners (kies een of meer)"
+      },
+      "management": {
+        "title": "Mediabestuur",
+        "description": "Bestuurders vir mediaversamelings (jy kan meerdere kies)"
+      },
+      "torrent": {
+        "title": "Aflaaikliënte",
+        "description": "BitTorrent-aflaaikliënte (kies een)"
+      },
+      "indexer": {
+        "title": "Indekseerders",
+        "description": "Bestuur van torrent-indekseerders (kies een)"
+      },
+      "request": {
+        "title": "Versoekbestuur",
+        "description": "Gereedskap vir media-versoeke en -ontdekking (kies een)"
+      }
+    },
+    "step1": {
+      "heading": "Dienskonfigurasie",
+      "subtitle": "Konfigureer lêerpaaie en poorte vir jou dienste:",
+      "environmentSettings": "Omgewingsinstellings",
+      "readyToSetUp": "Gereed om op te stel",
+      "port": "Poort {{port}}"
+    },
+    "apply": {
+      "titleDone": "Jou mediasentrum is gereed",
+      "titleError": "Die opstelling het ’n probleem teëgekom",
+      "titleRunning": "Besig om op te stel",
+      "subtitleDone": "Alles is aan die loop. Hier is hoe die outomatiese opstelling verloop het.",
+      "subtitleError": "Jou dienste is dalk gedeeltelik opgestel. Jy kan teruggaan en weer probeer.",
+      "subtitleRunning": "Besig om jou konfigurasie toe te pas en jou mediasentrum te begin.",
+      "phaseSave": "Stoor tans jou konfigurasie",
+      "phaseCompose": "Genereer tans die Docker-opstelling",
+      "phaseStart": "Begin tans dienste",
+      "phaseStartDetail": "Laai tans beelde af en begin houers. Met die eerste loop kan dit ’n paar minute neem.",
+      "phaseConnect": "Verbind tans dienste met mekaar",
+      "phaseConnectDetail": "Wag dat elke diens gereed is en koppel dit dan. Dit kan ’n minuut neem.",
+      "backToConfig": "Terug na konfigurasie",
+      "goToDashboard": "Gaan na kontroleskerm"
+    },
+    "nav": {
+      "previous": "Vorige",
+      "next": "Volgende",
+      "apply": "Pas opstelling toe"
+    },
+    "errors": {
+      "save": "Kon nie jou konfigurasie stoor nie.",
+      "compose": "Kon nie die Docker-opstelling genereer nie.",
+      "start": "Kon nie die dienste begin nie.",
+      "generic": "Iets het verkeerd geloop tydens die opstelling.",
+      "tzRequired": "Tydsone word vereis.",
+      "puid": "PUID moet ’n nie-negatiewe getal wees.",
+      "pgid": "PGID moet ’n nie-negatiewe getal wees.",
+      "portRange": "Poort moet tussen 1024 en 65535 wees.",
+      "portConflictSelected": "Poort bots met ’n ander gekose diens.",
+      "portInUseSwitched": "Poort {{port}} is in gebruik — oorgeskakel na ’n vrye poort, {{suggestion}}.",
+      "portInUseNoFree": "Poort {{port}} is in gebruik en geen vrye poort kon gevind word nie. Kies asseblief ’n ander.",
+      "pathMediaConflict": "Pad bots met ’n ander mediatipe in {{service}}",
+      "pathDownloadConflict": "Aflaaipad bots met nie-aflaaidiens {{service}}",
+      "pathUsedBy": "Pad word reeds deur {{service}} gebruik",
+      "pathValidateUnreachable": "Kon nie die agterkant bereik om paaie te valideer nie. Probeer asseblief weer."
+    }
+  },
+  "dashboard": {
+    "heading": {
+      "title": "Kontroleskerm",
+      "subtitle": "Bestuur jou mediasentrum se dienste"
+    },
+    "settings": {
+      "tooltip": "Gevorderde instellings",
+      "button": "Instellings"
+    },
+    "globalControls": {
+      "stopAll": "Stop alles",
+      "startAll": "Begin alles",
+      "noServicesToStop": "Geen dienste om te stop nie",
+      "allStopped": "Alle dienste is reeds gestop",
+      "stopAllTooltip": "Stop alle dienste",
+      "noServicesToStart": "Geen dienste om te begin nie",
+      "allRunning": "Alle dienste is reeds aan die loop",
+      "startAllTooltip": "Begin alle dienste"
+    },
+    "roles": {
+      "tvShows": "Bestuur jou TV-programme",
+      "movies": "Bestuur jou flieks",
+      "subtitles": "Bestuur onderskrifte",
+      "streams": "Stroom jou media",
+      "downloads": "Laai inhoud af",
+      "indexers": "Vind inhoudbronne",
+      "requests": "Versoek en ontdek media",
+      "library": "Bestuur jou biblioteek"
+    },
+    "setupChecklist": {
+      "heading": "Voltooi die opstelling",
+      "stepsLeft_one": "· {{count}} stap oor",
+      "stepsLeft_other": "· {{count}} stappe oor"
+    },
+    "tasks": {
+      "prowlarr": "Voeg ’n indekseerder in <strong>Prowlarr</strong> by sodat Sonarr en Radarr vir inhoud kan soek",
+      "plex": "Meld by <strong>Plex</strong> aan om jou TV- en Flieks-biblioteke te skep",
+      "overseerr": "Voltooi die <strong>Overseerr</strong>-opstelling — meld met Plex aan om jou dienste te ontdek"
+    },
+    "services": {
+      "heading": "Dienste",
+      "configured_one": "{{count}} diens gekonfigureer",
+      "configured_other": "{{count}} dienste gekonfigureer",
+      "updatesAvailable_one": " · {{count}} opdatering beskikbaar",
+      "updatesAvailable_other": " · {{count}} opdaterings beskikbaar",
+      "updateAllTooltip_one": "Dateer die {{count}} diens met ’n nuwe weergawe beskikbaar op",
+      "updateAllTooltip_other": "Dateer die {{count}} dienste met ’n nuwe weergawe beskikbaar op",
+      "updateAll": "Dateer alles op ({{count}})",
+      "checkAllTooltip": "Kontroleer elke diens vir beskikbare opdaterings",
+      "checkForUpdates": "Kontroleer vir opdaterings",
+      "addTooltip": "Voeg nog ’n diens by",
+      "addService": "Voeg diens by"
+    },
+    "empty": {
+      "title": "Geen dienste gekonfigureer nie",
+      "description": "Begin deur jou mediasentrum se dienste by te voeg en te konfigureer. Jy kan dienste individueel byvoeg soos nodig."
+    },
+    "status": {
+      "starting": "Begin tans…",
+      "stopping": "Stop tans…",
+      "restarting": "Herbegin tans…",
+      "setupNeeded": "Opstelling nodig",
+      "needsAttention": "Aandag nodig",
+      "running": "Aan die loop",
+      "stopped": "Gestop",
+      "unhealthyTooltip": "Diens loop, maar reageer nie normaal nie"
+    },
+    "card": {
+      "openDisabledTooltip": "Begin die diens om dit oop te maak",
+      "checkingUpdates": "Kontroleer tans vir opdaterings…",
+      "updateAvailable": "Opdatering beskikbaar — dateer nou op",
+      "upToDate": "Op datum",
+      "version": {
+        "pinned": "Vasgesit op v{{version}}",
+        "updateAvailable": "Op v{{version}} · opdatering beskikbaar",
+        "latest": "Op die nuutste weergawe (v{{version}})"
+      }
+    },
+    "common": {
+      "open": "Maak oop",
+      "openNamed": "Maak {{name}} oop",
+      "updating": "Dateer tans op…",
+      "checking": "Kontroleer tans…",
+      "unknown": "onbekend"
+    },
+    "menu": {
+      "openInBrowser": "Maak in blaaier oop",
+      "start": "Begin",
+      "stop": "Stop",
+      "restart": "Herbegin",
+      "viewLogs": "Bekyk logboeke",
+      "configure": "Konfigureer"
+    },
+    "diagnostics": {
+      "heading": "Diagnostiek",
+      "allOk": "Alle stelsels bedryfsgereed",
+      "attention": "Aandag nodig",
+      "running": "Aan die loop",
+      "notRunning": "Nie aan die loop nie",
+      "app": "Toepassing",
+      "active": "Aktief",
+      "inactive": "Onaktief",
+      "backendConnection": "Agterkant-verbinding",
+      "connected": "Verbind",
+      "disconnected": "Ontkoppel",
+      "servicesRunning": "Dienste aan die loop",
+      "lastChecked": "Laas gekontroleer",
+      "diskFree": "Vrye skyfspasie",
+      "dockerMemory": "Docker-geheue",
+      "note": "Docker-dienste loop onafhanklik voort, en gaan aan selfs wanneer die toepassing gesluit is."
+    },
+    "logs": {
+      "title": "Logboeke",
+      "titleNamed": "{{name}} — logboeke",
+      "live": "Regstreeks",
+      "loading": "Laai tans logboeke…"
+    },
+    "toast": {
+      "checkFailed": "Kon nie {{name}} vir opdaterings kontroleer nie.",
+      "checkAllFailed": "Kon nie vir opdaterings kontroleer nie.",
+      "updatesFound_one": "{{count}} opdatering beskikbaar.",
+      "updatesFound_other": "{{count}} opdaterings beskikbaar.",
+      "allUpToDate": "Alle dienste is op datum.",
+      "actionSuccess_start": "{{name}} suksesvol begin",
+      "actionSuccess_stop": "{{name}} suksesvol gestop",
+      "actionSuccess_restart": "{{name}} suksesvol herbegin",
+      "globalItemFailed_start": "Kon nie {{service}} begin nie: {{message}}",
+      "globalItemFailed_stop": "Kon nie {{service}} stop nie: {{message}}",
+      "globalItemError_start": "Fout met begin van {{service}}: {{error}}",
+      "globalItemError_stop": "Fout met stop van {{service}}: {{error}}",
+      "globalDone_start": "Alle dienste begin",
+      "globalDone_stop": "Alle dienste gestop",
+      "launchUrlFailed": "Kon nie die begin-URL vir {{service}} kry nie: {{message}}",
+      "launchError": "Fout met begin van {{service}}: {{error}}",
+      "updatedCount_one": "{{count}} diens opgedateer",
+      "updatedCount_other": "{{count}} dienste opgedateer",
+      "updatedWithFailures": "{{count}} opgedateer; het misluk: {{names}}",
+      "updateAllError": "Fout met opdatering van dienste: {{error}}",
+      "updateSuccess": "{{name}} suksesvol opgedateer",
+      "updateFailed": "Kon nie {{name}} opdateer nie: {{message}}",
+      "updateError": "Fout met opdatering van {{name}}: {{error}}"
+    },
+    "actionError": {
+      "title_start": "Kon nie {{name}} begin nie",
+      "title_stop": "Kon nie {{name}} stop nie",
+      "title_restart": "Kon nie {{name}} herbegin nie"
+    },
+    "confirm": {
+      "globalAction_start": "Is jy seker jy wil alle dienste begin?",
+      "globalAction_stop": "Is jy seker jy wil alle dienste stop?",
+      "updateAll_one": "Dateer {{count}} diens op? Dit laai die nuutste beelde af en herbegin elkeen.",
+      "updateAll_other": "Dateer {{count}} dienste op? Dit laai die nuutste beelde af en herbegin elkeen.",
+      "updateService": "Is jy seker jy wil {{name}} opdateer? Dit sal die nuutste weergawe aflaai en die diens herbegin."
+    }
+  },
+  "settings": {
+    "title": "Instellings",
+    "subtitle": "Konfigureer individuele dienste vanaf hul kaarte op die kontroleskerm. Hierdie is toepassingswye instellings.",
+    "loading": "Laai tans instellings...",
+    "errorTitle": "Fout",
+    "loadError": "Kon nie die konfigurasie laai nie. Probeer asseblief weer.",
+    "close": "Maak toe",
+    "cancel": "Kanselleer",
+    "save": "Stoor en pas toe",
+    "saving": "Pas tans toe…",
+    "toast": {
+      "savedPartial": "Instellings gestoor. Sommige dienste moet dalk handmatig begin word.",
+      "saved": "Instellings gestoor en toegepas.",
+      "saveFailed": "Kon nie instellings stoor nie. Probeer asseblief weer.",
+      "resetFailed": "Kon nie die toepassing terugstel nie: {{error}}"
+    },
+    "appearance": {
+      "heading": "Voorkoms",
+      "description": "Kies hoe die toepassing lyk. Stelsel volg jou bedryfstelsel.",
+      "themeLabel": "Tema",
+      "theme": {
+        "light": "Lig",
+        "dark": "Donker",
+        "system": "Stelsel"
+      }
+    },
+    "general": {
+      "heading": "Algemeen",
+      "trayLabel": "Bly loop in die laai wanneer ek die venster toemaak",
+      "trayDescription": "Ensembler bly in jou kieslysbalk / stelsellaai vir vinnige toegang. Jou dienste loop hoe dan ook voort — sluit heeltemal af vanuit die laai-kieslys.",
+      "trayAriaLabel": "Bly loop in die laai wanneer die venster toegemaak word"
+    },
+    "advanced": {
+      "heading": "Gevorderd",
+      "ownershipHeading": "Lêereienaarskap",
+      "ownershipDescription": "Die gebruiker- en groep-ID’s wat dienste gebruik wanneer hulle jou lêers lees en skryf (gewoonlik 1000)."
+    },
+    "updates": {
+      "autoLabel": "Installeer opdaterings outomaties",
+      "autoDescription": "Wanneer aan, word beskikbare opdaterings elke dag op die agtergrond toegepas. Standaard af — jy bly in beheer en pas dit self toe met “Dateer alles op”.",
+      "autoAriaLabel": "Installeer opdaterings outomaties"
+    },
+    "danger": {
+      "navLabel": "Terugstel",
+      "heading": "Gevaarsone",
+      "resetLabel": "Stel alles terug",
+      "resetDescription": "Verwyder alle dienste en hul instellings en keer terug na ’n vars installasie. Medialêers word behou.",
+      "resetButton": "Stel alles terug",
+      "confirm": "⚠️ VERNIETIGENDE AKSIE: Dit sal alle dienste stop en verwyder en al hul instellings, geskiedenisse en databasisse uitvee, en terugkeer na ’n vars installasie. Jou medialêers (TV-programme, flieks, aflaaie) sal NIE uitgevee word nie. Hierdie aksie kan nie ongedaan gemaak word nie. Is jy heeltemal seker?"
+    },
+    "reset": {
+      "phaseStop": "Stop en verwyder tans dienste",
+      "phaseClean": "Verwyder tans konfigurasie en data",
+      "completeTitle": "Terugstel voltooi",
+      "completeSubtitle": "Begin tans vars opstelling…",
+      "runningTitle": "Stel tans jou opstelling terug",
+      "runningSubtitle": "Keer terug na ’n vars installasie. Jou medialêers word nie geraak nie.",
+      "errorMessage": "Iets het verkeerd geloop. Jy kan dit toemaak en weer probeer."
+    }
+  },
+  "serviceConfig": {
+    "loadError": "Kon nie die huidige konfigurasie laai nie.",
+    "fieldRequired": "{{label}} word vereis.",
+    "portRerouted": "Poort {{port}} was in gebruik, so {{name}} is op {{finalPort}}.",
+    "serviceAdded": "{{name}} bygevoeg.",
+    "serviceUpdated": "{{name}} opgedateer.",
+    "addFailed": "Kon nie {{name}} byvoeg nie: {{message}}",
+    "updateFailed": "Kon nie {{name}} opdateer nie: {{message}}",
+    "serviceRemoved": "{{name}} verwyder. Sy medialêers is nie uitgevee nie.",
+    "removeFailed": "Kon nie {{name}} verwyder nie: {{message}}",
+    "addTitle": "Voeg {{name}} by",
+    "configureTitle": "Konfigureer {{name}}",
+    "loading": "Laai tans…",
+    "removeConfirmTitle": "Verwyder {{name}}?",
+    "removeConfirmBody": "Dit stop {{name}} en vee sy instellings uit. Jou medialêers word behou. Dit kan nie ongedaan gemaak word nie.",
+    "portLabel": "Poort",
+    "defaultPort": "Verstek: {{port}}",
+    "versionLabel": "Weergawe",
+    "loadingVersions": "Laai tans weergawes…",
+    "latestRecommended": "Nuutste (aanbeveel)",
+    "versionHelp": "Hou <1>Nuutste</1> om altyd die nuutste weergawe te laat loop. Sit ’n spesifieke weergawe vas om dit daar te hou — vasgesitte dienste sal nie opdaterings aanbied nie.",
+    "removeService": "Verwyder diens",
+    "keep": "Hou",
+    "removeNamed": "Verwyder {{name}}",
+    "cancel": "Kanselleer",
+    "addService": "Voeg diens by",
+    "saveChanges": "Stoor veranderinge"
+  },
+  "addService": {
+    "title": "Voeg ’n diens by",
+    "subtitle": "Kies ’n diens om by jou mediasentrum te voeg. Jy stel sy paaie en poort volgende.",
+    "allAdded": "Alle beskikbare dienste is reeds bygevoeg.",
+    "recommended": "Aanbeveel",
+    "add": "Voeg by",
+    "cancel": "Kanselleer"
+  },
+  "actionsMenu": {
+    "moreActions": "Meer aksies"
+  },
+  "systemChecks": {
+    "heading": "Kontroleer jou opstelling",
+    "dismiss": "Maak toe",
+    "dockerMemoryWarning": "Docker het net {{allocated}} GB geheue. Mediadienste (veral Plex) loop beter met {{recommended}} GB of meer — verhoog dit in jou houer-looptyd se instellings (Docker Desktop → Settings → Resources).",
+    "diskWarning": "Slegs {{free}} GB vry waar media gestoor word. Aflaaie kan misluk wanneer die spasie opraak — maak spasie vry of wys dienste na ’n groter skyf."
+  },
+  "actionError": {
+    "description": "Iets het verkeerd geloop. Kontroleer die logboeke vir besonderhede, of probeer weer.",
+    "dismiss": "Maak toe",
+    "viewLogs": "Bekyk logboeke",
+    "retry": "Probeer weer"
+  },
+  "confirm": {
+    "title": "Bevestig aksie",
+    "destructiveTitle": "Vernietigende aksie",
+    "confirm": "Ja, ek is seker",
+    "cancel": "Nee, kanselleer"
+  },
+  "environment": {
+    "timezone": {
+      "label": "Tydsone (TZ)",
+      "placeholder": "Kies tydsone...",
+      "help": "Gebruik vir logboek-tydstempels en skedulering"
+    },
+    "puid": {
+      "label": "Gebruiker-ID (PUID)",
+      "help": "Gebruiker-ID vir lêereienaarskap (gewoonlik 1000)"
+    },
+    "pgid": {
+      "label": "Groep-ID (PGID)",
+      "help": "Groep-ID vir lêereienaarskap (gewoonlik 1000)"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "Poort",
+    "portConfiguration": "Poortkonfigurasie",
+    "servicePort": "{{name}} poort:",
+    "portDefault": "Verstek: {{port}}",
+    "infoBadge": "Inligting",
+    "serviceInformation": "Diensinligting",
+    "noPathsRequired": "Geen lêerpaaie vereis nie",
+    "noPathsDescription": "Hierdie diens vereis geen lêerpad-konfigurasie nie."
+  },
+  "pathConfig": {
+    "badge": "Paaie",
+    "heading": "Lêerpaaie",
+    "placeholder": "{{description}} (verstek: {{default}})",
+    "useDefaultTitle": "Gebruik verstekpad",
+    "default": "Verstek",
+    "browseTitle": "Blaai vir ’n vouer",
+    "browse": "Blaai"
+  },
+  "docsButton": {
+    "label": "Dokumentasie",
+    "tooltip": "Dokumentasie"
+  },
+  "docsViewer": {
+    "heading": "Dokumentasie",
+    "pages": {
+      "overview": "Oorsig",
+      "gettingStarted": "Kom aan die gang",
+      "managing": "Bestuur van dienste",
+      "troubleshooting": "Probleemoplossing"
+    }
+  },
+  "tabs": {
+    "dashboard": "Kontroleskerm",
+    "closeService": "Maak {{name}} toe",
+    "reload": "Herlaai",
+    "reloadService": "Herlaai {{name}}",
+    "openInBrowser": "Maak in blaaier oop",
+    "openServiceInBrowser": "Maak {{name}} in blaaier oop"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "Indekseerderbestuurder/-proksi gebou op die gewilde arr-stapel"
+    },
+    "sonarr": {
+      "description": "PVR vir Usenet- en BitTorrent-gebruikers",
+      "paths": [
+        {
+          "label": "TV-programme pad",
+          "description": "Gids waar TV-programme gestoor sal word"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "Bestuurder van fliekversamelings vir Usenet- en BitTorrent-gebruikers",
+      "paths": [
+        {
+          "label": "Flieks pad",
+          "description": "Gids waar flieks gestoor sal word"
+        }
+      ]
+    },
+    "plex": {
+      "description": "Mediabediener om jou inhoud te stroom",
+      "paths": [
+        {
+          "label": "TV-programme pad",
+          "description": "Gids wat jou TV-programme bevat"
+        },
+        {
+          "label": "Flieks pad",
+          "description": "Gids wat jou flieks bevat"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "BitTorrent-kliënt",
+      "paths": [
+        {
+          "label": "Aflaaie pad",
+          "description": "Gids waar aflaaie gestoor sal word"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "Gereedskap vir versoekbestuur en media-ontdekking"
+    },
+    "jellyfin": {
+      "description": "Oopbron-mediabediener sonder lisensiefooie",
+      "paths": [
+        {
+          "label": "TV-programme pad",
+          "description": "Gids wat jou TV-programme bevat"
+        },
+        {
+          "label": "Flieks pad",
+          "description": "Gids wat jou flieks bevat"
+        }
+      ]
+    },
+    "emby": {
+      "description": "Ryklik-gefunksioneerde mediabediener met mobiele toepassings",
+      "paths": [
+        {
+          "label": "TV-programme pad",
+          "description": "Gids wat jou TV-programme bevat"
+        },
+        {
+          "label": "Flieks pad",
+          "description": "Gids wat jou flieks bevat"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "Metgesel-toepassing vir Sonarr en Radarr om onderskrifte te bestuur",
+      "paths": [
+        {
+          "label": "TV-programme pad",
+          "description": "Gids wat jou TV-programme bevat (dieselfde as Sonarr)"
+        },
+        {
+          "label": "Flieks pad",
+          "description": "Gids wat jou flieks bevat (dieselfde as Radarr)"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "BitTorrent-kliënt met webkoppelvlak",
+      "paths": [
+        {
+          "label": "Aflaaie pad",
+          "description": "Gids waar aflaaie gestoor sal word"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "API-ondersteuning vir jou gunsteling torrent-spoorsnyers"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "Ongeldige invoer"
+    },
+    "ports": {
+      "validateFailed": "Kon nie poorte valideer nie."
+    },
+    "paths": {
+      "createFailed": "Kon nie hierdie vouer skep nie.",
+      "notWritable": "Hierdie vouer is nie skryfbaar nie."
+    },
+    "docker": {
+      "composeNotFound": "Docker Compose nie gevind of werk nie.",
+      "notRunning": "Docker loop nie of is nie geïnstalleer nie.",
+      "autostartUnsupportedOs": "Nie-ondersteunde bedryfstelsel vir outomatiese begin.",
+      "autostartFailed": "Kon nie Docker outomaties begin nie.",
+      "started": "Docker suksesvol begin.",
+      "startCheckFailed": "Docker het nie suksesvol begin nie.",
+      "startError": "Fout met poging om Docker te begin."
+    },
+    "config": {
+      "saved": "Konfigurasie suksesvol gestoor.",
+      "saveFailed": "Kon nie konfigurasie stoor nie.",
+      "notFound": "config.json nie gevind nie.",
+      "currentFailed": "Kon nie die huidige konfigurasie kry nie."
+    },
+    "compose": {
+      "generated": "Docker Compose-lêers suksesvol gegenereer.",
+      "generateFailed": "Kon nie Docker Compose-lêers genereer nie."
+    },
+    "service": {
+      "statusFailed": "Kon nie die diensstatus kry nie.",
+      "started": "{{name}} suksesvol begin.",
+      "startFailed": "Kon nie {{name}} begin nie.",
+      "stopped": "{{name}} suksesvol gestop.",
+      "stopFailed": "Kon nie {{name}} stop nie.",
+      "restarted": "{{name}} suksesvol herbegin.",
+      "restartFailed": "Kon nie {{name}} herbegin nie.",
+      "logsFailed": "Kon nie logboeke vir {{name}} kry nie.",
+      "notFound": "Diens nie gevind nie.",
+      "versionFailed": "Kon nie die weergawe vir {{name}} kry nie.",
+      "startAllSucceeded": "Alle geaktiveerde dienste suksesvol begin.",
+      "startAllFailed": "Kon nie dienste begin nie.",
+      "stopAllSucceeded": "Alle dienste suksesvol gestop.",
+      "stopAllFailed": "Kon nie alle dienste stop nie.",
+      "launchUrlFailed": "Kon nie die begin-URL kry nie.",
+      "configFailed": "Kon nie die dienskonfigurasie kry nie.",
+      "invalidSelectionFormat": "Ongeldige formaat vir selectedServices.",
+      "selectionRequiresArr": "Jy moet ten minste Sonarr of Radarr kies.",
+      "selectionValid": "Diensseleksie is geldig.",
+      "selectionValidateFailed": "Kon nie die diensseleksie valideer nie.",
+      "checkUpdatesFailed": "Kon nie opdaterings vir {{name}} kontroleer nie.",
+      "checkUpdatesAllFailed": "Kon nie vir opdaterings kontroleer nie.",
+      "updated": "{{name}} suksesvol opgedateer.",
+      "updateFailed": "Kon nie {{name}} opdateer nie.",
+      "updateAllFailed": "Kon nie dienste opdateer nie.",
+      "monitorFailed": "Kon nie dienste monitor nie."
+    },
+    "setup": {
+      "bazarrRestartFailed": "Konfigurasie gesaai, maar kon nie Bazarr herbegin nie: {{error}}",
+      "connectionsFailed": "Kon nie diensverbindings opstel nie.",
+      "plexFailed": "Kon nie Plex opstel nie.",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission loop",
+      "transmissionUnreachable": "Transmission is nie bereikbaar nie: {{error}}",
+      "plexSignInRequired": "Plex benodig ’n eenmalige aanmelding — maak Plex vanaf die kontroleskerm oop en meld aan; biblioteke word dan outomaties geskep",
+      "rootFolderAdded": "Wortelvouer {{path}} bygevoeg",
+      "rootFolderExists": "Wortelvouer {{path}} reeds gekonfigureer",
+      "transmissionConnected": "Aan Transmission verbind",
+      "transmissionExists": "Transmission reeds gekonfigureer",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "{{app}} verbind — indekseerders sal outomaties sinkroniseer",
+      "prowlarrAppAlreadyConnected": "{{app}} reeds verbind",
+      "prowlarrTransmissionConnected": "Aan Transmission verbind",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission reeds gekonfigureer"
+    },
+    "reset": {
+      "servicesStopped": "Dienste gestop en verwyder.",
+      "stopServicesFailed": "Kon nie dienste stop nie.",
+      "cleaned": "Konfigurasie en data verwyder.",
+      "cleanFailed": "Kon nie konfigurasie en data verwyder nie.",
+      "completed": "Alle instellings suksesvol teruggestel.",
+      "failed": "Kon nie instellings terugstel nie."
+    },
+    "bazarr": {
+      "configNotFound": "Bazarr se config.yaml nog nie gevind nie — loop Bazarr?",
+      "connected": "Bazarr aan {{services}} verbind",
+      "alreadyConnected": "Bazarr reeds aan {{services}} verbind"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "“{{name}}”-biblioteek by {{location}} geskep",
+      "libraryExists": "’n {{type}}-biblioteek dek reeds {{location}}",
+      "notifyConfigured": "{{service}} sal Plex met invoer verfris",
+      "notifyExists": "{{service}} stel Plex reeds in kennis"
+    }
+  },
+  "errorBoundary": {
+    "heading": "Iets het verkeerd geloop",
+    "message": "Hierdie deel van die toepassing het ’n onverwagte fout teëgekom. Herlaai los dit gewoonlik op.",
+    "reload": "Herlaai"
+  }
+}

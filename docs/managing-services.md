@@ -24,9 +24,12 @@ While a service is starting or stopping, the status shows a brief
 
 ## Adding and removing services
 
-- **Add Service** (top of the Services section) lets you add anything you didn't
-  choose during setup.
+- **Add service** (top of the Services section) lets you add anything you didn't
+  choose during setup, grouped by category so it's easy to find.
 - To remove a service, open its **⋯ menu → Configure**.
+
+Both here and on the dashboard, services are grouped by category (media servers,
+media management, download clients, and so on).
 
 ## Keeping services up to date
 
@@ -40,22 +43,23 @@ While a service is starting or stopping, the status shows a brief
 - **Pin a version.** By default each service tracks the latest version. To hold
   one at a specific version, open **⋯ menu → Configure** and choose from the
   **Version** dropdown. Pinned services show a 🔒 and stop offering updates.
-- **Automatic updates.** Turn on **Settings → Updates → Install updates
+- **Automatic updates.** Turn on **Settings → General → Install updates
   automatically** to have Ensembler apply available updates in the background.
   It's off by default, so you stay in control.
 
 ## Settings
 
-Open **Settings** (top-right) for app-wide options:
+Open **Settings** (top-right) for app-wide options, organised into sections:
 
-- **Appearance** — Light, Dark, or System (follow your operating system).
+- **Appearance** — theme (Light, Dark, or System) and language.
 - **General** — keep Ensembler in the menu bar / system tray when you close the
-  window (on by default) so it's one click away. Your services keep running
-  either way; use **Quit** in the tray menu to exit fully.
-- **Updates** — turn on automatic background updates for your services (off by
-  default).
-- **Environment** — timezone and the user/group IDs used for file permissions.
-- **Danger zone → Reset everything** — stops and removes all services and their
+  window (on by default; your services keep running either way — use **Quit** in
+  the tray menu to exit fully), install service updates automatically (off by
+  default), and your timezone.
+- **Advanced** — technical detail you won't normally need: diagnostics (whether
+  Docker is running, how many services are up), free disk and memory, and the
+  user/group IDs used for file permissions.
+- **Reset → Reset everything** — stops and removes all services and their
   settings, returning Ensembler to a fresh install. **Your media files are never
   touched** — only the services and their configuration are removed.
 
@@ -73,6 +77,6 @@ setup and are separate from this.
 
 ## Diagnostics
 
-At the bottom of the dashboard, the **Diagnostics** panel (collapsed by default)
-shows technical status — whether Docker is running, how many services are up,
-and so on. You won't normally need it, but it's handy when troubleshooting.
+Technical status — whether Docker is running, how many services are up, and how
+much disk and memory are free — lives under **Settings → Advanced**. You won't
+normally need it, but it's handy when troubleshooting.

@@ -29,8 +29,12 @@ Pendant qu'un service démarre ou s'arrête, l'état affiche brièvement
 ## Ajouter et supprimer des services
 
 - **Ajouter un service** (en haut de la section Services) vous permet d'ajouter
-  tout ce que vous n'avez pas choisi lors de la configuration.
+  tout ce que vous n'avez pas choisi lors de la configuration, regroupé par
+  catégorie pour le retrouver facilement.
 - Pour supprimer un service, ouvrez son **menu ⋯ → Configurer**.
+
+Ici comme sur le tableau de bord, les services sont regroupés par catégorie
+(serveurs multimédias, gestion multimédia, clients de téléchargement, etc.).
 
 ## Maintenir les services à jour
 
@@ -47,7 +51,7 @@ Pendant qu'un service démarre ou s'arrête, l'état affiche brièvement
   Pour en maintenir un à une version précise, ouvrez **menu ⋯ → Configurer** et
   choisissez dans le menu déroulant **Version**. Les services épinglés affichent
   un 🔒 et cessent de proposer des mises à jour.
-- **Mises à jour automatiques.** Activez **Réglages → Mises à jour → Installer
+- **Mises à jour automatiques.** Activez **Réglages → Général → Installer
   les mises à jour automatiquement** pour qu'Ensembler applique les mises à jour
   disponibles en arrière-plan. C'est désactivé par défaut, vous gardez donc le
   contrôle.
@@ -57,17 +61,18 @@ Pendant qu'un service démarre ou s'arrête, l'état affiche brièvement
 Ouvrez les **Réglages** (en haut à droite) pour les options applicables à toute
 l'application :
 
-- **Apparence** — Clair, Sombre ou Système (suit votre système d'exploitation).
+- **Apparence** — thème (Clair, Sombre ou Système) et langue.
 - **Général** — garder Ensembler dans la barre de menus / la zone de
-  notification lorsque vous fermez la fenêtre (activé par défaut) pour qu'il soit
-  accessible en un clic. Vos services continuent de fonctionner dans les deux
-  cas ; utilisez **Quitter** dans le menu de la zone de notification pour quitter
-  complètement.
-- **Mises à jour** — activez les mises à jour automatiques en arrière-plan pour
-  vos services (désactivé par défaut).
-- **Environnement** — fuseau horaire et identifiants utilisateur/groupe utilisés
-  pour les permissions de fichiers.
-- **Zone de danger → Tout réinitialiser** — arrête et supprime tous les services
+  notification lorsque vous fermez la fenêtre (activé par défaut ; vos services
+  continuent de fonctionner dans les deux cas — utilisez **Quitter** dans le menu
+  de la zone de notification pour quitter complètement), installer
+  automatiquement les mises à jour des services (désactivé par défaut) et votre
+  fuseau horaire.
+- **Avancé** — des détails techniques dont vous n'aurez normalement pas besoin :
+  diagnostics (si Docker est en cours d'exécution, combien de services sont
+  actifs), espace disque et mémoire disponibles, et les identifiants
+  utilisateur/groupe utilisés pour les permissions de fichiers.
+- **Réinitialiser → Tout réinitialiser** — arrête et supprime tous les services
   ainsi que leurs réglages, ramenant Ensembler à une installation neuve. **Vos
   fichiers multimédias ne sont jamais touchés** — seuls les services et leur
   configuration sont supprimés.
@@ -86,7 +91,7 @@ où vous les avez choisis lors de la configuration et sont distincts de cela.
 
 ## Diagnostics
 
-En bas du tableau de bord, le panneau **Diagnostics** (replié par défaut)
-affiche l'état technique — si Docker est en cours d'exécution, combien de
-services sont actifs, etc. Vous n'en aurez normalement pas besoin, mais il est
+L'état technique — si Docker est en cours d'exécution, combien de services sont
+actifs, et combien d'espace disque et de mémoire sont disponibles — se trouve
+sous **Réglages → Avancé**. Vous n'en aurez normalement pas besoin, mais il est
 pratique pour le dépannage.

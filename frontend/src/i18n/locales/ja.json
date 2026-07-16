@@ -1,0 +1,669 @@
+{
+  "language": {
+    "chooseTitle": "言語を選択",
+    "chooseSubtitle": "設定でいつでも変更できます。",
+    "continue": "続ける",
+    "label": "言語",
+    "settingHint": "Ensembler 全体で使用される言語です。"
+  },
+  "app": {
+    "checkingStatus": "Docker と Docker Compose の状態を確認しています…",
+    "dockerRequired": {
+      "title": "Docker が必要です",
+      "subtitle": "Ensembler がサービスを実行するには Docker（または別のコンテナランタイム）が必要です",
+      "toGetStarted": "始めるには:",
+      "step1": "Docker Desktop をダウンロードしてインストールします",
+      "step2": "Docker Desktop を起動し、開始するまで待ちます",
+      "step3": "緑色の「Docker Desktop is running」というステータスを確認します",
+      "step4": "ここに戻り、下の「再確認」をクリックします",
+      "downloadHeading": "Docker Desktop をダウンロード:",
+      "downloadButton": "Docker Desktop をダウンロード",
+      "otherRuntimes": "すでに OrbStack、Podman、または別のコンテナランタイムをお使いですか？それでも動作します。インストールされ、実行されていることを確認してください。",
+      "checkAgain": "再確認",
+      "refreshPage": "ページを更新",
+      "refreshConfirm": "ページを更新し、Docker の状態を再度確認します。",
+      "havingTrouble": "うまくいきませんか？コンテナランタイムが（インストールされているだけでなく）完全に起動していることを確認し、このページを更新してみてください。",
+      "readDocs": "ドキュメントを読む"
+    },
+    "composeMissing": {
+      "title": "Docker Compose を利用できません",
+      "heading": "Docker Compose が利用できません"
+    },
+    "install": {
+      "mac": {
+        "docker": "https://www.docker.com/products/docker-desktop/ から Docker Desktop をインストールし、アプリケーションから起動してください。",
+        "compose": "macOS では Docker Compose は Docker Desktop に含まれています。"
+      },
+      "win": {
+        "docker": "https://www.docker.com/products/docker-desktop/ から Docker Desktop をインストールし、スタートメニューから起動してください。",
+        "compose": "Windows では Docker Compose は Docker Desktop に含まれています。"
+      },
+      "linux": {
+        "docker": "Docker Engine をインストールしてください: https://docs.docker.com/engine/install/ そしてサービスを開始してください（例: sudo systemctl start docker）。",
+        "compose": "Docker Compose をインストールしてください: https://docs.docker.com/compose/install/"
+      },
+      "other": {
+        "docker": "サポートされていない OS です。https://docs.docker.com/get-docker/ を参照してください",
+        "compose": "サポートされていない OS です。https://docs.docker.com/compose/install/ を参照してください"
+      }
+    }
+  },
+  "setup": {
+    "loading": "サービス設定を読み込んでいます…",
+    "title": "セットアップ",
+    "steps": {
+      "selection": "サービスの選択",
+      "configuration": "設定",
+      "apply": "適用"
+    },
+    "selectAtLeastOne": "続けるには少なくとも1つのサービスを選択してください。",
+    "selectAtLeastOneToast": "続けるには少なくとも1つのサービスを選択してください。",
+    "portsPrefilled": "一部のデフォルトポートはすでに使用中だったため、空いているポート（{{list}}）をあらかじめ選択しました。以下で変更できます。",
+    "step0": {
+      "heading": "サービスを選択",
+      "subtitle": "実行したいサービスを選択してください:",
+      "quickActions": "クイックアクション",
+      "recommendedOn": "推奨サービスの選択を解除",
+      "recommendedOff": "完全なメディアセンター向けの推奨サービスを選択",
+      "toggleRecommended": "推奨を切り替え",
+      "required": "必須",
+      "recommended": "推奨"
+    },
+    "categories": {
+      "media": {
+        "title": "メディアサーバー",
+        "description": "メディアストリーミングサーバー（1つ以上選択）"
+      },
+      "management": {
+        "title": "メディア管理",
+        "description": "メディアコレクション管理（複数選択可能）"
+      },
+      "torrent": {
+        "title": "ダウンロードクライアント",
+        "description": "BitTorrent ダウンロードクライアント（1つ選択）"
+      },
+      "indexer": {
+        "title": "インデクサー",
+        "description": "トレントインデクサー管理（1つ選択）"
+      },
+      "request": {
+        "title": "リクエスト管理",
+        "description": "メディアのリクエストと発見ツール（1つ選択）"
+      }
+    },
+    "step1": {
+      "heading": "サービス設定",
+      "subtitle": "サービスのファイルパスとポートを設定してください:",
+      "environmentSettings": "環境設定",
+      "readyToSetUp": "セットアップの準備完了",
+      "port": "ポート {{port}}"
+    },
+    "apply": {
+      "titleDone": "メディアセンターの準備ができました",
+      "titleError": "セットアップで問題が発生しました",
+      "titleRunning": "セットアップ中",
+      "subtitleDone": "すべて実行中です。自動セットアップの結果は次のとおりです。",
+      "subtitleError": "サービスが部分的にセットアップされている可能性があります。戻ってやり直すことができます。",
+      "subtitleRunning": "設定を適用し、メディアセンターを起動しています。",
+      "phaseSave": "設定を保存しています",
+      "phaseCompose": "Docker のセットアップを生成しています",
+      "phaseStart": "サービスを起動しています",
+      "phaseStartDetail": "イメージをダウンロードし、コンテナを起動しています。初回実行時は数分かかることがあります。",
+      "phaseConnect": "サービスを相互に接続しています",
+      "phaseConnectDetail": "各サービスの準備が整うのを待ってから連携させます。1分ほどかかることがあります。",
+      "backToConfig": "設定に戻る",
+      "goToDashboard": "ダッシュボードへ"
+    },
+    "nav": {
+      "previous": "戻る",
+      "next": "次へ",
+      "apply": "セットアップを適用"
+    },
+    "errors": {
+      "save": "設定を保存できませんでした。",
+      "compose": "Docker のセットアップを生成できませんでした。",
+      "start": "サービスを起動できませんでした。",
+      "generic": "セットアップ中に問題が発生しました。",
+      "tzRequired": "タイムゾーンは必須です。",
+      "puid": "PUID は0以上の数値である必要があります。",
+      "pgid": "PGID は0以上の数値である必要があります。",
+      "portRange": "ポートは1024〜65535の範囲である必要があります。",
+      "portConflictSelected": "ポートが別の選択済みサービスと競合しています。",
+      "portInUseSwitched": "ポート {{port}} は使用中です。空いているポート {{suggestion}} に切り替えました。",
+      "portInUseNoFree": "ポート {{port}} は使用中で、空いているポートが見つかりませんでした。別のポートを選択してください。",
+      "pathMediaConflict": "パスが {{service}} の異なるメディアタイプと競合しています",
+      "pathDownloadConflict": "ダウンロードパスがダウンロード以外のサービス {{service}} と競合しています",
+      "pathUsedBy": "パスはすでに {{service}} で使用されています",
+      "pathValidateUnreachable": "パスを検証するためにバックエンドに接続できませんでした。もう一度お試しください。"
+    }
+  },
+  "dashboard": {
+    "heading": {
+      "title": "ダッシュボード",
+      "subtitle": "メディアセンターのサービスを管理"
+    },
+    "settings": {
+      "tooltip": "詳細設定",
+      "button": "設定"
+    },
+    "globalControls": {
+      "stopAll": "すべて停止",
+      "startAll": "すべて開始",
+      "noServicesToStop": "停止するサービスがありません",
+      "allStopped": "すべてのサービスはすでに停止しています",
+      "stopAllTooltip": "すべてのサービスを停止",
+      "noServicesToStart": "開始するサービスがありません",
+      "allRunning": "すべてのサービスはすでに実行中です",
+      "startAllTooltip": "すべてのサービスを開始"
+    },
+    "roles": {
+      "tvShows": "TV 番組を管理",
+      "movies": "映画を管理",
+      "subtitles": "字幕を管理",
+      "streams": "メディアをストリーミング",
+      "downloads": "コンテンツをダウンロード",
+      "indexers": "コンテンツソースを検索",
+      "requests": "メディアのリクエストと発見",
+      "library": "ライブラリを管理"
+    },
+    "setupChecklist": {
+      "heading": "セットアップを完了",
+      "stepsLeft_one": "· 残り {{count}} ステップ",
+      "stepsLeft_other": "· 残り {{count}} ステップ"
+    },
+    "tasks": {
+      "prowlarr": "<strong>Prowlarr</strong> にインデクサーを追加して、Sonarr と Radarr がコンテンツを検索できるようにします",
+      "plex": "<strong>Plex</strong> にサインインして、TV と映画のライブラリを作成します",
+      "overseerr": "<strong>Overseerr</strong> のセットアップを完了します — Plex でサインインしてサービスを見つけましょう"
+    },
+    "services": {
+      "heading": "サービス",
+      "configured_one": "{{count}} 個のサービスを設定済み",
+      "configured_other": "{{count}} 個のサービスを設定済み",
+      "updatesAvailable_one": " · {{count}} 件のアップデートあり",
+      "updatesAvailable_other": " · {{count}} 件のアップデートあり",
+      "updateAllTooltip_one": "新しいバージョンが利用可能な {{count}} 個のサービスをアップデート",
+      "updateAllTooltip_other": "新しいバージョンが利用可能な {{count}} 個のサービスをアップデート",
+      "updateAll": "すべてアップデート（{{count}}）",
+      "checkAllTooltip": "すべてのサービスで利用可能なアップデートを確認",
+      "checkForUpdates": "アップデートを確認",
+      "addTooltip": "別のサービスを追加",
+      "addService": "サービスを追加"
+    },
+    "empty": {
+      "title": "設定済みのサービスがありません",
+      "description": "メディアセンターのサービスを追加・設定して始めましょう。必要に応じて個別にサービスを追加できます。"
+    },
+    "status": {
+      "starting": "開始中…",
+      "stopping": "停止中…",
+      "restarting": "再起動中…",
+      "setupNeeded": "セットアップが必要",
+      "needsAttention": "対応が必要",
+      "running": "実行中",
+      "stopped": "停止",
+      "unhealthyTooltip": "サービスは実行中ですが、正常に応答していません"
+    },
+    "card": {
+      "openDisabledTooltip": "サービスを開くには開始してください",
+      "checkingUpdates": "アップデートを確認しています…",
+      "updateAvailable": "アップデートあり — 今すぐアップデート",
+      "upToDate": "最新の状態です",
+      "version": {
+        "pinned": "v{{version}} に固定",
+        "updateAvailable": "v{{version}} を使用中 · アップデートあり",
+        "latest": "最新バージョン（v{{version}}）を使用中"
+      }
+    },
+    "common": {
+      "open": "開く",
+      "openNamed": "{{name}} を開く",
+      "updating": "アップデート中…",
+      "checking": "確認中…",
+      "unknown": "不明"
+    },
+    "menu": {
+      "openInBrowser": "ブラウザで開く",
+      "start": "開始",
+      "stop": "停止",
+      "restart": "再起動",
+      "viewLogs": "ログを表示",
+      "configure": "設定"
+    },
+    "diagnostics": {
+      "heading": "診断",
+      "allOk": "すべてのシステムが正常に稼働中",
+      "attention": "対応が必要",
+      "running": "実行中",
+      "notRunning": "実行されていません",
+      "app": "アプリ",
+      "active": "アクティブ",
+      "inactive": "非アクティブ",
+      "backendConnection": "バックエンド接続",
+      "connected": "接続済み",
+      "disconnected": "切断",
+      "servicesRunning": "実行中のサービス",
+      "lastChecked": "最終確認",
+      "diskFree": "ディスクの空き容量",
+      "dockerMemory": "Docker メモリ",
+      "note": "Docker サービスは独立して実行され、アプリを閉じても実行を継続します。"
+    },
+    "logs": {
+      "title": "ログ",
+      "titleNamed": "{{name}} — ログ",
+      "live": "ライブ",
+      "loading": "ログを読み込んでいます…"
+    },
+    "toast": {
+      "checkFailed": "{{name}} のアップデートを確認できませんでした。",
+      "checkAllFailed": "アップデートを確認できませんでした。",
+      "updatesFound_one": "{{count}} 件のアップデートがあります。",
+      "updatesFound_other": "{{count}} 件のアップデートがあります。",
+      "allUpToDate": "すべてのサービスは最新の状態です。",
+      "actionSuccess_start": "{{name}} を正常に開始しました",
+      "actionSuccess_stop": "{{name}} を正常に停止しました",
+      "actionSuccess_restart": "{{name}} を正常に再起動しました",
+      "globalItemFailed_start": "{{service}} の開始に失敗しました: {{message}}",
+      "globalItemFailed_stop": "{{service}} の停止に失敗しました: {{message}}",
+      "globalItemError_start": "{{service}} の開始中にエラーが発生しました: {{error}}",
+      "globalItemError_stop": "{{service}} の停止中にエラーが発生しました: {{error}}",
+      "globalDone_start": "すべてのサービスを開始しました",
+      "globalDone_stop": "すべてのサービスを停止しました",
+      "launchUrlFailed": "{{service}} の起動 URL を取得できませんでした: {{message}}",
+      "launchError": "{{service}} の起動中にエラーが発生しました: {{error}}",
+      "updatedCount_one": "{{count}} 個のサービスをアップデートしました",
+      "updatedCount_other": "{{count}} 個のサービスをアップデートしました",
+      "updatedWithFailures": "{{count}} 個をアップデートしました。失敗: {{names}}",
+      "updateAllError": "サービスのアップデート中にエラーが発生しました: {{error}}",
+      "updateSuccess": "{{name}} を正常にアップデートしました",
+      "updateFailed": "{{name}} のアップデートに失敗しました: {{message}}",
+      "updateError": "{{name}} のアップデート中にエラーが発生しました: {{error}}"
+    },
+    "actionError": {
+      "title_start": "{{name}} を開始できませんでした",
+      "title_stop": "{{name}} を停止できませんでした",
+      "title_restart": "{{name}} を再起動できませんでした"
+    },
+    "confirm": {
+      "globalAction_start": "すべてのサービスを開始してもよろしいですか？",
+      "globalAction_stop": "すべてのサービスを停止してもよろしいですか？",
+      "updateAll_one": "{{count}} 個のサービスをアップデートしますか？最新のイメージをダウンロードし、それぞれを再起動します。",
+      "updateAll_other": "{{count}} 個のサービスをアップデートしますか？最新のイメージをダウンロードし、それぞれを再起動します。",
+      "updateService": "{{name}} をアップデートしてもよろしいですか？最新バージョンをダウンロードし、サービスを再起動します。"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "subtitle": "個々のサービスはダッシュボードのカードから設定できます。ここではアプリ全体の設定を行います。",
+    "loading": "設定を読み込んでいます...",
+    "errorTitle": "エラー",
+    "loadError": "設定の読み込みに失敗しました。もう一度お試しください。",
+    "close": "閉じる",
+    "cancel": "キャンセル",
+    "save": "保存して適用",
+    "saving": "適用中…",
+    "toast": {
+      "savedPartial": "設定を保存しました。一部のサービスは手動で開始する必要がある場合があります。",
+      "saved": "設定を保存し、適用しました。",
+      "saveFailed": "設定の保存に失敗しました。もう一度お試しください。",
+      "resetFailed": "アプリケーションのリセットに失敗しました: {{error}}"
+    },
+    "appearance": {
+      "heading": "外観",
+      "description": "アプリの見た目を選択します。「システム」はお使いのオペレーティングシステムに従います。",
+      "themeLabel": "テーマ",
+      "theme": {
+        "light": "ライト",
+        "dark": "ダーク",
+        "system": "システム"
+      }
+    },
+    "general": {
+      "heading": "一般",
+      "trayLabel": "ウィンドウを閉じたときにトレイで実行を継続する",
+      "trayDescription": "Ensembler はすばやくアクセスできるようメニューバー / システムトレイに残ります。どちらの場合もサービスは実行を継続します。完全に終了するにはトレイメニューから終了してください。",
+      "trayAriaLabel": "ウィンドウを閉じたときにトレイで実行を継続する"
+    },
+    "advanced": {
+      "heading": "詳細設定",
+      "ownershipHeading": "ファイルの所有権",
+      "ownershipDescription": "サービスがファイルを読み書きする際に使用するユーザー ID とグループ ID です（通常は1000）。"
+    },
+    "updates": {
+      "autoLabel": "アップデートを自動的にインストールする",
+      "autoDescription": "オンにすると、利用可能なアップデートが毎日バックグラウンドで適用されます。デフォルトはオフです。「すべてアップデート」で自分のタイミングで適用でき、制御を維持できます。",
+      "autoAriaLabel": "アップデートを自動的にインストールする"
+    },
+    "danger": {
+      "navLabel": "リセット",
+      "heading": "危険な操作",
+      "resetLabel": "すべてリセット",
+      "resetDescription": "すべてのサービスとその設定を削除し、新規インストールの状態に戻します。メディアファイルは保持されます。",
+      "resetButton": "すべてリセット",
+      "confirm": "⚠️ 破壊的な操作: これによりすべてのサービスが停止・削除され、それらの設定、履歴、データベースがすべて削除され、新規インストールの状態に戻ります。メディアファイル（TV 番組、映画、ダウンロード）は削除されません。この操作は元に戻せません。本当によろしいですか？"
+    },
+    "reset": {
+      "phaseStop": "サービスを停止・削除しています",
+      "phaseClean": "設定とデータを削除しています",
+      "completeTitle": "リセット完了",
+      "completeSubtitle": "新しいセットアップを開始しています…",
+      "runningTitle": "セットアップをリセットしています",
+      "runningSubtitle": "新規インストールの状態に戻しています。メディアファイルには影響しません。",
+      "errorMessage": "問題が発生しました。これを閉じてもう一度お試しください。"
+    }
+  },
+  "serviceConfig": {
+    "loadError": "現在の設定を読み込めませんでした。",
+    "fieldRequired": "{{label}} は必須です。",
+    "portRerouted": "ポート {{port}} が使用中だったため、{{name}} は {{finalPort}} を使用します。",
+    "serviceAdded": "{{name}} を追加しました。",
+    "serviceUpdated": "{{name}} を更新しました。",
+    "addFailed": "{{name}} を追加できませんでした: {{message}}",
+    "updateFailed": "{{name}} を更新できませんでした: {{message}}",
+    "serviceRemoved": "{{name}} を削除しました。メディアファイルは削除されていません。",
+    "removeFailed": "{{name}} を削除できませんでした: {{message}}",
+    "addTitle": "{{name}} を追加",
+    "configureTitle": "{{name}} を設定",
+    "loading": "読み込んでいます…",
+    "removeConfirmTitle": "{{name}} を削除しますか？",
+    "removeConfirmBody": "これにより {{name}} が停止し、その設定が削除されます。メディアファイルは保持されます。この操作は元に戻せません。",
+    "portLabel": "ポート",
+    "defaultPort": "デフォルト: {{port}}",
+    "versionLabel": "バージョン",
+    "loadingVersions": "バージョンを読み込んでいます…",
+    "latestRecommended": "最新（推奨）",
+    "versionHelp": "常に最新バージョンを実行するには <1>最新</1> のままにします。特定のバージョンに固定すると、そのバージョンが維持されます。固定されたサービスにはアップデートが表示されません。",
+    "removeService": "サービスを削除",
+    "keep": "残す",
+    "removeNamed": "{{name}} を削除",
+    "cancel": "キャンセル",
+    "addService": "サービスを追加",
+    "saveChanges": "変更を保存"
+  },
+  "addService": {
+    "title": "サービスを追加",
+    "subtitle": "メディアセンターに追加するサービスを選択してください。次にパスとポートを設定します。",
+    "allAdded": "利用可能なすべてのサービスがすでに追加されています。",
+    "recommended": "推奨",
+    "add": "追加",
+    "cancel": "キャンセル"
+  },
+  "actionsMenu": {
+    "moreActions": "その他の操作"
+  },
+  "systemChecks": {
+    "heading": "セットアップを確認",
+    "dismiss": "閉じる",
+    "dockerMemoryWarning": "Docker には {{allocated}} GB のメモリしかありません。メディアサービス（特に Plex）は {{recommended}} GB 以上でより快適に動作します。コンテナランタイムの設定で増やしてください（Docker Desktop → Settings → Resources）。",
+    "diskWarning": "メディアが保存される場所の空き容量は {{free}} GB のみです。空き容量が不足するとダウンロードが失敗することがあります。空き容量を確保するか、より大きなドライブをサービスに指定してください。"
+  },
+  "actionError": {
+    "description": "問題が発生しました。詳細はログを確認するか、もう一度お試しください。",
+    "dismiss": "閉じる",
+    "viewLogs": "ログを表示",
+    "retry": "再試行"
+  },
+  "confirm": {
+    "title": "操作の確認",
+    "destructiveTitle": "破壊的な操作",
+    "confirm": "はい、実行します",
+    "cancel": "いいえ、キャンセル"
+  },
+  "environment": {
+    "timezone": {
+      "label": "タイムゾーン (TZ)",
+      "placeholder": "タイムゾーンを選択...",
+      "help": "ログのタイムスタンプとスケジュールに使用されます"
+    },
+    "puid": {
+      "label": "ユーザー ID (PUID)",
+      "help": "ファイルの所有権に使用するユーザー ID（通常は1000）"
+    },
+    "pgid": {
+      "label": "グループ ID (PGID)",
+      "help": "ファイルの所有権に使用するグループ ID（通常は1000）"
+    }
+  },
+  "serviceConfiguration": {
+    "portBadge": "ポート",
+    "portConfiguration": "ポート設定",
+    "servicePort": "{{name}} ポート:",
+    "portDefault": "デフォルト: {{port}}",
+    "infoBadge": "情報",
+    "serviceInformation": "サービス情報",
+    "noPathsRequired": "ファイルパスは不要です",
+    "noPathsDescription": "このサービスはファイルパスの設定を必要としません。"
+  },
+  "pathConfig": {
+    "badge": "パス",
+    "heading": "ファイルパス",
+    "placeholder": "{{description}}（デフォルト: {{default}}）",
+    "useDefaultTitle": "デフォルトのパスを使用",
+    "default": "デフォルト",
+    "browseTitle": "フォルダを参照",
+    "browse": "参照"
+  },
+  "docsButton": {
+    "label": "ドキュメント",
+    "tooltip": "ドキュメント"
+  },
+  "docsViewer": {
+    "heading": "ドキュメント",
+    "pages": {
+      "overview": "概要",
+      "gettingStarted": "はじめに",
+      "managing": "サービスの管理",
+      "troubleshooting": "トラブルシューティング"
+    }
+  },
+  "tabs": {
+    "dashboard": "ダッシュボード",
+    "closeService": "{{name}} を閉じる",
+    "reload": "再読み込み",
+    "reloadService": "{{name}} を再読み込み",
+    "openInBrowser": "ブラウザで開く",
+    "openServiceInBrowser": "{{name}} をブラウザで開く"
+  },
+  "services": {
+    "prowlarr": {
+      "description": "人気の arr スタックをベースにしたインデクサー管理/プロキシ"
+    },
+    "sonarr": {
+      "description": "Usenet および BitTorrent ユーザー向けの PVR",
+      "paths": [
+        {
+          "label": "TV 番組のパス",
+          "description": "TV 番組が保存されるディレクトリ"
+        }
+      ]
+    },
+    "radarr": {
+      "description": "Usenet および BitTorrent ユーザー向けの映画コレクション管理",
+      "paths": [
+        {
+          "label": "映画のパス",
+          "description": "映画が保存されるディレクトリ"
+        }
+      ]
+    },
+    "plex": {
+      "description": "コンテンツをストリーミングするメディアサーバー",
+      "paths": [
+        {
+          "label": "TV 番組のパス",
+          "description": "TV 番組が含まれるディレクトリ"
+        },
+        {
+          "label": "映画のパス",
+          "description": "映画が含まれるディレクトリ"
+        }
+      ]
+    },
+    "transmission": {
+      "description": "BitTorrent クライアント",
+      "paths": [
+        {
+          "label": "ダウンロードのパス",
+          "description": "ダウンロードが保存されるディレクトリ"
+        }
+      ]
+    },
+    "overseerr": {
+      "description": "リクエスト管理とメディア発見ツール"
+    },
+    "jellyfin": {
+      "description": "ライセンス料のかからないオープンソースのメディアサーバー",
+      "paths": [
+        {
+          "label": "TV 番組のパス",
+          "description": "TV 番組が含まれるディレクトリ"
+        },
+        {
+          "label": "映画のパス",
+          "description": "映画が含まれるディレクトリ"
+        }
+      ]
+    },
+    "emby": {
+      "description": "モバイルアプリを備えた高機能なメディアサーバー",
+      "paths": [
+        {
+          "label": "TV 番組のパス",
+          "description": "TV 番組が含まれるディレクトリ"
+        },
+        {
+          "label": "映画のパス",
+          "description": "映画が含まれるディレクトリ"
+        }
+      ]
+    },
+    "bazarr": {
+      "description": "字幕を管理するための Sonarr と Radarr のコンパニオンアプリ",
+      "paths": [
+        {
+          "label": "TV 番組のパス",
+          "description": "TV 番組が含まれるディレクトリ（Sonarr と同じ）"
+        },
+        {
+          "label": "映画のパス",
+          "description": "映画が含まれるディレクトリ（Radarr と同じ）"
+        }
+      ]
+    },
+    "deluge": {
+      "description": "Web インターフェースを備えた BitTorrent クライアント",
+      "paths": [
+        {
+          "label": "ダウンロードのパス",
+          "description": "ダウンロードが保存されるディレクトリ"
+        }
+      ]
+    },
+    "jackett": {
+      "description": "お気に入りのトレントトラッカー向けの API サポート"
+    }
+  },
+  "messages": {
+    "common": {
+      "invalidInput": "無効な入力"
+    },
+    "ports": {
+      "validateFailed": "ポートの検証に失敗しました。"
+    },
+    "paths": {
+      "createFailed": "このフォルダを作成できませんでした。",
+      "notWritable": "このフォルダは書き込みできません。"
+    },
+    "docker": {
+      "composeNotFound": "Docker Compose が見つからないか、動作していません。",
+      "notRunning": "Docker が実行されていないか、インストールされていません。",
+      "autostartUnsupportedOs": "自動起動に対応していない OS です。",
+      "autostartFailed": "Docker の自動起動に失敗しました。",
+      "started": "Docker を正常に起動しました。",
+      "startCheckFailed": "Docker が正常に起動しませんでした。",
+      "startError": "Docker の起動を試みる際にエラーが発生しました。"
+    },
+    "config": {
+      "saved": "設定を正常に保存しました。",
+      "saveFailed": "設定の保存に失敗しました。",
+      "notFound": "config.json が見つかりません。",
+      "currentFailed": "現在の設定を取得できませんでした。"
+    },
+    "compose": {
+      "generated": "Docker Compose ファイルを正常に生成しました。",
+      "generateFailed": "Docker Compose ファイルの生成に失敗しました。"
+    },
+    "service": {
+      "statusFailed": "サービスの状態を取得できませんでした。",
+      "started": "{{name}} を正常に開始しました。",
+      "startFailed": "{{name}} の開始に失敗しました。",
+      "stopped": "{{name}} を正常に停止しました。",
+      "stopFailed": "{{name}} の停止に失敗しました。",
+      "restarted": "{{name}} を正常に再起動しました。",
+      "restartFailed": "{{name}} の再起動に失敗しました。",
+      "logsFailed": "{{name}} のログを取得できませんでした。",
+      "notFound": "サービスが見つかりません。",
+      "versionFailed": "{{name}} のバージョンを取得できませんでした。",
+      "startAllSucceeded": "有効なすべてのサービスを正常に開始しました。",
+      "startAllFailed": "サービスの開始に失敗しました。",
+      "stopAllSucceeded": "すべてのサービスを正常に停止しました。",
+      "stopAllFailed": "すべてのサービスの停止に失敗しました。",
+      "launchUrlFailed": "起動 URL を取得できませんでした。",
+      "configFailed": "サービス設定を取得できませんでした。",
+      "invalidSelectionFormat": "selectedServices の形式が無効です。",
+      "selectionRequiresArr": "少なくとも Sonarr または Radarr を選択する必要があります。",
+      "selectionValid": "サービスの選択は有効です。",
+      "selectionValidateFailed": "サービスの選択の検証に失敗しました。",
+      "checkUpdatesFailed": "{{name}} のアップデートの確認に失敗しました。",
+      "checkUpdatesAllFailed": "アップデートの確認に失敗しました。",
+      "updated": "{{name}} を正常にアップデートしました。",
+      "updateFailed": "{{name}} のアップデートに失敗しました。",
+      "updateAllFailed": "サービスのアップデートに失敗しました。",
+      "monitorFailed": "サービスの監視に失敗しました。"
+    },
+    "setup": {
+      "bazarrRestartFailed": "設定を初期化しましたが、Bazarr の再起動に失敗しました: {{error}}",
+      "connectionsFailed": "サービス接続のセットアップに失敗しました。",
+      "plexFailed": "Plex のセットアップに失敗しました。",
+      "apiKeyReadFailed": "{{error}}",
+      "transmissionRunning": "Transmission は実行中です",
+      "transmissionUnreachable": "Transmission に接続できません: {{error}}",
+      "plexSignInRequired": "Plex には一度だけサインインが必要です — ダッシュボードから Plex を開いてログインしてください。その後ライブラリが自動的に作成されます",
+      "rootFolderAdded": "ルートフォルダ {{path}} を追加しました",
+      "rootFolderExists": "ルートフォルダ {{path}} はすでに設定されています",
+      "transmissionConnected": "Transmission に接続しました",
+      "transmissionExists": "Transmission はすでに設定されています",
+      "stepFailed": "{{error}}",
+      "prowlarrStepFailed": "{{error}}",
+      "prowlarrAppConnected": "{{app}} を接続しました — インデクサーは自動的に同期されます",
+      "prowlarrAppAlreadyConnected": "{{app}} はすでに接続されています",
+      "prowlarrTransmissionConnected": "Transmission に接続しました",
+      "prowlarrTransmissionAlreadyConfigured": "Transmission はすでに設定されています"
+    },
+    "reset": {
+      "servicesStopped": "サービスを停止・削除しました。",
+      "stopServicesFailed": "サービスの停止に失敗しました。",
+      "cleaned": "設定とデータを削除しました。",
+      "cleanFailed": "設定とデータの削除に失敗しました。",
+      "completed": "すべての設定を正常にリセットしました。",
+      "failed": "設定のリセットに失敗しました。"
+    },
+    "bazarr": {
+      "configNotFound": "Bazarr の config.yaml がまだ見つかりません — Bazarr は実行中ですか？",
+      "connected": "Bazarr を {{services}} に接続しました",
+      "alreadyConnected": "Bazarr はすでに {{services}} に接続されています"
+    },
+    "plex": {
+      "stepFailed": "{{error}}",
+      "libraryCreated": "{{location}} に「{{name}}」ライブラリを作成しました",
+      "libraryExists": "{{type}} ライブラリはすでに {{location}} をカバーしています",
+      "notifyConfigured": "{{service}} はインポート時に Plex を更新します",
+      "notifyExists": "{{service}} はすでに Plex に通知します"
+    }
+  },
+  "errorBoundary": {
+    "heading": "問題が発生しました",
+    "message": "アプリのこの部分で予期しないエラーが発生しました。再読み込みすると通常は解決します。",
+    "reload": "再読み込み"
+  }
+}

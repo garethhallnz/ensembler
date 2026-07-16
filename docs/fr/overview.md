@@ -23,9 +23,9 @@ Le parcours habituel est le suivant :
    **Appliquer**. Les ports sont vérifiés pour vous, et des ports libres sont
    choisis automatiquement si un port par défaut est déjà pris.
 2. **Câblage automatique** — Sonarr et Radarr reçoivent leur client de
-   téléchargement et leurs dossiers, Prowlarr s'y relie, les serveurs
-   multimédias reçoivent les notifications d'import, et ainsi de suite. Vous
-   voyez chaque étape se terminer.
+   téléchargement et leurs dossiers, Prowlarr s'y relie, Plex reçoit les
+   notifications d'import une fois que vous vous connectez, et ainsi de suite.
+   Vous voyez chaque étape se terminer.
 3. **Tableau de bord** — dès lors, vous gérez tout depuis un seul endroit :
    ouvrir un service, le démarrer/l'arrêter, vérifier les mises à jour ou
    ajouter d'autres services.

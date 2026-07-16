@@ -41,12 +41,12 @@ have grabbed its port — stop that app, or change the port from the service's
   deleted by Ensembler.
 
 ## Something is badly stuck — start fresh
-**Settings → Danger zone → Reset everything** stops and removes all services and
+**Settings → Reset → Reset everything** stops and removes all services and
 their settings and returns Ensembler to a clean state. **Your media files are
 not affected** — only services and their configuration are removed. You'll go
 back through the setup wizard afterwards.
 
 ## Still stuck?
-Grab the details from a service's **View logs** and from the **Diagnostics**
-panel at the bottom of the dashboard — those are the most useful things to
-include when reporting an issue.
+Grab the details from a service's **View logs** and from **Settings → Advanced →
+Diagnostics** — those are the most useful things to include when reporting an
+issue.

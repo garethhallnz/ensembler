@@ -20,8 +20,8 @@ The typical journey is:
    folders, and click **Apply**. Ports are checked for you, and free ones are
    picked automatically if a default is taken.
 2. **Automatic wiring** — Sonarr and Radarr get their download client and
-   folders, Prowlarr links to them, media servers get import notifications, and
-   so on. You watch each step complete.
+   folders, Prowlarr links to them, Plex gets import notifications once you sign
+   in, and so on. You watch each step complete.
 3. **Dashboard** — from then on you manage everything from one place: open a
    service, start/stop it, check for updates, or add more services.
 

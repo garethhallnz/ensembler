@@ -27,8 +27,12 @@ Enquanto um serviço está iniciando ou parando, o status mostra um breve
 ## Adicionando e removendo serviços
 
 - **Adicionar serviço** (no topo da seção Serviços) permite adicionar qualquer
-  coisa que você não tenha escolhido durante a configuração.
+  coisa que você não tenha escolhido durante a configuração, agrupado por
+  categoria para facilitar a busca.
 - Para remover um serviço, abra seu **menu ⋯ → Configurar**.
+
+Tanto aqui quanto no painel, os serviços são agrupados por categoria (servidores
+de mídia, gerenciamento de mídia, clientes de download, e assim por diante).
 
 ## Mantendo os serviços atualizados
 
@@ -45,7 +49,7 @@ Enquanto um serviço está iniciando ou parando, o status mostra um breve
   Para manter um serviço em uma versão específica, abra **menu ⋯ → Configurar** e
   escolha na lista suspensa **Versão**. Serviços fixados exibem um 🔒 e deixam de
   oferecer atualizações.
-- **Atualizações automáticas.** Ative **Configurações → Atualizações → Instalar
+- **Atualizações automáticas.** Ative **Configurações → Geral → Instalar
   atualizações automaticamente** para que o Ensembler aplique as atualizações
   disponíveis em segundo plano. Isso vem desativado por padrão, então você
   permanece no controle.
@@ -54,16 +58,17 @@ Enquanto um serviço está iniciando ou parando, o status mostra um breve
 
 Abra **Configurações** (canto superior direito) para opções de todo o aplicativo:
 
-- **Aparência** — Clara, Escura ou Sistema (seguir o seu sistema operacional).
+- **Aparência** — tema (Clara, Escura ou Sistema) e idioma.
 - **Geral** — manter o Ensembler na barra de menus / bandeja do sistema quando
-  você fecha a janela (ativado por padrão) para que ele fique a um clique de
-  distância. Seus serviços continuam em execução de qualquer forma; use **Sair**
-  no menu da bandeja para encerrar completamente.
-- **Atualizações** — ative as atualizações automáticas em segundo plano para
-  seus serviços (desativadas por padrão).
-- **Ambiente** — fuso horário e os IDs de usuário/grupo usados para permissões
-  de arquivos.
-- **Zona de perigo → Redefinir tudo** — para e remove todos os serviços e suas
+  você fecha a janela (ativado por padrão; seus serviços continuam em execução de
+  qualquer forma — use **Sair** no menu da bandeja para encerrar completamente),
+  instalar atualizações de serviços automaticamente (desativado por padrão) e o
+  seu fuso horário.
+- **Avançado** — detalhes técnicos que você normalmente não precisará:
+  diagnósticos (se o Docker está em execução, quantos serviços estão ativos),
+  espaço livre em disco e memória, e os IDs de usuário/grupo usados para
+  permissões de arquivos.
+- **Redefinir → Redefinir tudo** — para e remove todos os serviços e suas
   configurações, retornando o Ensembler a uma instalação nova. **Seus arquivos
   de mídia nunca são tocados** — apenas os serviços e sua configuração são
   removidos.
@@ -82,7 +87,6 @@ escolhido durante a configuração e são separados disso.
 
 ## Diagnósticos
 
-Na parte inferior do painel, o painel de **Diagnósticos** (recolhido por padrão)
-mostra o status técnico — se o Docker está em execução, quantos serviços estão
-ativos, e assim por diante. Normalmente você não precisará dele, mas ele é útil
-na solução de problemas.
+O status técnico — se o Docker está em execução, quantos serviços estão ativos e
+quanto de disco e memória estão livres — fica em **Configurações → Avançado**.
+Normalmente você não precisará dele, mas ele é útil na solução de problemas.

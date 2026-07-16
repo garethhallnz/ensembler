@@ -50,13 +50,13 @@ Dienstes.
   und werden von Ensembler nie verschoben oder gelöscht.
 
 ## Etwas hängt völlig fest — neu anfangen
-**Einstellungen → Gefahrenzone → Alles zurücksetzen** stoppt und entfernt alle
+**Einstellungen → Zurücksetzen → Alles zurücksetzen** stoppt und entfernt alle
 Dienste und ihre Einstellungen und versetzt Ensembler in einen sauberen Zustand.
 **Deine Mediendateien sind nicht betroffen** — nur Dienste und ihre
 Konfiguration werden entfernt. Danach durchläufst du den
 Einrichtungsassistenten erneut.
 
 ## Immer noch festgefahren?
-Hol dir die Details aus den **Logs anzeigen** eines Dienstes und aus dem
-**Diagnose**-Panel am unteren Rand des Dashboards — das sind die nützlichsten
+Hol dir die Details aus den **Logs anzeigen** eines Dienstes und aus
+**Einstellungen → Erweitert → Diagnose** — das sind die nützlichsten
 Dinge, die du beim Melden eines Problems angeben kannst.

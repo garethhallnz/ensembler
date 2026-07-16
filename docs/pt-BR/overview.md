@@ -22,9 +22,9 @@ O percurso típico é:
    para você, e portas livres são escolhidas automaticamente caso uma padrão
    esteja ocupada.
 2. **Conexão automática** — Sonarr e Radarr recebem seu cliente de download e
-   suas pastas, o Prowlarr se conecta a eles, os servidores de mídia recebem
-   notificações de importação, e assim por diante. Você acompanha cada etapa
-   sendo concluída.
+   suas pastas, o Prowlarr se conecta a eles, o Plex recebe notificações de
+   importação assim que você faz login, e assim por diante. Você acompanha cada
+   etapa sendo concluída.
 3. **Painel** — a partir daí você gerencia tudo em um só lugar: abrir um serviço,
    iniciá-lo/pará-lo, verificar atualizações ou adicionar mais serviços.
 

@@ -22,8 +22,9 @@ El recorrido habitual es:
    comprueban por ti, y se eligen automáticamente unos libres si alguno por
    defecto está ocupado.
 2. **Conexión automática** — Sonarr y Radarr obtienen su cliente de descargas y
-   sus carpetas, Prowlarr se enlaza con ellos, los servidores multimedia reciben
-   notificaciones de importación, y así sucesivamente. Ves completarse cada paso.
+   sus carpetas, Prowlarr se enlaza con ellos, Plex recibe notificaciones de
+   importación una vez que inicies sesión, y así sucesivamente. Ves completarse
+   cada paso.
 3. **Panel** — a partir de ahí gestionas todo desde un solo lugar: abre un
    servicio, inícialo/deténlo, busca actualizaciones o añade más servicios.
 

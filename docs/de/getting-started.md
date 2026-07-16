@@ -29,9 +29,10 @@ Ensembler fährt fort.
 
 ### 1. Wähle deine Dienste
 Empfohlene Dienste sind für ein vollständiges Media Center bereits vorausgewählt.
-Kategorien mit der Kennzeichnung **"eines auswählen"** (Medienserver,
-Download-Client, Indexer-Manager, Anfragen) lassen dich eine einzige Option
-wählen; "Medienverwaltung" erlaubt dir, mehrere auszuwählen.
+Bei einigen Kategorien — Download-Client, Indexer-Manager und Anfragen — kannst
+du eine einzige Option wählen; bei anderen — Medienserver und Medienverwaltung —
+kannst du mehrere auswählen (zum Beispiel Plex und Jellyfin gleichzeitig
+betreiben).
 
 ### 2. Lege deine Ordner fest
 Sag Ensembler, wo deine **TV-Serien**, **Filme** und **Downloads** liegen. Das
@@ -52,12 +53,16 @@ dich in einer Liste **"Einrichtung abschließen"** dazu auf:
   Inhalten suchen können. Du wählst deine eigenen Quellen; Ensembler wählt sie
   nie für dich aus.
 - **Bei Plex anmelden** — Ensembler erstellt dann automatisch deine TV- und
-  Filmbibliotheken. (Jellyfin braucht keine Anmeldung — es wird vollständig für
-  dich eingerichtet.)
+  Filmbibliotheken.
 - **Overseerr abschließen** — es meldet sich bei Plex an und entdeckt deine
   anderen Dienste.
 
 Jede Aufforderung hat einen **Öffnen**-Link, der dich direkt zur richtigen
 Stelle bringt.
+
+Jellyfin oder Emby? Diese stehen nicht in der Liste — Ensembler betreibt den
+Container, aber jeder verwaltet seine eigene Ersteinrichtung. Öffne ihn vom
+Dashboard aus und schließe die Einrichtung in seiner eigenen Weboberfläche ab
+(erstelle dein Administrator-Konto und füge deine Bibliotheken hinzu).
 
 Sobald das erledigt ist, bist du startklar.

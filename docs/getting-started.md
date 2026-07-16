@@ -26,9 +26,10 @@ Docker Desktop, wait for it to say it's running, and Ensembler will continue.
 ## The setup wizard
 
 ### 1. Choose your services
-Recommended services are pre-selected for a complete media center. Categories
-labelled **"choose one"** (media server, download client, indexer manager,
-requests) let you pick a single option; "media management" lets you pick several.
+Recommended services are pre-selected for a complete media center. Some
+categories — download client, indexer manager, and requests — let you pick a
+single option; others — **media servers** and **media management** — let you
+choose several (for example, run both Plex and Jellyfin).
 
 ### 2. Set your folders
 Tell Ensembler where your **TV shows**, **movies**, and **downloads** live.
@@ -48,9 +49,13 @@ in a **"Finish setting up"** list:
 - **Add an indexer in Prowlarr** — so Sonarr and Radarr can search for content.
   You choose your own sources; Ensembler never picks these for you.
 - **Sign in to Plex** — Ensembler then creates your TV and Movies libraries
-  automatically. (Jellyfin needs no sign-in — it's set up entirely for you.)
+  automatically.
 - **Finish Overseerr** — it signs in with Plex and discovers your other services.
 
 Each prompt has an **Open** link that takes you straight to the right place.
+
+**Jellyfin or Emby?** These aren't in the list — Ensembler runs the container,
+but each manages its own first-run. Open it from the dashboard and complete its
+setup in its own web interface (create your admin account and add your libraries).
 
 Once those are done, you're up and running.

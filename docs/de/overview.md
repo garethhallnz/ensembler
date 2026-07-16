@@ -23,8 +23,8 @@ Der typische Ablauf ist:
    freie Ports werden automatisch gewählt, falls ein Standard belegt ist.
 2. **Automatische Verkabelung** — Sonarr und Radarr erhalten ihren
    Download-Client und ihre Ordner, Prowlarr verknüpft sich mit ihnen,
-   Medienserver bekommen Import-Benachrichtigungen und so weiter. Du siehst,
-   wie jeder Schritt abgeschlossen wird.
+   Plex bekommt Import-Benachrichtigungen, sobald du dich anmeldest, und so
+   weiter. Du siehst, wie jeder Schritt abgeschlossen wird.
 3. **Dashboard** — von da an verwaltest du alles an einem Ort: öffne einen
    Dienst, starte/stoppe ihn, suche nach Updates oder füge weitere Dienste hinzu.
 

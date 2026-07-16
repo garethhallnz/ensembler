@@ -52,13 +52,13 @@ son port — arrêtez cette application, ou changez le port depuis l'écran
   ne sont jamais déplacés ni supprimés par Ensembler.
 
 ## Quelque chose est vraiment bloqué — repartir de zéro
-**Réglages → Zone de danger → Tout réinitialiser** arrête et supprime tous les
+**Réglages → Réinitialiser → Tout réinitialiser** arrête et supprime tous les
 services ainsi que leurs réglages et ramène Ensembler à un état propre. **Vos
 fichiers multimédias ne sont pas affectés** — seuls les services et leur
 configuration sont supprimés. Vous repasserez ensuite par l'assistant de
 configuration.
 
 ## Toujours bloqué ?
-Récupérez les détails depuis **Voir les journaux** d'un service et depuis le
-panneau **Diagnostics** en bas du tableau de bord — ce sont les éléments les
-plus utiles à inclure lorsque vous signalez un problème.
+Récupérez les détails depuis **Voir les journaux** d'un service et depuis
+**Réglages → Avancé → Diagnostics** — ce sont les éléments les plus utiles à
+inclure lorsque vous signalez un problème.

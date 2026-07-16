@@ -48,12 +48,12 @@ puerto — detén esa aplicación, o cambia el puerto desde la pantalla de
   Ensembler nunca los mueve ni los elimina.
 
 ## Algo está muy atascado — empieza de cero
-**Ajustes → Zona de peligro → Restablecer todo** detiene y elimina todos los
+**Ajustes → Restablecer → Restablecer todo** detiene y elimina todos los
 servicios y sus ajustes y devuelve Ensembler a un estado limpio. **Tus archivos
 multimedia no se ven afectados** — solo se eliminan los servicios y su
 configuración. Después volverás a pasar por el asistente de configuración.
 
 ## ¿Sigues atascado?
-Toma los detalles de **Ver registros** de un servicio y del panel de
-**Diagnósticos** en la parte inferior del panel — esas son las cosas más útiles
-que incluir al informar de un problema.
+Toma los detalles de **Ver registros** de un servicio y de **Ajustes → Avanzado
+→ Diagnósticos** — esas son las cosas más útiles que incluir al informar de un
+problema.

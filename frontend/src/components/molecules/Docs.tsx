@@ -43,6 +43,21 @@ import gettingStartedRu from '../../../../docs/ru/getting-started.md?raw';
 import managingRu from '../../../../docs/ru/managing-services.md?raw';
 import troubleshootingRu from '../../../../docs/ru/troubleshooting.md?raw';
 
+import overviewAf from '../../../../docs/af/overview.md?raw';
+import gettingStartedAf from '../../../../docs/af/getting-started.md?raw';
+import managingAf from '../../../../docs/af/managing-services.md?raw';
+import troubleshootingAf from '../../../../docs/af/troubleshooting.md?raw';
+
+import overviewJa from '../../../../docs/ja/overview.md?raw';
+import gettingStartedJa from '../../../../docs/ja/getting-started.md?raw';
+import managingJa from '../../../../docs/ja/managing-services.md?raw';
+import troubleshootingJa from '../../../../docs/ja/troubleshooting.md?raw';
+
+import overviewKo from '../../../../docs/ko/overview.md?raw';
+import gettingStartedKo from '../../../../docs/ko/getting-started.md?raw';
+import managingKo from '../../../../docs/ko/managing-services.md?raw';
+import troubleshootingKo from '../../../../docs/ko/troubleshooting.md?raw';
+
 type DocName = 'overview' | 'getting-started' | 'managing' | 'troubleshooting';
 
 // [language][docName] → markdown. English is the guaranteed-complete baseline
@@ -89,6 +104,24 @@ const DOCS: Record<string, Partial<Record<DocName, string>>> = {
     'getting-started': gettingStartedRu,
     managing: managingRu,
     troubleshooting: troubleshootingRu,
+  },
+  af: {
+    overview: overviewAf,
+    'getting-started': gettingStartedAf,
+    managing: managingAf,
+    troubleshooting: troubleshootingAf,
+  },
+  ja: {
+    overview: overviewJa,
+    'getting-started': gettingStartedJa,
+    managing: managingJa,
+    troubleshooting: troubleshootingJa,
+  },
+  ko: {
+    overview: overviewKo,
+    'getting-started': gettingStartedKo,
+    managing: managingKo,
+    troubleshooting: troubleshootingKo,
   },
 };
 

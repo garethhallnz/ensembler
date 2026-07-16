@@ -28,8 +28,12 @@ Während ein Dienst startet oder stoppt, zeigt der Status kurz
 ## Dienste hinzufügen und entfernen
 
 - **Dienst hinzufügen** (oben im Bereich Dienste) lässt dich alles hinzufügen,
-  was du während der Einrichtung nicht ausgewählt hast.
+  was du während der Einrichtung nicht ausgewählt hast, nach Kategorie gruppiert,
+  sodass es leicht zu finden ist.
 - Um einen Dienst zu entfernen, öffne sein **⋯ Menü → Konfigurieren**.
+
+Sowohl hier als auch auf dem Dashboard sind die Dienste nach Kategorie gruppiert
+(Medienserver, Medienverwaltung, Download-Clients und so weiter).
 
 ## Dienste aktuell halten
 
@@ -46,7 +50,7 @@ Während ein Dienst startet oder stoppt, zeigt der Status kurz
   Version. Um einen auf einer bestimmten Version zu halten, öffne
   **⋯ Menü → Konfigurieren** und wähle aus dem **Version**-Dropdown. Festgelegte
   Dienste zeigen ein 🔒 und bieten keine Updates mehr an.
-- **Automatische Updates.** Aktiviere **Einstellungen → Updates → Updates
+- **Automatische Updates.** Aktiviere **Einstellungen → Allgemein → Updates
   automatisch installieren**, damit Ensembler verfügbare Updates im Hintergrund
   anwendet. Es ist standardmäßig ausgeschaltet, sodass du die Kontrolle behältst.
 
@@ -54,16 +58,16 @@ Während ein Dienst startet oder stoppt, zeigt der Status kurz
 
 Öffne **Einstellungen** (oben rechts) für app-weite Optionen:
 
-- **Erscheinungsbild** — Hell, Dunkel oder System (folgt deinem Betriebssystem).
+- **Erscheinungsbild** — Design (Hell, Dunkel oder System) und Sprache.
 - **Allgemein** — Ensembler in der Menüleiste / im System-Tray behalten, wenn du
-  das Fenster schließt (standardmäßig aktiviert), sodass es einen Klick entfernt
-  ist. Deine Dienste laufen so oder so weiter; nutze **Beenden** im Tray-Menü, um
-  vollständig zu beenden.
-- **Updates** — automatische Hintergrund-Updates für deine Dienste aktivieren
-  (standardmäßig aus).
-- **Umgebung** — Zeitzone und die für Dateiberechtigungen verwendeten
+  das Fenster schließt (standardmäßig aktiviert; deine Dienste laufen so oder so
+  weiter — nutze **Beenden** im Tray-Menü, um vollständig zu beenden),
+  Dienst-Updates automatisch installieren (standardmäßig aus) und deine Zeitzone.
+- **Erweitert** — technische Details, die du normalerweise nicht brauchst:
+  Diagnose (ob Docker läuft, wie viele Dienste aktiv sind), freier Festplatten-
+  und Arbeitsspeicher sowie die für Dateiberechtigungen verwendeten
   Benutzer-/Gruppen-IDs.
-- **Gefahrenzone → Alles zurücksetzen** — stoppt und entfernt alle Dienste und
+- **Zurücksetzen → Alles zurücksetzen** — stoppt und entfernt alle Dienste und
   ihre Einstellungen und versetzt Ensembler in einen frisch installierten
   Zustand. **Deine Mediendateien werden nie angetastet** — nur die Dienste und
   ihre Konfiguration werden entfernt.
@@ -82,7 +86,7 @@ Einrichtung gewählt hast, und sind davon getrennt.
 
 ## Diagnose
 
-Am unteren Rand des Dashboards zeigt das **Diagnose**-Panel (standardmäßig
-eingeklappt) den technischen Status — ob Docker läuft, wie viele Dienste aktiv
-sind und so weiter. Normalerweise brauchst du es nicht, aber es ist bei der
-Fehlerbehebung nützlich.
+Der technische Status — ob Docker läuft, wie viele Dienste aktiv sind und wie
+viel Festplatten- und Arbeitsspeicher frei ist — findet sich unter
+**Einstellungen → Erweitert**. Normalerweise brauchst du ihn nicht, aber er ist
+bei der Fehlerbehebung nützlich.

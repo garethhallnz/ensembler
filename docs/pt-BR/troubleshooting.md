@@ -48,12 +48,12 @@ serviço.
   configuração e nunca é movida ou excluída pelo Ensembler.
 
 ## Algo está seriamente travado — começar do zero
-**Configurações → Zona de perigo → Redefinir tudo** para e remove todos os
+**Configurações → Redefinir → Redefinir tudo** para e remove todos os
 serviços e suas configurações e retorna o Ensembler a um estado limpo. **Seus
 arquivos de mídia não são afetados** — apenas os serviços e sua configuração são
 removidos. Depois você passará novamente pelo assistente de configuração.
 
 ## Ainda travado?
-Pegue os detalhes de **Ver logs** de um serviço e do painel de **Diagnósticos**
-na parte inferior do painel — essas são as coisas mais úteis para incluir ao
-relatar um problema.
+Pegue os detalhes de **Ver logs** de um serviço e de **Configurações → Avançado
+→ Diagnósticos** — essas são as coisas mais úteis para incluir ao relatar um
+problema.
