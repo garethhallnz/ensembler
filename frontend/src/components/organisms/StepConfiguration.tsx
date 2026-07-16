@@ -66,7 +66,7 @@ export default function StepConfiguration({
       <Card>
         <Card.Header>
           <div className="flex items-center gap-2">
-            <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.environmentSettings')}</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('setup.step1.environmentSettings')}</h3>
           </div>
         </Card.Header>
         <Card.Body>
@@ -83,7 +83,7 @@ export default function StepConfiguration({
           click from here rather than a separate review step. */}
       <Card>
         <Card.Header>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{t('setup.step1.readyToSetUp')}</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{t('setup.step1.readyToSetUp')}</h3>
         </Card.Header>
         <Card.Body>
           <div className="space-y-1.5">

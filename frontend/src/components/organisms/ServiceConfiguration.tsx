@@ -142,7 +142,7 @@ export default function ServiceConfiguration({
     return (
       <Card key={service.key} className={className}>
         <Card.Header>
-          <h3 className="text-xl font-medium text-gray-900 dark:text-white">{service.name}</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white">{service.name}</h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{t(`services.${service.key}.description`)}</p>
         </Card.Header>
         <Card.Body>
