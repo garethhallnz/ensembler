@@ -60,12 +60,23 @@ describe('getServiceUpdates', () => {
     expect(await getServiceUpdates()).toEqual({
       updates: { sonarr: { hasUpdate: true }, radarr: { hasUpdate: null } },
       lastChecked: '2026-01-01T00:00:00Z',
+      lastAutoUpdate: null,
     });
   });
 
   it('defaults lastChecked to null when absent', async () => {
     mockApiFetch.mockResolvedValue(jsonRes({ success: true, updates: {} }));
-    expect(await getServiceUpdates()).toEqual({ updates: {}, lastChecked: null });
+    expect(await getServiceUpdates()).toEqual({ updates: {}, lastChecked: null, lastAutoUpdate: null });
+  });
+
+  it('passes through a background auto-update result', async () => {
+    mockApiFetch.mockResolvedValue(jsonRes({
+      success: true,
+      updates: {},
+      lastAutoUpdate: { at: '2026-01-02T00:00:00Z', updated: ['plex'], failed: [{ service: 'emby', error: 'boom' }] },
+    }));
+    const { lastAutoUpdate } = await getServiceUpdates();
+    expect(lastAutoUpdate).toEqual({ at: '2026-01-02T00:00:00Z', updated: ['plex'], failed: [{ service: 'emby', error: 'boom' }] });
   });
 });
 

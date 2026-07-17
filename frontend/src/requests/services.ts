@@ -15,10 +15,19 @@ export const ServicesStatusSchema = z.object({
   serviceStatus: z.record(z.string(), z.string()),
 });
 
+const AutoUpdateResultSchema = z.object({
+  at: z.string(),
+  updated: z.array(z.string()),
+  failed: z.array(z.object({ service: z.string(), error: z.string().optional() })),
+});
+
+export type AutoUpdateResult = z.infer<typeof AutoUpdateResultSchema>;
+
 const ServiceUpdatesSchema = z.object({
   success: z.boolean(),
   updates: z.record(z.string(), z.object({ hasUpdate: z.boolean().nullable() })),
   lastChecked: z.string().nullish(),
+  lastAutoUpdate: AutoUpdateResultSchema.nullish(),
 });
 
 const ServiceMonitorSchema = z.object({
@@ -45,11 +54,11 @@ export async function getServiceStatuses(): Promise<Record<string, string>> {
   return data.serviceStatus;
 }
 
-export async function getServiceUpdates(): Promise<{ updates: ServiceUpdates; lastChecked: string | null }> {
+export async function getServiceUpdates(): Promise<{ updates: ServiceUpdates; lastChecked: string | null; lastAutoUpdate: AutoUpdateResult | null }> {
   const res = await apiFetch('/api/services/updates');
   const data = ServiceUpdatesSchema.parse(await res.json());
   if (!data.success) throw new Error('Service updates request was unsuccessful');
-  return { updates: data.updates, lastChecked: data.lastChecked ?? null };
+  return { updates: data.updates, lastChecked: data.lastChecked ?? null, lastAutoUpdate: data.lastAutoUpdate ?? null };
 }
 
 // POST — recompute update availability now (cheap digest check, no image pulls).

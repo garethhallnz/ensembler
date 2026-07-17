@@ -13,6 +13,15 @@ vi.mock('./requests/services', () => ({
     environment: { tz: 'UTC', puid: 1000, pgid: 1000 },
     minimizeToTray: true,
     autoUpdate: false,
+    updateNotifications: true,
+  })),
+  checkAppUpdate: vi.fn(async () => ({
+    success: true,
+    currentVersion: '1.0.0',
+    latestVersion: '1.0.0',
+    hasUpdate: false,
+    releaseUrl: null,
+    lastChecked: null,
   })),
 }));
 

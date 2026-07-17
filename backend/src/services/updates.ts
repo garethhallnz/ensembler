@@ -1,8 +1,26 @@
 import fs from 'fs';
+import path from 'path';
 import { getServiceConfig } from './serviceConfig';
-import { configFile } from './paths';
+import { configFile, configDir } from './paths';
 import { execAsync, dockerCompose } from './exec';
 import { getEffectiveImage } from './compose';
+
+export type AutoUpdateResult = { at: string; updated: string[]; failed: { service: string; error?: string }[] };
+
+// Auto-update runtime state, persisted separately from the user's config so the
+// once-per-day debounce survives restarts. This app is both quit/relaunched
+// often and left running in the tray for days, so the guard must span process
+// lifetimes, not just a single run.
+const updateStateFile = path.join(configDir, 'update-state.json');
+
+function readAutoUpdateState(): { lastAutoUpdateAt: number; lastAutoUpdate: AutoUpdateResult | null } {
+  try {
+    const state = JSON.parse(fs.readFileSync(updateStateFile, 'utf-8'));
+    return { lastAutoUpdateAt: state.lastAutoUpdateAt ?? 0, lastAutoUpdate: state.lastAutoUpdate ?? null };
+  } catch {
+    return { lastAutoUpdateAt: 0, lastAutoUpdate: null };
+  }
+}
 
 // Cache of update status per service. hasUpdate is null when it can't be
 // determined (image not pulled, registry unreachable). Populated by a cheap
@@ -10,8 +28,20 @@ import { getEffectiveImage } from './compose';
 // and written only through the functions below.
 const updateCheckStore = {
   lastServiceCheck: new Date(),
-  availableUpdates: {} as { [key: string]: { hasUpdate: boolean | null } }
+  availableUpdates: {} as { [key: string]: { hasUpdate: boolean | null } },
+  ...readAutoUpdateState(),
 };
+
+function persistAutoUpdateState(): void {
+  try {
+    fs.writeFileSync(updateStateFile, JSON.stringify({
+      lastAutoUpdateAt: updateCheckStore.lastAutoUpdateAt,
+      lastAutoUpdate: updateCheckStore.lastAutoUpdate,
+    }));
+  } catch (err) {
+    console.error('Could not persist auto-update state:', err);
+  }
+}
 
 // Digest of the locally-pulled image for a tag (the manifest the tag resolved
 // to when pulled). Null if the image isn't present or has no repo digest.
@@ -98,8 +128,12 @@ export async function fetchAvailableVersions(image: string): Promise<string[]> {
 }
 
 // Snapshot of the cached update status (no docker calls).
-export function getAvailableUpdates(): { updates: { [key: string]: { hasUpdate: boolean | null } }; lastChecked: Date } {
-  return { updates: updateCheckStore.availableUpdates, lastChecked: updateCheckStore.lastServiceCheck };
+export function getAvailableUpdates(): { updates: { [key: string]: { hasUpdate: boolean | null } }; lastChecked: Date; lastAutoUpdate: AutoUpdateResult | null } {
+  return {
+    updates: updateCheckStore.availableUpdates,
+    lastChecked: updateCheckStore.lastServiceCheck,
+    lastAutoUpdate: updateCheckStore.lastAutoUpdate,
+  };
 }
 
 // Record a single service's checked status into the cache.
@@ -163,27 +197,42 @@ export async function applyAvailableUpdates(): Promise<{ updated: string[]; fail
   };
 }
 
-// Daily update-check scheduler (runs shortly after startup, then every 24h).
-// When the user has opted into auto-update, it also applies any updates found.
+// At most one auto-apply per this window, across every trigger and every
+// process restart (state is persisted). `force` bypasses it for the explicit
+// "just enabled auto-update" action.
+const AUTO_UPDATE_MIN_INTERVAL_MS = 20 * 60 * 60 * 1000;
+
+// Refresh the update cache, then — if the user has opted into auto-update and the
+// debounce window has passed — pull and recreate any services with a pending
+// update. The refresh always runs (it's cheap and keeps the dashboard current);
+// only the apply is gated. Never throws: failures are recorded and surfaced.
+export async function runScheduledUpdate({ force = false }: { force?: boolean } = {}): Promise<void> {
+  try {
+    await refreshUpdateCache();
+
+    const autoUpdateEnabled = fs.existsSync(configFile)
+      && JSON.parse(fs.readFileSync(configFile, 'utf-8')).autoUpdate === true;
+    if (!autoUpdateEnabled) return;
+
+    if (!force && Date.now() - updateCheckStore.lastAutoUpdateAt < AUTO_UPDATE_MIN_INTERVAL_MS) return;
+
+    const { updated, failed } = await applyAvailableUpdates();
+    updateCheckStore.lastAutoUpdateAt = Date.now();
+    updateCheckStore.lastAutoUpdate = { at: new Date().toISOString(), updated, failed };
+    persistAutoUpdateState();
+
+    if (updated.length) console.log(`Auto-update applied: ${updated.join(', ')}`);
+    if (failed.length) console.error(`Auto-update failed: ${failed.map(f => f.service).join(', ')}`);
+  } catch (err) {
+    console.error('Error during scheduled update check:', err);
+  }
+}
+
+// Runs shortly after startup (covers quit-then-relaunch) and daily thereafter
+// (covers close-to-tray, where the process stays alive for days). The debounce
+// in runScheduledUpdate keeps both — and frequent restarts — to ~once/day.
 export function startUpdateScheduler(): void {
   const checkInterval = 24 * 60 * 60 * 1000; // daily
-
-  const run = async () => {
-    try {
-      await refreshUpdateCache();
-      const autoUpdateEnabled = fs.existsSync(configFile)
-        && JSON.parse(fs.readFileSync(configFile, 'utf-8')).autoUpdate === true;
-      if (autoUpdateEnabled) {
-        const { updated, failed } = await applyAvailableUpdates();
-        if (updated.length) console.log(`Auto-update applied: ${updated.join(', ')}`);
-        if (failed.length) console.error(`Auto-update failed: ${failed.map(f => f.service).join(', ')}`);
-      }
-    } catch (err) {
-      console.error('Error during scheduled update check:', err);
-    }
-  };
-
-  // Prime the cache shortly after startup, then daily.
-  setTimeout(run, 10000);
-  setInterval(run, checkInterval);
+  setTimeout(() => runScheduledUpdate(), 10000);
+  setInterval(() => runScheduledUpdate(), checkInterval);
 }

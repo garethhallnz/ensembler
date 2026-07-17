@@ -4,6 +4,7 @@ import {
   checkServiceUpdates,
   getServiceUpdateStatus,
   type ServiceUpdates,
+  type AutoUpdateResult,
 } from '../requests/services';
 
 const AUTO_CHECK_TTL_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -17,6 +18,7 @@ export function useServiceUpdates(serviceKeys: string[]) {
   const [updateChecking, setUpdateChecking] = useState<Record<string, boolean>>({});
   const [recentlyChecked, setRecentlyChecked] = useState<Record<string, boolean>>({});
   const [checkingAll, setCheckingAll] = useState(false);
+  const [lastAutoUpdate, setLastAutoUpdate] = useState<AutoUpdateResult | null>(null);
   const autoCheckedRef = useRef(false);
   // "Up to date" fade-out timers, cleared on unmount so they can't setState after.
   const fadeTimers = useRef<Array<ReturnType<typeof setTimeout>>>([]);
@@ -26,8 +28,9 @@ export function useServiceUpdates(serviceKeys: string[]) {
   // background digest check so availability surfaces without user action.
   const refresh = useCallback(async () => {
     try {
-      const { updates, lastChecked } = await getServiceUpdates();
+      const { updates, lastChecked, lastAutoUpdate: latestAutoUpdate } = await getServiceUpdates();
       setServiceUpdates(updates);
+      setLastAutoUpdate(latestAutoUpdate);
       if (!autoCheckedRef.current) {
         autoCheckedRef.current = true;
         const last = lastChecked ? new Date(lastChecked).getTime() : 0;
@@ -79,7 +82,11 @@ export function useServiceUpdates(serviceKeys: string[]) {
   useEffect(() => {
     if (serviceSetKey === '') return;
     refresh();
+    // Poll the cached read (no docker calls) so update badges stay current and a
+    // background auto-update result surfaces without the user reopening the app.
+    const interval = setInterval(refresh, 60000);
+    return () => clearInterval(interval);
   }, [serviceSetKey, refresh]);
 
-  return { serviceUpdates, updateChecking, recentlyChecked, checkingAll, refresh, checkAll, checkOne };
+  return { serviceUpdates, updateChecking, recentlyChecked, checkingAll, lastAutoUpdate, refresh, checkAll, checkOne };
 }

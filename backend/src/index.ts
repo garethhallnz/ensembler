@@ -17,6 +17,7 @@ import {
   getAvailableUpdates,
   recordServiceUpdate,
   startUpdateScheduler,
+  runScheduledUpdate,
 } from './services/updates';
 import { checkForAppUpdate } from './services/appUpdate';
 import { runSystemChecks } from './services/systemChecks';
@@ -202,6 +203,14 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
           }
         }
       }
+    }
+
+    // If auto-update was just turned on, apply pending updates now rather than
+    // waiting for the next daily check — enabling it is an explicit request, so
+    // it bypasses the debounce. Fire-and-forget: pulls are slow and must not
+    // block the save response; results surface via /api/services/updates.
+    if (newConfig?.autoUpdate === true && previousConfig?.autoUpdate !== true) {
+      runScheduledUpdate({ force: true }).catch(err => console.error('On-enable auto-update failed:', err));
     }
 
     res.json({ success: true, code: 'messages.config.saved', message: 'Configuration saved successfully.' });
@@ -671,8 +680,8 @@ app.post('/api/app/update/check', async (req: Request, res: Response) => {
 
 // Instant read of cached update status for all services (no docker calls).
 app.get('/api/services/updates', (req: Request, res: Response) => {
-  const { updates, lastChecked } = getAvailableUpdates();
-  res.json({ success: true, updates, lastChecked });
+  const { updates, lastChecked, lastAutoUpdate } = getAvailableUpdates();
+  res.json({ success: true, updates, lastChecked, lastAutoUpdate });
 });
 
 // Refresh the update cache on demand (cheap digest checks). Backs the

@@ -260,6 +260,8 @@
       "updatesFound_one": "{{count}} update available.",
       "updatesFound_other": "{{count}} updates available.",
       "allUpToDate": "All services are up to date.",
+      "autoUpdated": "Automatically updated {{names}}.",
+      "autoUpdateFailed": "Auto-update failed for {{names}}. Open a service's ⋯ menu to retry.",
       "actionSuccess_start": "{{name}} started successfully",
       "actionSuccess_stop": "{{name}} stopped successfully",
       "actionSuccess_restart": "{{name}} restarted successfully",

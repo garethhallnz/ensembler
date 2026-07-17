@@ -118,9 +118,27 @@ export default function Dashboard({ onResetComplete }: DashboardProps) {
   const { serviceVersions, pinnedVersions, refresh: refreshVersions } = useServiceVersions(selectedServices);
   const serviceAlerts = useServiceAlerts(selectedServices);
   const {
-    serviceUpdates, updateChecking, recentlyChecked, checkingAll,
+    serviceUpdates, updateChecking, recentlyChecked, checkingAll, lastAutoUpdate,
     refresh: refreshUpdates, checkAll, checkOne,
   } = useServiceUpdates(selectedServices);
+  // Surface background auto-update outcomes (which otherwise only hit the server
+  // log). Toast only on a *new* result, so an old one doesn't fire on mount.
+  const seenAutoUpdateAtRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!lastAutoUpdate) return;
+    if (seenAutoUpdateAtRef.current === null) {
+      seenAutoUpdateAtRef.current = lastAutoUpdate.at; // remember the initial one without toasting
+      return;
+    }
+    if (lastAutoUpdate.at === seenAutoUpdateAtRef.current) return;
+    seenAutoUpdateAtRef.current = lastAutoUpdate.at;
+    if (lastAutoUpdate.updated.length) {
+      showToast(t('dashboard.toast.autoUpdated', { names: lastAutoUpdate.updated.join(', ') }), 'success');
+    }
+    if (lastAutoUpdate.failed.length) {
+      showToast(t('dashboard.toast.autoUpdateFailed', { names: lastAutoUpdate.failed.map(f => f.service).join(', ') }), 'error');
+    }
+  }, [lastAutoUpdate, showToast, t]);
   const [updateLoading, setUpdateLoading] = useState<{ [key: string]: boolean }>({});
   const [updatingAll, setUpdatingAll] = useState(false);
   const [serviceConfig, setServiceConfig] = useState<ServiceConfig[]>([]);
