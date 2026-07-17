@@ -19,4 +19,4 @@ Closes #
 - [ ] Type-check is clean (`cd frontend && npx tsc -b`)
 - [ ] Lint is clean (`cd frontend && npm run lint`)
 - [ ] Docs (`docs/`) and translations updated if user-facing behaviour or strings changed
-- [ ] Branched off `dev`
+- [ ] Branched off `main`

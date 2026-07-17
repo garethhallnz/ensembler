@@ -64,14 +64,14 @@ Please make sure tests, `tsc`, and lint are clean before opening a PR.
 
 ## Pull requests
 
-1. Branch off `dev` (the default working branch).
+1. Branch off `main` (the default branch).
 2. Keep each PR focused on one logical change.
 3. Add or update tests for anything you change; keep the suite green.
 4. Update the docs (`docs/`) and translations if you change user-facing behaviour
    or strings. English (`en.json` / `docs/*.md`) is the source; other languages
    follow.
 5. Use clear, present-tense commit messages ("Add …", "Fix …").
-6. Open the PR against `dev` and fill in the template.
+6. Open the PR against `main` and fill in the template.
 
 ## Coding conventions
 
