@@ -1,6 +1,6 @@
 {
   "name": "ensembler",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A self-hosted media center orchestrator — run the *arr stack and a media server without Docker or the command line.",
   "author": "Gareth Hall (https://github.com/garethhallnz)",
   "license": "MIT",
