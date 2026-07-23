@@ -213,9 +213,13 @@ function startBackend() {
     dialog.showErrorBox('Backend Error', `Failed to start backend: ${error.message}`);
   });
 
-  backendProcess.on('exit', (code) => {
-    console.log(`Backend process exited with code ${code}`);
-    if (code !== 0) {
+  backendProcess.on('exit', (code, signal) => {
+    console.log(`Backend process exited with code ${code}${signal ? ` (signal ${signal})` : ''}`);
+    // A deliberate shutdown (app quitting, or stopBackend() killing the
+    // process directly) ends the process via signal, not a normal exit — code
+    // is then null, which is not a failure. Only alarm on a genuine non-zero
+    // exit while the app is still running.
+    if (!app.isQuitting && code !== 0 && code !== null) {
       dialog.showErrorBox('Backend Error', `Backend process exited with code ${code}`);
     }
   });
@@ -237,6 +241,24 @@ ipcMain.handle('show-open-dialog', async (_event, options) => {
 
 // Renderer reads the running app version via window.electronAPI.getVersion().
 ipcMain.handle('get-version', () => app.getVersion());
+
+// Only one backend may hold port 3001. A second launch (opening the app again
+// while a previous instance is already running, e.g. from Finder/Dock or the
+// tray) would spawn a competing backend that loses the port race and exits
+// non-zero — see startBackend()'s EADDRINUSE handling in the backend. Refuse
+// the second instance outright rather than let that race play out.
+if (!app.requestSingleInstanceLock()) {
+  console.log('[Electron] Another instance is already running. Exiting.');
+  app.quit();
+  process.exit(0);
+}
+
+app.on('second-instance', () => {
+  // A second launch attempt was refused above; focus the window this (first)
+  // instance already owns instead of doing nothing.
+  console.log('[Electron] Second instance detected; focusing existing window.');
+  showMainWindow();
+});
 
 // App event handlers
 app.whenReady().then(() => {

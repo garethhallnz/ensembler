@@ -781,7 +781,35 @@ if (process.env.NODE_ENV !== 'test') {
   // Start the background update-check scheduler
   startUpdateScheduler();
 
-  app.listen(port, () => console.log(`Backend listening on port ${port}`));
+  const server = app.listen(port, () => console.log(`Backend listening on port ${port}`));
+
+  // If the port is already in use, defer to whatever's already listening only
+  // if it's recognizably another Ensembler backend (the '/' route below always
+  // responds "Backend running") — a second app launch, or a dev backend left
+  // running, land here. Deferring unconditionally would let the app start up
+  // silently against an unrelated process or an incompatible backend version,
+  // which is far harder to diagnose than today's crash. Anything else (a
+  // stranger process on the port, or no/garbled response) exits non-zero so
+  // the Electron launcher's "Backend Error" dialog still fires — the crash
+  // itself should stay a hard failure, just not a spurious one.
+  server.on('error', async (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      try {
+        const res = await fetch(`http://localhost:${port}/`, { signal: AbortSignal.timeout(2000) });
+        if (res.ok && (await res.text()) === 'Backend running') {
+          console.error(`Port ${port} already in use by another Ensembler backend. Exiting.`);
+          process.exit(0);
+        }
+      } catch {
+        // fall through — treat as an unrecognized occupant, below
+      }
+      console.error(`Port ${port} already in use by an unrecognized process. Exiting.`);
+      process.exit(1);
+      return;
+    }
+    console.error('Backend server error:', err);
+    process.exit(1);
+  });
 }
 
 export default app;
