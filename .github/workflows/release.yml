@@ -1,20 +1,26 @@
 name: Release
 
-# Push a version tag (e.g. v1.1.0) to build installers for every OS and upload
-# them to a GitHub Release. electron-builder creates the release as a DRAFT — review
-# the artifacts, then publish it manually. Builds are currently unsigned, so macOS
-# users right-click → Open and Windows users choose "More info → Run anyway" once.
+# Push a version tag (e.g. v1.1.0) to build installers for every OS. Build jobs only
+# produce artifacts; one final job attaches them all to a DRAFT GitHub Release, so a
+# release is never half-populated and a failed platform blocks it outright. Review the
+# draft, then publish it manually. Builds are unsigned, so macOS users right-click →
+# Open and Windows users choose "More info → Run anyway" once.
 on:
   push:
     tags:
       - 'v*'
 
 permissions:
-  contents: write # allow the workflow token to create/update the release
+  contents: read # only the release job below is granted write
 
 jobs:
-  release:
-    name: Build & publish (${{ matrix.os }})
+  verify:
+    name: Verify
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: verify
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -23,12 +29,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
@@ -54,9 +60,70 @@ jobs:
         working-directory: ./frontend
         run: npm run build
 
-      # electron-builder builds the target for the current OS (dmg / nsis /
-      # AppImage) and uploads it to the draft GitHub Release for this tag.
-      - name: Build & publish desktop app
-        run: npx electron-builder --publish always
+      # Build only. Uploading is the release job's responsibility — three racing
+      # runners each mutating one GitHub Release is what silently shipped an empty
+      # v1.0.1, because electron-builder skips uploads it can't make and still exits 0.
+      - name: Build desktop app
+        run: npx electron-builder --publish never
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v7
+        with:
+          name: installers-${{ matrix.os }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            dist-electron/*.dmg
+            dist-electron/*.exe
+            dist-electron/*.AppImage
+            dist-electron/*.blockmap
+            dist-electron/latest*.yml
+
+  release:
+    name: Draft release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release and attach installers
+    steps:
+      - name: Download installers
+        uses: actions/download-artifact@v8
+        with:
+          pattern: installers-*
+          merge-multiple: true
+          path: installers
+
+      - name: Check every platform produced an installer
+        run: |
+          ls -l installers
+          for ext in dmg exe AppImage; do
+            compgen -G "installers/*.$ext" >/dev/null \
+              || { echo "::error::no .$ext installer was produced"; exit 1; }
+          done
+          for meta in latest.yml latest-mac.yml latest-linux.yml; do
+            test -f "installers/$meta" \
+              || echo "::warning::$meta missing — auto-update metadata is incomplete"
+          done
+
+      - name: Create draft release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          published=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq '.[] | select(.tag_name == env.TAG and .draft == false) | .id' | head -1)
+          if [ -n "$published" ]; then
+            echo "::error::$TAG is already published. Bump the version and tag again rather than overwriting a shipped release."
+            exit 1
+          fi
+
+          # A draft left by an earlier run of this tag would collide on asset names.
+          stale=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+            --jq '.[] | select(.tag_name == env.TAG and .draft) | .id' | head -1)
+          if [ -n "$stale" ]; then
+            echo "Replacing draft release $stale left by an earlier run."
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$stale"
+          fi
+
+          gh release create "$TAG" installers/* \
+            --draft --title "$TAG" --generate-notes
