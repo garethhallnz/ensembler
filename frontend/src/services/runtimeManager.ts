@@ -20,7 +20,7 @@ class RuntimeManager {
     lastCheck: new Date()
   };
 
-  private intervalId: NodeJS.Timeout | null = null;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
 
   /**
    * Initialize the runtime manager
