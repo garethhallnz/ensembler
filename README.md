@@ -98,7 +98,7 @@ npm run dev        # backend + frontend; open http://localhost:5180
 **Electron mode — for debugging the desktop app itself.** One command starts everything (Vite, then the Electron window, which spawns the backend for you). Reach for this only when the issue is about the packaged/desktop environment — window behaviour, file paths, backend spawning:
 
 ```bash
-npm run dev-electron   # runs one mode at a time — stop `npm run dev` first (both use port 3001)
+npm run dev-electron   # runs one mode at a time — stop `npm run dev` first (both use port 5180)
 ```
 
 > **Why both exist — and the gotcha that matters:** the two modes store data in **different directories**. Browser mode's backend uses `~/.ensembler`, while Electron mode (and the packaged app) use the OS's per-user data dir — on macOS `~/Library/Application Support/Ensembler`, which contains a **space**. Bugs tied to that path (and anything Electron-specific) can only be reproduced in Electron mode. If something works in the browser but not in the packaged app, run `npm run dev` to reproduce it.

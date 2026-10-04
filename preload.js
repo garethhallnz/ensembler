@@ -1,10 +1,18 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// electron.js picks the backend's port at launch and passes it as a renderer
+// argument (webPreferences.additionalArguments).
+const backendPortArg = process.argv.find((arg) => arg.startsWith('--ensembler-backend-port='));
+const backendOrigin = backendPortArg ? `http://localhost:${backendPortArg.split('=')[1]}` : undefined;
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   // Platform info
   getPlatform: () => process.platform,
+
+  // Where the backend this window's app instance spawned is listening
+  backendOrigin,
   
   // File system operations (if needed)
   showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),

@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, shell, ipcMain, Tray, Menu, nativeImage } f
 import path from 'path';
 import fs from 'fs';
 import { spawn } from 'child_process';
+import net from 'net';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +28,40 @@ function openExternalSafely(url) {
 let mainWindow;
 let tray = null;
 app.isQuitting = false;
+
+// The backend's port, chosen at startup by pickBackendPort(). Every consumer —
+// the spawned backend (PORT), the tray, and the renderer (via preload) — reads
+// it from here rather than assuming a fixed number.
+const PREFERRED_BACKEND_PORT = 3001;
+let backendPort = PREFERRED_BACKEND_PORT;
+
+// Resolve with `port` if it can be bound, else reject. Binds the same way the
+// backend does (no host, so all interfaces) so the probe can't pass on one
+// interface while the backend then fails on another.
+function probePort(port) {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.once('error', reject);
+    server.listen(port, () => {
+      const { port: bound } = server.address();
+      server.close(() => resolve(bound));
+    });
+  });
+}
+
+// Keep the familiar port when it's free; otherwise let the OS assign one.
+// Another app on 3001 (e.g. a Docker container) used to kill the backend at
+// launch with "Port 3001 already in use by an unrecognized process".
+async function pickBackendPort() {
+  try {
+    return await probePort(PREFERRED_BACKEND_PORT);
+  } catch {
+    const assigned = await probePort(0);
+    console.log(`[Electron] Port ${PREFERRED_BACKEND_PORT} is in use; backend will use port ${assigned}.`);
+    return assigned;
+  }
+}
 
 // The containers run independently of the app, so closing the window can keep
 // Ensembler resident in the tray for quick access. Opt-out via a Settings toggle
@@ -68,7 +103,7 @@ function createTray() {
   tray.setToolTip('Ensembler');
 
   const runServiceAction = (endpoint) => {
-    fetch(`http://localhost:3001/api/services/${endpoint}`, { method: 'POST' })
+    fetch(`http://localhost:${backendPort}/api/services/${endpoint}`, { method: 'POST' })
       .catch(err => console.error(`[Electron] Tray action ${endpoint} failed:`, err));
   };
 
@@ -100,7 +135,9 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       webviewTag: true, // service UIs render in-app via <webview>, avoiding the browser's "Not Secure" chrome
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // preload.js reads this from process.argv and hands it to the renderer.
+      additionalArguments: [`--ensembler-backend-port=${backendPort}`],
     },
     icon: path.join(__dirname, 'assets/icon.png'), // Window/taskbar icon (Windows/Linux)
     show: false, // Don't show until ready
@@ -190,7 +227,7 @@ function startBackend() {
       stdio: 'inherit',
       cwd: path.join(__dirname, 'backend'),
       shell: true,
-      env: { ...process.env, PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
+      env: { ...process.env, PORT: String(backendPort), PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
     };
   } else {
     // Run the bundled backend with Electron's own Node runtime (no system Node
@@ -201,7 +238,7 @@ function startBackend() {
     args = [bundlePath];
     options = {
       stdio: 'inherit',
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
+      env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', PORT: String(backendPort), PATH: backendPath(), ENSEMBLER_DATA_DIR: app.getPath('userData'), ENSEMBLER_APP_VERSION: app.getVersion() },
       shell: false
     };
   }
@@ -242,11 +279,10 @@ ipcMain.handle('show-open-dialog', async (_event, options) => {
 // Renderer reads the running app version via window.electronAPI.getVersion().
 ipcMain.handle('get-version', () => app.getVersion());
 
-// Only one backend may hold port 3001. A second launch (opening the app again
+// One app instance owns one backend. A second launch (opening the app again
 // while a previous instance is already running, e.g. from Finder/Dock or the
-// tray) would spawn a competing backend that loses the port race and exits
-// non-zero — see startBackend()'s EADDRINUSE handling in the backend. Refuse
-// the second instance outright rather than let that race play out.
+// tray) would spawn a second backend with its own window and tray against the
+// same data dir. Refuse the second instance outright and focus the first.
 if (!app.requestSingleInstanceLock()) {
   console.log('[Electron] Another instance is already running. Exiting.');
   app.quit();
@@ -261,8 +297,9 @@ app.on('second-instance', () => {
 });
 
 // App event handlers
-app.whenReady().then(() => {
-  console.log('[Electron] App is ready. Starting backend...');
+app.whenReady().then(async () => {
+  backendPort = await pickBackendPort();
+  console.log(`[Electron] App is ready. Starting backend on port ${backendPort}...`);
   startBackend();
   
   createTray();

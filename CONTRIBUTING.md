@@ -43,7 +43,7 @@ npm run dev               # open http://localhost:5180
 behaviour, file paths, backend spawning):
 
 ```bash
-npm run dev-electron      # stop `npm run dev` first — both use port 3001
+npm run dev-electron      # stop `npm run dev` first — both use port 5180
 ```
 
 > **Gotcha worth knowing:** the two modes store data in **different** folders.
